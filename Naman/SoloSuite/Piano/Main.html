@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoloSuite Studio - Master Edition</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.8);
+            --accent-glow: #38bdf8;
+            --accent-gold: #fbbf24;
+            --danger: #f43f5e;
+            --white-key: linear-gradient(to bottom, #ffffff 0%, #f1f5f9 80%, #cbd5e1 100%);
+            --black-key: linear-gradient(to bottom, #334155 0%, #000 100%);
+        }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-color); color: #f8fafc;
+            margin: 0; padding: 20px; min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center;
+            overflow-x: hidden;
+        }
+        /* --- LOADING & START SCREEN --- */
+        #loading-overlay {
+            position: fixed; inset: 0; background: #0f172a; z-index: 10000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.6s ease-out;
+            pointer-events: all;
+        }
+        #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+        .studio-logo { color: var(--accent-glow); font-size: 2.5rem; letter-spacing: 10px; margin-bottom: 20px; text-shadow: 0 0 20px rgba(56, 189, 248, 0.4); }
+        .loader-bar { width: 300px; height: 2px; background: rgba(255, 255, 255, 0.1); margin: 20px; position: relative; overflow: hidden; }
+        .loader-progress { position: absolute; height: 100%; width: 100%; background: var(--accent-glow); animation: scan 1.5s infinite; }
+        @keyframes scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .start-btn {
+            background: var(--accent-glow); color: #000; border: none;
+            padding: 16px 45px; border-radius: 50px; font-weight: 800;
+            cursor: pointer; font-size: 1rem; letter-spacing: 2px;
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.4);
+            transition: 0.3s;
+        }
+        .start-btn:hover { transform: scale(1.05); background: #fff; }
+        /* --- STUDIO UI --- */
+        .studio-header {
+            width: 100%; max-width: 1200px; display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 30px; padding: 20px;
+            background: var(--panel-bg); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+        .lcd-screen {
+            background: #000; border: 2px solid #334155; padding: 10px 20px; border-radius: 8px;
+            font-family: monospace; color: var(--accent-glow); text-shadow: 0 0 10px var(--accent-glow);
+            min-width: 250px; text-align: center; font-size: 0.9rem;
+        }
+        .toolbar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 30px; justify-content: center; align-items: center;}
+        .btn {
+            background: #1e293b; color: #94a3b8; border: 1px solid #334155;
+            padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.2s;
+        }
+        .btn:hover { border-color: var(--accent-glow); color: #fff; transform: translateY(-2px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; border-color: #334155;}
+        .btn.active { background: var(--accent-glow); color: #000; }
+        #volume-slider { accent-color: var(--accent-glow); }
+        .piano-rack {
+            width: 95vw; max-width: 1400px; background: #020617; padding: 40px 20px;
+            border-radius: 24px; border: 4px solid #1e293b; overflow-x: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .piano { display: flex; width: fit-content; margin: 0 auto; position: relative; }
+        .key { position: relative; cursor: pointer; transition: 0.1s; }
+        .white { width: 55px; height: 240px; background: var(--white-key); border: 1px solid #94a3b8; border-radius: 0 0 8px 8px; z-index: 1; }
+        .black { width: 34px; height: 150px; background: var(--black-key); border-radius: 0 0 6px 6px; z-index: 2; margin: 0 -17px; box-shadow: 4px 4px 10px rgba(0,0,0,0.5); }
+        .key.pressed { transform: translateY(4px); }
+        .white.pressed { box-shadow: inset 0 0 20px var(--accent-glow), 0 0 15px var(--accent-glow); }
+        .black.pressed { box-shadow: inset 0 0 15px var(--accent-gold), 0 0 15px var(--accent-gold); }
+        .key-label { position: absolute; bottom: 15px; width: 100%; text-align: center; font-size: 11px; font-weight: 800; color: #64748b; pointer-events: none; }
+        .k-map { color: var(--danger); display: block; }
+        /* Modals */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); }
+        .modal-content { background: #1e293b; padding: 30px; border-radius: 20px; width: 90%; max-width: 800px; max-height: 80vh; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); }
+        .section-header { color: var(--accent-gold); font-size: 0.8rem; letter-spacing: 2px; margin: 25px 0 15px 0; text-transform: uppercase; }
+        .note-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; }
+        .note-item { background: #0f172a; border: 1px solid #334155; padding: 8px; border-radius: 6px; text-align: center; cursor: pointer; font-size: 0.8rem; }
+        .note-item.active { border-color: var(--accent-glow); color: var(--accent-glow); }
+        table { width: 100%; color: white; border-spacing: 0 8px; border-collapse: separate; }
+        td { background: #0f172a; padding: 10px; border-radius: 4px; }
+        input { background: #1e293b; color: white; border: 1px solid #334155; padding: 8px; width: 80px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<!-- BRANDED START SCREEN -->
+<div id="loading-overlay">
+    <div class="studio-logo">SOLOSUITE</div>
+    <div class="loader-bar"><div class="loader-progress"></div></div>
+    <p id="load-msg" style="margin-bottom:30px; color:#64748b; letter-spacing:2px; font-size:0.7rem">LOADING STUDIO ENGINE...</p>
+    <button class="start-btn" id="start-btn" onclick="startStudio()">START STUDIO</button>
+    <p style="margin-top:25px; color:var(--accent-gold); font-size:0.75rem; letter-spacing:1px; font-weight:bold;">Made By Naman Mittal</p>
+</div>
+
+<div class="studio-header">
+    <h1 style="margin:0; font-size:1.4rem; letter-spacing:2px;">SOLOSUITE <span style="color:var(--accent-glow)">STUDIO</span></h1>
+    <div class="lcd-screen" id="status-lcd">WAITING FOR USER...</div>
+</div>
+
+<div class="toolbar">
+    <button class="btn" onclick="openModal('layout-modal')">⌨ LAYOUT</button>
+    <button class="btn active" id="instrument-btn">ACOUSTIC</button>
+    <button class="btn active" id="sustain-btn">SUSTAIN ON</button>
+    <button class="btn" onclick="openModal('macro-modal')">⚙ MACROS</button>
+    <button class="btn" id="remap-btn">🔴 MAP KEY</button>
+    <button class="btn" onclick="fullReset()" style="color:var(--danger)">RESET</button>
+    <label for="volume-slider" style="display: flex; align-items: center; gap: 8px; color: #94a3b8; font-weight: 600;">
+        VOL
+        <input type="range" min="-40" max="6" value="0" id="volume-slider">
+    </label>
+</div>
+
+<div class="piano-rack">
+    <div class="piano" id="piano-keys"></div>
+</div>
+
+<!-- Layout Modal -->
+<div class="modal" id="layout-modal">
+    <div class="modal-content">
+        <h2 style="margin-top:0">Layout Manager</h2>
+        <div class="section-header">Adjust Keyboard Range</div>
+        <div style="display:flex; gap:10px; justify-content:center">
+            <button class="btn" onclick="adjustRange('add-left')">+ LEFT</button>
+            <button class="btn" onclick="adjustRange('rem-left')">- LEFT</button>
+            <button class="btn" onclick="adjustRange('rem-right')">- RIGHT</button>
+            <button class="btn" onclick="adjustRange('add-right')">+ RIGHT</button>
+        </div>
+        <div class="section-header">Note Matrix</div>
+        <div class="note-grid" id="note-selector"></div>
+        <button class="btn" style="margin-top:30px; width:100%" onclick="closeModal('layout-modal')">DONE</button>
+    </div>
+</div>
+
+<!-- Macro Modal -->
+<div class="modal" id="macro-modal">
+    <div class="modal-content">
+        <h2 style="margin-top:0">Sequencer</h2>
+        <table id="macro-table">
+            <thead><tr><th>Note</th><th>Start (s)</th><th>Dur (s)</th><th>Action</th></tr></thead>
+            <tbody id="macro-body"></tbody>
+        </table>
+        <button class="btn" style="width:100%; margin-top: 15px;" onclick="addMacroStep()">+ ADD STEP</button>
+        <div style="margin-top:30px; display:flex; gap:10px; justify-content: center; align-items:center;">
+            <button class="btn active" onclick="playMacro()">PLAY SEQUENCE</button>
+            <button class="btn" onclick="stopMacro()" style="color:var(--danger)">STOP</button>
+            <label style="font-size:0.8rem; display:flex; align-items:center; gap: 5px;"><input type="checkbox" id="macro-loop"> LOOP</label>
+        </div>
+        <button class="btn" style="margin-top:20px; width:100%" onclick="closeModal('macro-modal')">DONE</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+<script>
+    const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const acousticBuffers = new Tone.ToneAudioBuffers();
+    const epianoBuffers = new Tone.ToneAudioBuffers();
+    const activeSources = new Map();
+    
+    let masterLayout = [], visibleNotes = new Set(), keyToNote = {};
+    let isRemapping = false, noteToRemap = null, activeMacro = null;
+    let isSustainLooping = true;
+    
+    const instrumentModes = ['acoustic', 'epiano', 'synth'];
+    let instrumentIndex = 0;
+
+    const lcd = document.getElementById('status-lcd');
+
+    // --- AUDIO CHAIN ---
+    const limiter = new Tone.Limiter(-1).toDestination();
+    const reverb = new Tone.Reverb(2.5).connect(limiter);
+    const synthFallback = new Tone.PolySynth(Tone.Synth).connect(reverb);
+    const electricSynth = new Tone.PolySynth(Tone.FMSynth, {
+        harmonicity: 3.01, modulationIndex: 14,
+        envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 1.2 },
+        modulationEnvelope: { attack: 0.02, decay: 0.3, sustain: 0, release: 0.8 }
+    }).connect(reverb);
+
+    function getFileName(note) {
+        const s2f = { 'C#':'Db', 'D#':'Eb', 'F#':'Gb', 'G#':'Ab', 'A#':'Bb' };
+        let b = note.slice(0, -1), o = note.slice(-1);
+        return (s2f[b] ? s2f[b] + o : note) + ".mp3";
+    }
+
+    // --- INITIALIZATION ---
+    function init() {
+        let idx = NOTES.indexOf('A'), oct = 0;
+        let loadedCount = 0;
+        const totalToLoad = 88 * 2;
+        
+        const updateLoadMsg = () => {
+            loadedCount++;
+            const percent = Math.floor((loadedCount / totalToLoad) * 100);
+            if (document.getElementById('load-msg')) {
+                 document.getElementById('load-msg').innerText = `LOADING ASSETS... ${percent}%`;
+            }
+            if(percent === 100) {
+                 setTimeout(() => {
+                    if (document.getElementById('load-msg')) document.getElementById('load-msg').innerText = "ASSETS READY";
+                 }, 200);
+            }
+        };
+
+        for (let i = 0; i < 88; i++) {
+            const n = NOTES[idx] + oct;
+            masterLayout.push({ note: n, type: n.includes('#') ? 'black' : 'white', key: null });
+            visibleNotes.add(n);
+            
+            acousticBuffers.add(n, `./assets/${getFileName(n)}`, updateLoadMsg);
+            epianoBuffers.add(n, `./e_assets/${getFileName(n)}`, updateLoadMsg);
+            
+            if (idx === 11) { idx = 0; oct++; } else { idx++; }
+        }
+        loadMappings();
+        renderAll();
+    }
+
+    async function startStudio() {
+        await Tone.start();
+        document.getElementById('loading-overlay').classList.add('hidden');
+        lcd.innerText = "STUDIO LIVE";
+    }
+
+    // --- AUDIO ENGINE ---
+    function playNote(note) {
+        if (!visibleNotes.has(note)) return;
+        Tone.start();
+        stopNote(note);
+
+        const currentInstrument = instrumentModes[instrumentIndex];
+
+        if (currentInstrument === 'synth') {
+            electricSynth.triggerAttack(note, Tone.now(), 1);
+        } else {
+            const bufferSet = currentInstrument === 'acoustic' ? acousticBuffers : epianoBuffers;
+            if (bufferSet.has(note) && bufferSet.get(note)) {
+                const volNode = new Tone.Volume().connect(reverb);
+                const source = new Tone.ToneBufferSource(bufferSet.get(note)).connect(volNode);
+                
+                const nIdx = masterLayout.findIndex(m => m.note === note);
+                if (nIdx >= 50) volNode.volume.value = 6; 
+                
+                if (isSustainLooping) {
+                    source.loop = true;
+                    source.loopStart = 0.5; 
+                    source.loopEnd = 0.55; 
+                    source.fadeIn = 0.05;
+                }
+                source.start();
+                activeSources.set(note, { source, volNode });
+            } else {
+                synthFallback.triggerAttack(note);
+                activeSources.set(note, { isSynth: true });
+            }
+        }
+        document.getElementById(`key-${note}`)?.classList.add('pressed');
+        lcd.innerText = `ACTIVE: ${note}`;
+    }
+
+    function stopNote(note) {
+        const currentInstrument = instrumentModes[instrumentIndex];
+        if (currentInstrument === 'synth') {
+            electricSynth.triggerRelease(note);
+        } else {
+            const node = activeSources.get(note);
+            if (node) {
+                if (node.isSynth) synthFallback.triggerRelease(note);
+                else {
+                    node.source.loop = false;
+                    node.source.fadeOut = 2.0; 
+                    node.source.stop("+2.1");
+                }
+                activeSources.delete(note);
+            }
+        }
+        document.getElementById(`key-${note}`)?.classList.remove('pressed');
+    }
+
+    // --- WORKSTATION TOOLS ---
+    function renderPiano() {
+        const container = document.getElementById('piano-keys');
+        container.innerHTML = '';
+        masterLayout.forEach(item => {
+            if (!visibleNotes.has(item.note)) return;
+            const div = document.createElement('div');
+            div.className = `key ${item.type}`;
+            div.id = `key-${item.note}`;
+            div.innerHTML = `<div class="key-label">${item.note}<br><span class="k-map">${item.key?.toUpperCase() || ''}</span></div>`;
+            const start = (e) => { e.preventDefault(); isRemapping ? handleRemapClick(item.note) : playNote(item.note); };
+            const end = (e) => { e.preventDefault(); stopNote(item.note); };
+            div.onmousedown = start;
+            div.onmouseup = end;
+            div.onmouseleave = end;
+            div.ontouchstart = start;
+            div.ontouchend = end;
+            container.appendChild(div);
+        });
+    }
+
+    function handleRemapClick(n) {
+        noteToRemap = n;
+        lcd.innerText = `MAP ${n}: PRESS COMPUTER KEY...`;
+    }
+
+    document.getElementById('remap-btn').onclick = function() {
+        isRemapping = !isRemapping;
+        this.classList.toggle('active', isRemapping);
+        lcd.innerText = isRemapping ? "SELECT PIANO KEY" : "STUDIO LIVE";
+    };
+    
+    document.getElementById('sustain-btn').onclick = function() {
+        isSustainLooping = !isSustainLooping;
+        this.classList.toggle('active', isSustainLooping);
+        this.innerText = isSustainLooping ? 'SUSTAIN ON' : 'SUSTAIN OFF';
+    };
+    
+    document.getElementById('instrument-btn').onclick = function() {
+        activeSources.forEach(node => { if(node.source) node.source.stop(0) });
+        activeSources.clear();
+        synthFallback.releaseAll();
+        electricSynth.releaseAll();
+        renderPiano();
+
+        instrumentIndex = (instrumentIndex + 1) % instrumentModes.length;
+        const newInstrument = instrumentModes[instrumentIndex];
+
+        const sustainBtn = document.getElementById('sustain-btn');
+        let buttonText = '';
+
+        if (newInstrument === 'acoustic') {
+            buttonText = 'ACOUSTIC';
+            sustainBtn.disabled = false;
+            this.classList.add('active');
+        } else if (newInstrument === 'epiano') {
+            buttonText = 'E-PIANO';
+            sustainBtn.disabled = false;
+            this.classList.add('active');
+        } else {
+            buttonText = 'SYNTH';
+            sustainBtn.disabled = true;
+            this.classList.remove('active');
+_
+        }
+        
+        this.innerText = buttonText;
+        lcd.innerText = `ENGINE: ${buttonText}`;
+    };
+
+    // NEW: Master Volume Control
+    document.getElementById('volume-slider').addEventListener('input', (e) => {
+        Tone.Destination.volume.value = e.target.value;
+    });
+
+    window.onkeydown = (e) => {
+        if(e.repeat) return;
+        if(noteToRemap) {
+            const k = e.key.toLowerCase();
+            const item = masterLayout.find(m => m.note === noteToRemap);
+            if(item.key) delete keyToNote[item.key];
+            item.key = k; keyToNote[k] = noteToRemap;
+            noteToRemap = null;
+            saveMappings(); renderPiano();
+            lcd.innerText = `MAPPED: ${k.toUpperCase()}`;
+        } else {
+            const n = keyToNote[e.key.toLowerCase()];
+            if(n && !activeSources.has(n) && document.getElementById(`key-${n}`)) playNote(n);
+        }
+    };
+
+    window.onkeyup = (e) => { const n = keyToNote[e.key.toLowerCase()]; if(n) stopNote(n); };
+    
+    // RESTORED: All modal and helper functions
+    function playMacro() {
+        const steps = [];
+        document.querySelectorAll('#macro-body tr').forEach(row => {
+            const inp = row.querySelectorAll('input');
+            steps.push({ note: inp[0].value, time: parseFloat(inp[1].value) || 0, duration: parseFloat(inp[2].value) || 0.5 });
+        });
+        if (!steps.length) return;
+        if(activeMacro) activeMacro.dispose();
+        activeMacro = new Tone.Part((time, val) => {
+            Tone.Draw.schedule(() => playNote(val.note), time);
+            Tone.Draw.schedule(() => stopNote(val.note), time + val.duration);
+        }, steps).start(0);
+        activeMacro.loop = document.getElementById('macro-loop').checked;
+        activeMacro.loopEnd = Math.max(...steps.map(s => s.time + s.duration)) + 0.1;
+        Tone.Transport.start();
+        lcd.innerText = "SEQUENCER RUNNING";
+    }
+
+    function stopMacro() { Tone.Transport.stop(); if(activeMacro) activeMacro.dispose(); lcd.innerText = "SEQ STOPPED"; }
+
+    function adjustRange(a) {
+        let l = masterLayout.filter(m => visibleNotes.has(m.note));
+        if (a === 'rem-left' && l.length > 1) visibleNotes.delete(l[0].note);
+        else if (a === 'rem-right' && l.length > 1) visibleNotes.delete(l[l.length-1].note);
+        else if (a === 'add-left') { const i = masterLayout.findIndex(m => m.note === l[0].note); if(i > 0) visibleNotes.add(masterLayout[i-1].note); }
+        else if (a === 'add-right') { const i = masterLayout.findIndex(m => m.note === l[l.length-1].note); if(i < 87) visibleNotes.add(masterLayout[i+1].note); }
+        renderAll();
+    }
+
+    function renderNoteSelector() {
+        const g = document.getElementById('note-selector'); g.innerHTML = '';
+        masterLayout.forEach(m => {
+            const d = document.createElement('div'); d.className = `note-item ${visibleNotes.has(m.note) ? 'active' : ''}`;
+            d.innerText = m.note; d.onclick = () => { visibleNotes.has(m.note) ? visibleNotes.delete(m.note) : visibleNotes.add(m.note); renderAll(); };
+            g.appendChild(d);
+        });
+    }
+
+    function addMacroStep() {
+        const r = document.createElement('tr');
+        r.innerHTML = `<td><input type="text" value="C4"></td><td><input type="number" step="0.1" value="0"></td><td><input type="number" step="0.1" value="0.5"></td><td><button class="btn" onclick="this.parentElement.parentElement.remove()">✖</button></td>`;
+        document.getElementById('macro-body').appendChild(r);
+    }
+    
+    function renderAll() { renderPiano(); renderNoteSelector(); }
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function saveMappings() { localStorage.setItem('solosuite_final_v1', JSON.stringify(masterLayout.map(m => ({n: m.note, k: m.key})))); }
+    function loadMappings() {
+        const s = localStorage.getItem('solosuite_final_v1'); if(!s) return;
+        JSON.parse(s).forEach(sv => {
+            const i = masterLayout.find(m => m.note === sv.n);
+            if(i && sv.k) { i.key = sv.k; keyToNote[sv.k] = sv.n; }
+        });
+    }
+    function fullReset() { if(confirm("This will clear all mappings and settings. Are you sure?")) { localStorage.clear(); location.reload(); } }
+
+    init();
+</script>
+</body>
+</html>
