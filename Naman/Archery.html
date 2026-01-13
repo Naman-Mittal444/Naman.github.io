@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Archer</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #1a1a2e;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        #game-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas {
+            background-color: #16213e;
+            border: 3px solid #0f3460;
+            box-shadow: 0 0 25px rgba(224, 251, 255, 0.5);
+            cursor: crosshair;
+        }
+        
+        #ui-container {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #e0fbff;
+            font-size: 2rem;
+            text-shadow: 0 0 10px #e0fbff;
+            display: flex;
+            gap: 40px;
+        }
+
+        .level-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 5rem;
+            color: #f7ff00;
+            text-shadow: 0 0 20px #f7ff00;
+            display: none;
+            text-align: center;
+        }
+
+        .controls-info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(224, 251, 255, 0.7);
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="canvas"></canvas>
+        <div id="ui-container">
+            <div id="level-display">Level: 1</div>
+            <div id="score-display">Score: 0</div>
+            <div id="arrows-display">Arrows: 10</div>
+        </div>
+        <div id="level-message" class="level-message"></div>
+        <div class="controls-info">
+            Controls: [Mouse] OR [W/S/A/D + Spacebar]
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const ui = {
+                level: document.getElementById('level-display'),
+                score: document.getElementById('score-display'),
+                arrows: document.getElementById('arrows-display'),
+                levelMessage: document.getElementById('level-message')
+            };
+
+            canvas.width = 1280;
+            canvas.height = 720;
+
+            let gameState = { score: 0, currentLevelIndex: 0, arrowsLeft: 0 };
+            let arrow = null;
+            let targets = [];
+            let isDrawing = false;
+            let drawStart = { x: 0, y: 0 };
+            let mousePos = { x: 0, y: 0 };
+            let drawPower = 0;
+            let aimAngle = 0;
+            let facingRight = true;
+            let keyboard = { up: false, down: false, left: false, right: false };
+            let isCheckingLevel = false; // Debounce flag
+
+            const gravity = 0.15;
+            const ARCHER_POS = { x: 150, y: 550 };
+            const ARROW_SPEED_MULTIPLIER = 0.28;
+            const MAX_DRAW_POWER = 150;
+            const AIM_SPEED = 0.03;
+
+            // 50 Levels of Content
+            const levels = [
+                // Levels 1-5: Introduction
+                { arrows: 10, targets: [{ x: 1100, y: 500, radius: 50, isHit: false }] },
+                { arrows: 8, targets: [{ x: 1050, y: 400, radius: 45, isHit: false }] },
+                { arrows: 10, targets: [{ x: 1200, y: 300, radius: 20, isHit: false }] },
+                { arrows: 8, targets: [{ x: 1150, y: 300, radius: 40, isHit: false }] },
+                { arrows: 5, targets: [{ x: 1100, y: 450, radius: 35, isHit: false }] },
+                // Levels 6-10: Introduction to Moving Targets
+                { arrows: 8, targets: [{ x: 1100, y: 300, radius: 40, isHit: false, dy: 2, minY: 200, maxY: 600 }] },
+                { arrows: 6, targets: [{ x: 1150, y: 200, radius: 35, isHit: false, dy: 3, minY: 150, maxY: 600 }] },
+                { arrows: 10, targets: [{ x: 1000, y: 550, radius: 40, isHit: false }, { x: 1150, y: 250, radius: 35, isHit: false, dy: 2, minY: 200, maxY: 400 }] },
+                { arrows: 7, targets: [{ x: 1100, y: 400, radius: 30, isHit: false, dy: -4, minY: 200, maxY: 650 }] },
+                // Levels 11-20: Multiple Movers & Smaller Targets
+                { arrows: 10, targets: [{ x: 1050, y: 200, radius: 30, isHit: false, dy: -3, minY: 150, maxY: 650 }, { x: 1180, y: 600, radius: 30, isHit: false, dy: 3, minY: 150, maxY: 650 }] },
+                { arrows: 8, targets: [{ x: 1000, y: 150, radius: 35, isHit: false, dy: 2.5, minY: 150, maxY: 350 }, { x: 1150, y: 600, radius: 35, isHit: false, dy: -2.5, minY: 450, maxY: 600 }] },
+                { arrows: 12, targets: [{ x: 1000, y: 200, radius: 40, isHit: false }, { x: 1150, y: 400, radius: 40, isHit: false }, { x: 1000, y: 600, radius: 40, isHit: false }] },
+                { arrows: 8, targets: [{ x: 1100, y: 250, radius: 25, isHit: false, dy: 5, minY: 150, maxY: 650 }] },
+                { arrows: 10, targets: [{ x: 1050, y: 200, radius: 30, isHit: false, dy: 4, minY: 150, maxY: 400 }, { x: 1050, y: 600, radius: 30, isHit: false, dy: -4, minY: 450, maxY: 650 }] },
+                { arrows: 7, targets: [{ x: 1000, y: 400, radius: 35, isHit: false }, { x: 1180, y: 400, radius: 35, isHit: false, dy: 3, minY: 300, maxY: 500 }] },
+                { arrows: 5, targets: [{ x: 1100, y: 200, radius: 20, isHit: false, dy: 6, minY: 150, maxY: 650 }] },
+                { arrows: 10, targets: [{ x: 1000, y: 150, radius: 30, isHit: false, dy: 3, minY: 150, maxY: 650 }, { x: 1150, y: 150, radius: 30, isHit: false, dy: -3, minY: 150, maxY: 650 }] },
+                { arrows: 8, targets: [{ x: 1100, y: 200, radius: 40, isHit: false, dy: 2, minY: 150, maxY: 350 }, { x: 1100, y: 500, radius: 40, isHit: false, dy: -2, minY: 450, maxY: 650 }] },
+                { arrows: 10, targets: [{ x: 1000, y: 500, radius: 25, isHit: false }, { x: 1100, y: 350, radius: 25, isHit: false }, { x: 1200, y: 200, radius: 25, isHit: false }] },
+                // Levels 21-30: Intro to Horizontal Movement
+                { arrows: 8, targets: [{ x: 950, y: 500, radius: 40, isHit: false, dx: 2, minX: 950, maxX: 1200 }] },
+                { arrows: 8, targets: [{ x: 1200, y: 300, radius: 35, isHit: false, dx: -2.5, minX: 950, maxX: 1200 }] },
+                { arrows: 10, targets: [{ x: 950, y: 250, radius: 35, isHit: false, dx: 3, minX: 950, maxX: 1200 }, { x: 1200, y: 550, radius: 35, isHit: false, dx: -3, minX: 950, maxX: 1200 }] },
+                { arrows: 7, targets: [{ x: 950, y: 400, radius: 30, isHit: false, dx: 4, minX: 950, maxX: 1200 }] },
+                { arrows: 10, targets: [{ x: 1075, y: 200, radius: 40, isHit: false, dy: 3, minY: 150, maxY: 650 }, { x: 950, y: 500, radius: 30, isHit: false, dx: 2, minX: 950, maxX: 1200 }] },
+                { arrows: 8, targets: [{ x: 1100, y: 200, radius: 30, isHit: false, dy: -3, minY: 150, maxY: 650 }, { x: 1000, y: 500, radius: 30, isHit: false, dx: -2, minX: 950, maxX: 1100 }] },
+                { arrows: 6, targets: [{ x: 950, y: 200, radius: 25, isHit: false, dx: 5, minX: 950, maxX: 1200 }] },
+                { arrows: 12, targets: [{ x: 950, y: 200, radius: 30, isHit: false, dx: 2, minX: 950, maxX: 1200 }, { x: 1200, y: 400, radius: 30, isHit: false, dx: -2, minX: 950, maxX: 1200 }, { x: 950, y: 600, radius: 30, isHit: false, dx: 2, minX: 950, maxX: 1200 }] },
+                { arrows: 7, targets: [{ x: 1100, y: 150, radius: 30, isHit: false, dy: 4, minY: 150, maxY: 650 }, { x: 1000, y: 600, radius: 30, isHit: false, dx: -3, minX: 950, maxX: 1150 }] },
+                { arrows: 5, targets: [{ x: 1100, y: 400, radius: 20, isHit: false, dx: -6, minX: 950, maxX: 1200 }] },
+                // Levels 31-40: Diagonal Movement
+                { arrows: 8, targets: [{ x: 950, y: 200, radius: 35, isHit: false, dx: 2, dy: 2, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
+                { arrows: 8, targets: [{ x: 1200, y: 600, radius: 30, isHit: false, dx: -3, dy: -3, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
+                { arrows: 10, targets: [{ x: 950, y: 200, radius: 30, isHit: false, dx: 2, dy: 2, minX: 950, maxX: 1200, minY: 150, maxY: 650 }, { x: 1200, y: 200, radius: 30, isHit: false, dx: -2, dy: 2, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
+                { arrows: 7, targets: [{ x: 1075, y: 150, radius: 25, isHit: false, dx: -4, dy: 4, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
+                { arrows: 9, targets: [{ x: 950, y: 600, radius: 30, isHit: false, dx: 3, dy: -3, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
+                { arrows: 10, targets: [{ x: 950, y: 200, radius: 30, isHit: false, dx: 2, minX: 950, maxX: 1200 }, { x: 1200, y: 600, radius: 30, isHit: false, dx: -2, dy: -2, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
+                { arrows: 6, targets: [{ x: 1075, y: 400, radius: 20, isHit: false, dx: 5, dy: -5, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
+                { arrows: 12, targets: [{ x: 950, y: 200, radius: 25, isHit: false, dx: 2, dy: 2, minX: 950, maxX: 1200, minY: 150, maxY: 650 }, { x: 1200, y: 200, radius: 25, isHit: false, dx: -2, dy: 2, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
+                { arrows: 8, targets: [{ x: 1200, y: 150, radius: 25, isHit: false, dx: -3, dy: 3, minX: 950, maxX: 1200, minY: 150, maxY: 650 }, { x: 950, y: 650, radius: 25, isHit: false, dx: 3, dy: -3, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
+                { arrows: 5, targets: [{ x: 950, y: 400, radius: 15, isHit: false, dx: 6, dy: 6, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
+                // Levels 41-50: Challenge
+                { arrows: 10, targets: [{ x: 950, y: 150, radius: 20, isHit: false, dy: 5, minY: 150, maxY: 650 }, { x: 1050, y: 650, radius: 20, isHit: false, dy: -5, minY: 150, maxY: 650 }, { x: 1150, y: 150, radius: 20, isHit: false, dy: 5, minY: 150, maxY: 650 }] },
+                { arrows: 8, targets: [{ x: 950, y: 400, radius: 25, isHit: false, dx: 4, minX: 950, maxX: 1200 }, { x: 1200, y: 250, radius: 25, isHit: false, dx: -4, minX: 950, maxX: 1200 }] },
+                { arrows: 8, targets: [{ x: 1100, y: 150, radius: 20, isHit: false, dy: 6, minY: 150, maxY: 650 }, { x: 1000, y: 650, radius: 20, isHit: false, dx: 2, dy: -6, minX: 950, maxX: 1150, minY: 150, maxY: 650 }] },
+                { arrows: 6, targets: [{ x: 950, y: 150, radius: 20, isHit: false, dx: 5, dy: 5, minX: 950, maxX: 1200, minY: 150, maxY: 650 }, { x: 1200, y: 150, radius: 20, isHit: false, dx: -5, dy: 5, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
+                { arrows: 7, targets: [{ x: 950, y: 600, radius: 25, isHit: false, dx: -3, dy: -5, minX: 950, maxX: 1200, minY: 150, maxY: 650 }, { x: 1200, y: 600, radius: 25, isHit: false, dx: 3, dy: -5, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
+                { arrows: 10, targets: [{ x: 950, y: 400, radius: 30, isHit: false, dx: 2, minX: 950, maxX: 1200 }, { x: 1075, y: 400, radius: 30, isHit: false, dx: 2, minX: 950, maxX: 1200 }, { x: 1200, y: 400, radius: 30, isHit: false, dx: 2, minX: 950, maxX: 1200 }] },
+                { arrows: 5, targets: [{ x: 1075, y: 150, radius: 15, isHit: false, dx: 8, dy: 8, minX: 950, maxX: 1200, minY: 150, maxY: 650 }] },
+                { arrows: 15, targets: [{ x: 950, y: 150, radius: 20, isHit: false, dy: 4, minY: 150, maxY: 650 }, { x: 1025, y: 150, radius: 20, isHit: false, dy: -4, minY: 150, maxY: 650 }, { x: 1100, y: 150, radius: 20, isHit: false, dy: 4, minY: 150, maxY: 650 }, { x: 1175, y: 150, radius: 20, isHit: false, dy: -4, minY: 150, maxY: 650 }] },
+                { arrows: 3, targets: [{ x: 1100, y: 400, radius: 50, isHit: false, dx: -8, minX: 950, maxX: 1200 }] },
+                { arrows: 5, targets: [{ x: 1075, y: 400, radius: 10, isHit: false, dy: 10, minY: 100, maxY: 680 }] },
+            ];
+            
+            function drawStickman() {
+                ctx.save();
+                ctx.translate(ARCHER_POS.x, ARCHER_POS.y);
+                if (!facingRight) ctx.scale(-1, 1);
+                ctx.strokeStyle = '#e0fbff';
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                ctx.arc(0, -50, 20, 0, Math.PI * 2);
+                ctx.moveTo(0, -30); ctx.lineTo(0, 40);
+                ctx.moveTo(0, 40); ctx.lineTo(-20, 90);
+                ctx.moveTo(0, 40); ctx.lineTo(20, 90);
+                ctx.stroke();
+                ctx.save();
+                ctx.rotate(aimAngle);
+                ctx.beginPath();
+                ctx.moveTo(0, 0); ctx.lineTo(40, 0); ctx.stroke();
+                drawBow();
+                ctx.restore();
+                if(isDrawing){
+                    ctx.beginPath();
+                    const pullDist = drawPower / 2;
+                    const pullAngle = aimAngle + Math.PI;
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(Math.cos(pullAngle) * pullDist, Math.sin(pullAngle) * pullDist);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+            
+            function drawBow() {
+                ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 8;
+                ctx.beginPath(); ctx.arc(40, 0, 60, Math.PI * 1.55, Math.PI * 0.45); ctx.stroke();
+                ctx.fillStyle = '#5C3317'; ctx.fillRect(35, -15, 10, 30);
+                ctx.strokeStyle = '#F0E68C'; ctx.lineWidth = 2;
+                ctx.beginPath();
+                const bowTipTop = { x: 40, y: -60 };
+                const bowTipBottom = { x: 40, y: 60 };
+                if (isDrawing) {
+                    const pullDist = drawPower / 1.5;
+                    ctx.moveTo(bowTipTop.x, bowTipTop.y);
+                    ctx.lineTo(-pullDist, 0);
+                    ctx.lineTo(bowTipBottom.x, bowTipBottom.y);
+                } else {
+                    ctx.moveTo(bowTipTop.x, bowTipTop.y);
+                    ctx.lineTo(bowTipTop.x, bowTipBottom.y);
+                }
+                ctx.stroke();
+            }
+
+            function drawPlatform(x, y, width, height) {
+                ctx.fillStyle = '#1e405c'; ctx.strokeStyle = '#0f3460'; ctx.lineWidth = 4;
+                ctx.fillRect(x, y, width, height); ctx.strokeRect(x, y, width, height);
+            }
+
+            function drawTarget(target) {
+                if (target.isHit && target.radius <= 0) return; // Don't draw if fully shrunk
+                
+                ctx.save();
+                if (target.isHit) {
+                    // Shrink and fade animation
+                    ctx.globalAlpha = target.radius / levels[gameState.currentLevelIndex].targets.find(t => t.x === target.x && t.y === target.y).radius;
+                }
+
+                drawPlatform(target.x - 10, target.y + target.radius, 20, canvas.height);
+                ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(target.x, target.y, target.radius * 0.8, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#2196f3'; ctx.beginPath(); ctx.arc(target.x, target.y, target.radius * 0.6, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#f44336'; ctx.beginPath(); ctx.arc(target.x, target.y, target.radius * 0.4, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#ffeb3b'; ctx.beginPath(); ctx.arc(target.x, target.y, target.radius * 0.2, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            }
+            
+            function drawArrow() {
+                if (!arrow) return;
+                ctx.save();
+                ctx.translate(arrow.x, arrow.y); ctx.rotate(arrow.rotation);
+                ctx.fillStyle = '#f7ff00'; ctx.shadowColor = '#f7ff00'; ctx.shadowBlur = 10;
+                ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-40, -5); ctx.lineTo(-40, 5); ctx.closePath(); ctx.fill();
+                ctx.shadowBlur = 0;
+                ctx.restore();
+            }
+
+            function drawTrajectory() {
+                if (!isDrawing || drawPower <= 10) return;
+
+                const finalAimAngle = facingRight ? aimAngle : Math.PI - aimAngle;
+                const speed = drawPower * ARROW_SPEED_MULTIPLIER;
+                let simVx = Math.cos(finalAimAngle) * speed;
+                let simVy = Math.sin(finalAimAngle) * speed;
+                let simX = ARCHER_POS.x + Math.cos(finalAimAngle) * 50;
+                let simY = ARCHER_POS.y + Math.sin(finalAimAngle) * 50;
+
+                ctx.save();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                for (let i = 0; i < 100; i++) {
+                    simVy += gravity;
+                    simVx *= 0.998;
+                    simX += simVx;
+                    simY += simVy;
+                    if (i % 5 === 0) {
+                        ctx.beginPath();
+                        ctx.arc(simX, simY, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+                ctx.restore();
+            }
+            
+            function loadLevel(levelIndex) {
+                if (levelIndex >= levels.length) {
+                    displayMessage("YOU WIN!", -1);
+                    return;
+                }
+                gameState.currentLevelIndex = levelIndex;
+                const levelData = levels[levelIndex];
+                gameState.arrowsLeft = levelData.arrows;
+                targets = JSON.parse(JSON.stringify(levelData.targets));
+                ui.level.textContent = `Level: ${gameState.currentLevelIndex + 1}`;
+                ui.arrows.textContent = `Arrows: ${gameState.arrowsLeft}`;
+                ui.score.textContent = `Score: ${gameState.score}`;
+                isCheckingLevel = false; // <<< CRITICAL FIX
+            }
+
+            function displayMessage(msg, duration = 2000) {
+                ui.levelMessage.textContent = msg;
+                ui.levelMessage.style.display = 'block';
+                if (duration > 0) {
+                    setTimeout(() => ui.levelMessage.style.display = 'none', duration);
+                }
+            }
+
+            function checkLevelCompletion() {
+                if (isCheckingLevel) return;
+
+                const allHit = targets.every(t => t.isHit);
+                if (allHit) {
+                    isCheckingLevel = true;
+                    displayMessage("LEVEL CLEARED!");
+                    setTimeout(() => {
+                        loadLevel(gameState.currentLevelIndex + 1);
+                    }, 2000);
+                } else if (gameState.arrowsLeft === 0) {
+                    isCheckingLevel = true;
+                    displayMessage("GAME OVER", -1);
+                }
+            }
+
+            function fireArrow() {
+                if (drawPower <= 10) {
+                    drawPower = 0;
+                    isDrawing = false;
+                    return;
+                }
+
+                const finalAimAngle = facingRight ? aimAngle : Math.PI - aimAngle;
+                const speed = drawPower * ARROW_SPEED_MULTIPLIER;
+                
+                arrow = {
+                    x: ARCHER_POS.x + Math.cos(finalAimAngle) * 50,
+                    y: ARCHER_POS.y + Math.sin(finalAimAngle) * 50,
+                    vx: Math.cos(finalAimAngle) * speed,
+                    vy: Math.sin(finalAimAngle) * speed,
+                    rotation: finalAimAngle
+                };
+
+                gameState.arrowsLeft--;
+                ui.arrows.textContent = `Arrows: ${gameState.arrowsLeft}`;
+                drawPower = 0;
+                isDrawing = false;
+            }
+            
+            function gameLoop() {
+                // Update Logic
+                const aimModifier = isDrawing ? 0.5 : 1;
+                if (keyboard.up) aimAngle -= AIM_SPEED * aimModifier;
+                if (keyboard.down) aimAngle += AIM_SPEED * aimModifier;
+                if (keyboard.right) { isDrawing = true; drawPower = Math.min(MAX_DRAW_POWER, drawPower + 2); }
+                if (keyboard.left) { isDrawing = true; drawPower = Math.max(0, drawPower - 2); }
+
+                targets.forEach(t => {
+                    if (t.isHit && t.radius > 0) {
+                        t.radius -= 2; // Shrink animation
+                        if (t.radius < 0) t.radius = 0;
+                    }
+                    if (t.dx) { t.x += t.dx; if (t.x < t.minX || t.x > t.maxX) t.dx *= -1; }
+                    if (t.dy) { t.y += t.dy; if (t.y < t.minY || t.y > t.maxY) t.dy *= -1; }
+                });
+
+                if (arrow) {
+                    arrow.vy += gravity;
+                    arrow.vx *= 0.998;
+                    arrow.x += arrow.vx;
+                    arrow.y += arrow.vy;
+                    arrow.rotation = Math.atan2(arrow.vy, arrow.vx);
+
+                    targets.forEach(target => {
+                        if (!target.isHit && Math.hypot(arrow.x - target.x, arrow.y - target.y) < target.radius) {
+                            target.isHit = true;
+                            gameState.score += 100;
+                            arrow = null;
+                            ui.score.textContent = `Score: ${gameState.score}`;
+                            setTimeout(checkLevelCompletion, 500);
+                        }
+                    });
+
+                    if (arrow && (arrow.y > canvas.height || arrow.x < 0 || arrow.x > canvas.width)) {
+                        arrow = null;
+                        checkLevelCompletion();
+                    }
+                }
+
+                // Drawing Logic
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawPlatform(100, 640, 100, canvas.height);
+                targets.forEach(drawTarget);
+                drawStickman();
+                drawArrow();
+                drawTrajectory();
+                
+                requestAnimationFrame(gameLoop);
+            }
+
+            // Event Listeners
+            function getMousePos(e) {
+                const rect = canvas.getBoundingClientRect();
+                return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+            }
+
+            canvas.addEventListener('mousedown', (e) => {
+                if (arrow || gameState.arrowsLeft === 0) return;
+                isDrawing = true;
+                drawStart = getMousePos(e);
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                mousePos = getMousePos(e);
+                const dx = mousePos.x - ARCHER_POS.x;
+                const dy = mousePos.y - ARCHER_POS.y;
+                facingRight = dx >= 0;
+                aimAngle = facingRight ? Math.atan2(dy, dx) : Math.atan2(dy, -dx);
+
+                if (isDrawing) {
+                    const dragDist = Math.hypot(mousePos.x - drawStart.x, mousePos.y - drawStart.y);
+                    drawPower = Math.min(MAX_DRAW_POWER, dragDist);
+                }
+            });
+
+            canvas.addEventListener('mouseup', () => {
+                if (!isDrawing) return;
+                fireArrow();
+            });
+            
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'w' || e.key === 'ArrowUp') keyboard.up = true;
+                if (e.key === 's' || e.key === 'ArrowDown') keyboard.down = true;
+                if (e.key === 'a' || e.key === 'ArrowLeft') keyboard.left = true;
+                if (e.key === 'd' || e.key === 'ArrowRight') keyboard.right = true;
+                if (e.key === ' ' && !arrow && gameState.arrowsLeft > 0) {
+                     e.preventDefault();
+                     if (drawPower > 10) fireArrow(); else isDrawing = true;
+                }
+            });
+
+             window.addEventListener('keyup', (e) => {
+                if (e.key === 'w' || e.key === 'ArrowUp') keyboard.up = false;
+                if (e.key === 's' || e.key === 'ArrowDown') keyboard.down = false;
+                if (e.key === 'a' || e.key === 'ArrowLeft') keyboard.left = false;
+                if (e.key === 'd' || e.key === 'ArrowRight') keyboard.right = false;
+            });
+            
+            // Initialization
+            loadLevel(0);
+            gameLoop();
+        });
+    </script>
+</body>
+</html>

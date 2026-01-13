@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DesignHub Pro - Creative Design Suite</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .tool-card {
+            transition: all 0.3s ease;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .sidebar-item {
+            transition: all 0.2s ease;
+        }
+        
+        .sidebar-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .sidebar-item.active {
+            background: rgba(255,255,255,0.15);
+            border-left: 3px solid #fff;
+        }
+        
+        .canvas-area {
+            background-image: 
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+                linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+                linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        
+        .feature-badge {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .glow-effect {
+            box-shadow: 0 0 40px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-4 px-6 flex items-center justify-between shadow-lg">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                <i class="fas fa-palette text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold">DesignHub Pro</h1>
+                <p class="text-xs text-white/70">Creative Design Suite</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <button class="px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition text-sm">
+                <i class="fas fa-folder-open mr-2"></i>My Projects
+            </button>
+            <button class="px-4 py-2 bg-white rounded-lg text-purple-600 font-semibold hover:bg-gray-100 transition text-sm">
+                <i class="fas fa-plus mr-2"></i>New Project
+            </button>
+        </div>
+    </header>
+
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-800 min-h-[calc(100vh-72px)] p-4">
+            <div class="mb-6">
+                <h3 class="text-gray-400 text-xs uppercase tracking-wider mb-3">Categories</h3>
+                <nav class="space-y-1">
+                    <a href="#" class="sidebar-item active text-white px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm">
+                        <i class="fas fa-home w-5"></i>
+                        Dashboard
+                    </a>
+                    <a href="#" class="sidebar-item text-gray-300 px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm">
+                        <i class="fas fa-image w-5"></i>
+                        Templates
+                    </a>
+                    <a href="#" class="sidebar-item text-gray-300 px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm">
+                        <i class="fas fa-mobile-alt w-5"></i>
+                        Mockups
+                    </a>
+                    <a href="#" class="sidebar-item text-gray-300 px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm">
+                        <i class="fas fa-swatchbook w-5"></i>
+                        Colors
+                    </a>
+                    <a href="#" class="sidebar-item text-gray-300 px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm">
+                        <i class="fas fa-font w-5"></i>
+                        Typography
+                    </a>
+                    <a href="#" class="sidebar-item text-gray-300 px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm">
+                        <i class="fas fa-vector-square w-5"></i>
+                        Vectors & SVG
+                    </a>
+                    <a href="#" class="sidebar-item text-gray-300 px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm">
+                        <i class="fas fa-th w-5"></i>
+                        Layout Tools
+                    </a>
+                    <a href="#" class="sidebar-item text-gray-300 px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm" onclick="filterTools('document')">
+                        <i class="fas fa-file-alt w-5"></i>
+                        Document Tools
+                    </a>
+                    <a href="#" class="sidebar-item text-gray-300 px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm" onclick="filterTools('utility')">
+                        <i class="fas fa-cog w-5"></i>
+                        Utilities
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="border-t border-gray-700 pt-6">
+                <h3 class="text-gray-400 text-xs uppercase tracking-wider mb-3">Quick Access</h3>
+                <nav class="space-y-1">
+                    <a href="#" class="sidebar-item text-gray-300 px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm">
+                        <i class="fas fa-star w-5 text-yellow-400"></i>
+                        Favorites
+                    </a>
+                    <a href="#" class="sidebar-item text-gray-300 px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm">
+                        <i class="fas fa-clock w-5 text-blue-400"></i>
+                        Recent
+                    </a>
+                    <a href="#" class="sidebar-item text-gray-300 px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm">
+                        <i class="fas fa-download w-5 text-green-400"></i>
+                        Downloads
+                    </a>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8 overflow-y-auto max-h-[calc(100vh-72px)]">
+            <!-- Welcome Section -->
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-white mb-2">Welcome to DesignHub Pro</h2>
+                <p class="text-gray-400">Your all-in-one creative design toolkit. Choose a tool below to get started.</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-4 gap-4 mb-8">
+                <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Available Tools</p>
+                            <p class="text-2xl font-bold text-white">16</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-tools text-purple-400 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Templates</p>
+                            <p class="text-2xl font-bold text-white">500+</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-layer-group text-blue-400 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Mockups</p>
+                            <p class="text-2xl font-bold text-white">200+</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-mobile-alt text-green-400 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Icons</p>
+                            <p class="text-2xl font-bold text-white">10K+</p>
+                        </div>
+                        <div class="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-icons text-pink-400 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tools Grid -->
+            <div class="mb-6">
+                <h3 class="text-xl font-semibold text-white mb-4">
+                    <i class="fas fa-rocket mr-2 text-purple-400"></i>Design Tools
+                </h3>
+            </div>
+
+            <div class="grid grid-cols-3 gap-6" id="toolsGrid">
+                <!-- Tool cards will be dynamically generated here -->
+            </div>
+
+            <!-- Empty State Message -->
+            <div id="emptyState" class="text-center py-16 hidden">
+                <div class="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-puzzle-piece text-4xl text-gray-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-white mb-2">No Tools Added Yet</h3>
+                <p class="text-gray-400 max-w-md mx-auto">This is your design suite foundation. Tell me which features you'd like to add from your list!</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Tool Modal -->
+    <div id="toolModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl">
+            <div class="gradient-bg p-6 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div id="modalIcon" class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-palette text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h2 id="modalTitle" class="text-xl font-bold text-white">Tool Name</h2>
+                        <p id="modalSubtitle" class="text-sm text-white/70">Tool Description</p>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition">
+                    <i class="fas fa-times text-white"></i>
+                </button>
+            </div>
+            <div id="modalContent" class="p-6 overflow-y-auto max-h-[60vh]">
+                <!-- Dynamic tool content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <!-- JSZip for file archiving -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- QR Code library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Marked.js for Markdown -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    <!-- CryptoJS for hashing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+
+    <script>
+        // Tool definitions
+        const tools = [
+            // ==================== DOCUMENT & TEXT UTILITIES ====================
+            {
+                id: 'pdf-to-word',
+                name: 'PDF to Word Converter',
+                description: 'Convert a PDF document into an editable text format',
+                icon: 'fas fa-file-word',
+                gradient: 'bg-gradient-to-br from-blue-500 to-blue-700',
+                category: 'Document',
+                badge: 'Popular',
+                content: `
+                    <div class="space-y-4">
+                        <div class="border-2 border-dashed border-gray-600 rounded-xl p-8 text-center hover:border-purple-500 transition cursor-pointer" onclick="document.getElementById('pdfInput').click()">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                            <p class="text-gray-300">Click to upload PDF file</p>
+                            <p class="text-gray-500 text-sm mt-1">Max file size: 10MB</p>
+                            <input type="file" id="pdfInput" accept=".pdf" class="hidden" onchange="handlePdfToWord(this)">
+                        </div>
+                        <div id="pdfToWordResult" class="hidden">
+                            <div class="bg-gray-700 rounded-lg p-4">
+                                <h4 class="text-white font-semibold mb-2">Extracted Text:</h4>
+                                <textarea id="extractedText" class="w-full h-64 bg-gray-800 text-gray-200 rounded-lg p-3 text-sm" readonly></textarea>
+                                <button onclick="downloadAsWord()" class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                                    <i class="fas fa-download mr-2"></i>Download as .txt
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'word-to-pdf',
+                name: 'Word to PDF Converter',
+                description: 'Convert text or Word documents into PDF format',
+                icon: 'fas fa-file-pdf',
+                gradient: 'bg-gradient-to-br from-red-500 to-red-700',
+                category: 'Document',
+                content: `
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-gray-300 text-sm mb-2 block">Enter or paste your text:</label>
+                            <textarea id="textToPdf" class="w-full h-64 bg-gray-700 text-gray-200 rounded-lg p-3 text-sm border border-gray-600 focus:border-purple-500 focus:outline-none" placeholder="Type or paste your content here..."></textarea>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="convertToPdf()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                                <i class="fas fa-file-pdf mr-2"></i>Convert to PDF
+                            </button>
+                            <button onclick="document.getElementById('wordFileInput').click()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition">
+                                <i class="fas fa-upload mr-2"></i>Upload .txt file
+                            </button>
+                            <input type="file" id="wordFileInput" accept=".txt" class="hidden" onchange="loadTextFile(this)">
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'merge-pdfs',
+                name: 'Merge PDFs',
+                description: 'Combine multiple PDF files into a single document',
+                icon: 'fas fa-object-group',
+                gradient: 'bg-gradient-to-br from-orange-500 to-orange-700',
+                category: 'Document',
+                content: `
+                    <div class="space-y-4">
+                        <div class="border-2 border-dashed border-gray-600 rounded-xl p-8 text-center hover:border-purple-500 transition cursor-pointer" onclick="document.getElementById('mergePdfInput').click()">
+                            <i class="fas fa-files-medical text-4xl text-gray-400 mb-3"></i>
+                            <p class="text-gray-300">Click to select multiple PDF files</p>
+                            <p class="text-gray-500 text-sm mt-1">Hold Ctrl/Cmd to select multiple files</p>
+                            <input type="file" id="mergePdfInput" accept=".pdf" multiple class="hidden" onchange="handleMergePdfs(this)">
+                        </div>
+                        <div id="pdfFileList" class="space-y-2"></div>
+                        <button id="mergeBtn" onclick="mergePdfs()" class="hidden px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition">
+                            <i class="fas fa-compress-arrows-alt mr-2"></i>Merge PDFs
+                        </button>
+                    </div>
+                `
+            },
+            {
+                id: 'split-pdf',
+                name: 'Split PDF',
+                description: 'Extract pages or split a PDF into individual files',
+                icon: 'fas fa-cut',
+                gradient: 'bg-gradient-to-br from-yellow-500 to-yellow-700',
+                category: 'Document',
+                content: `
+                    <div class="space-y-4">
+                        <div class="border-2 border-dashed border-gray-600 rounded-xl p-8 text-center hover:border-purple-500 transition cursor-pointer" onclick="document.getElementById('splitPdfInput').click()">
+                            <i class="fas fa-file-alt text-4xl text-gray-400 mb-3"></i>
+                            <p class="text-gray-300">Click to upload PDF file</p>
+                            <input type="file" id="splitPdfInput" accept=".pdf" class="hidden" onchange="handleSplitPdf(this)">
+                        </div>
+                        <div id="splitOptions" class="hidden space-y-4">
+                            <div class="bg-gray-700 rounded-lg p-4">
+                                <p class="text-white mb-2">PDF has <span id="totalPages">0</span> pages</p>
+                                <div class="flex gap-4">
+                                    <div>
+                                        <label class="text-gray-400 text-sm">From page:</label>
+                                        <input type="number" id="fromPage" min="1" value="1" class="w-20 bg-gray-800 text-white rounded px-2 py-1 ml-2">
+                                    </div>
+                                    <div>
+                                        <label class="text-gray-400 text-sm">To page:</label>
+                                        <input type="number" id="toPage" min="1" value="1" class="w-20 bg-gray-800 text-white rounded px-2 py-1 ml-2">
+                                    </div>
+                                </div>
+                            </div>
+                            <button onclick="splitPdf()" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition">
+                                <i class="fas fa-cut mr-2"></i>Extract Pages
+                            </button>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'esign-pdf',
+                name: 'eSign PDF',
+                description: 'Draw or type a signature and place it on a PDF',
+                icon: 'fas fa-signature',
+                gradient: 'bg-gradient-to-br from-indigo-500 to-indigo-700',
+                category: 'Document',
+                badge: 'New',
+                content: `
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-gray-300 text-sm mb-2 block">Draw your signature:</label>
+                                <canvas id="signatureCanvas" class="w-full h-32 bg-white rounded-lg cursor-crosshair"></canvas>
+                                <div class="flex gap-2 mt-2">
+                                    <button onclick="clearSignature()" class="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-500">Clear</button>
+                                    <select id="penColor" onchange="updatePenColor()" class="bg-gray-700 text-white rounded px-2 py-1 text-sm">
+                                        <option value="#000000">Black</option>
+                                        <option value="#0000ff">Blue</option>
+                                        <option value="#ff0000">Red</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-gray-300 text-sm mb-2 block">Or type your signature:</label>
+                                <input type="text" id="typedSignature" placeholder="Your Name" class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-purple-500 focus:outline-none" style="font-family: 'Brush Script MT', cursive; font-size: 24px;">
+                                <button onclick="useTypedSignature()" class="mt-2 px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700">Use Typed Signature</button>
+                            </div>
+                        </div>
+                        <div class="border-2 border-dashed border-gray-600 rounded-xl p-6 text-center hover:border-purple-500 transition cursor-pointer" onclick="document.getElementById('signPdfInput').click()">
+                            <i class="fas fa-file-pdf text-3xl text-gray-400 mb-2"></i>
+                            <p class="text-gray-300">Upload PDF to sign</p>
+                            <input type="file" id="signPdfInput" accept=".pdf" class="hidden" onchange="handleSignPdf(this)">
+                        </div>
+                        <button onclick="downloadSignature()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                            <i class="fas fa-download mr-2"></i>Download Signature as PNG
+                        </button>
+                    </div>
+                `,
+                init: function() {
+                    initSignatureCanvas();
+                }
+            },
+            {
+                id: 'lorem-ipsum',
+                name: 'Lorem Ipsum Generator',
+                description: 'Generate placeholder text with various options',
+                icon: 'fas fa-paragraph',
+                gradient: 'bg-gradient-to-br from-teal-500 to-teal-700',
+                category: 'Text',
+                content: `
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <label class="text-gray-300 text-sm mb-2 block">Type:</label>
+                                <select id="loremType" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600">
+                                    <option value="paragraphs">Paragraphs</option>
+                                    <option value="sentences">Sentences</option>
+                                    <option value="words">Words</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-gray-300 text-sm mb-2 block">Count:</label>
+                                <input type="number" id="loremCount" value="3" min="1" max="100" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600">
+                            </div>
+                            <div class="flex items-end">
+                                <button onclick="generateLorem()" class="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                                    <i class="fas fa-magic mr-2"></i>Generate
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <textarea id="loremOutput" class="w-full h-64 bg-gray-700 text-gray-200 rounded-lg p-3 text-sm border border-gray-600" readonly placeholder="Generated text will appear here..."></textarea>
+                        </div>
+                        <button onclick="copyLorem()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition">
+                            <i class="fas fa-copy mr-2"></i>Copy to Clipboard
+                        </button>
+                    </div>
+                `
+            },
+            {
+                id: 'case-converter',
+                name: 'Case Converter',
+                description: 'Convert text to UPPERCASE, lowercase, Title Case, and more',
+                icon: 'fas fa-font',
+                gradient: 'bg-gradient-to-br from-pink-500 to-pink-700',
+                category: 'Text',
+                content: `
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-gray-300 text-sm mb-2 block">Enter your text:</label>
+                            <textarea id="caseInput" class="w-full h-32 bg-gray-700 text-gray-200 rounded-lg p-3 text-sm border border-gray-600 focus:border-purple-500 focus:outline-none" placeholder="Type or paste your text here..."></textarea>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="convertCase('upper')" class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm">UPPERCASE</button>
+                            <button onclick="convertCase('lower')" class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm">lowercase</button>
+                            <button onclick="convertCase('title')" class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm">Title Case</button>
+                            <button onclick="convertCase('sentence')" class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm">Sentence case</button>
+                            <button onclick="convertCase('toggle')" class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm">tOGGLE cASE</button>
+                            <button onclick="convertCase('alternating')" class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm">aLtErNaTiNg</button>
+                        </div>
+                        <div>
+                            <label class="text-gray-300 text-sm mb-2 block">Result:</label>
+                            <textarea id="caseOutput" class="w-full h-32 bg-gray-700 text-gray-200 rounded-lg p-3 text-sm border border-gray-600" readonly></textarea>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="copyCaseOutput()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition">
+                                <i class="fas fa-copy mr-2"></i>Copy Result
+                            </button>
+                            <span id="caseCharCount" class="text-gray-400 text-sm flex items-center ml-auto">0 characters</span>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'markdown-html',
+                name: 'Markdown to HTML',
+                description: 'Real-time editor that converts Markdown to HTML with live preview',
+                icon: 'fab fa-markdown',
+                gradient: 'bg-gradient-to-br from-gray-600 to-gray-800',
+                category: 'Text',
+                content: `
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-gray-300 text-sm mb-2 block">Markdown Input:</label>
+                            <textarea id="markdownInput" class="w-full h-80 bg-gray-700 text-gray-200 rounded-lg p-3 text-sm border border-gray-600 focus:border-purple-500 focus:outline-none font-mono" placeholder="# Heading\n\nWrite your **markdown** here..." oninput="updateMarkdownPreview()"></textarea>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-gray-300 text-sm">Preview:</label>
+                                <button onclick="toggleHtmlView()" class="text-xs text-purple-400 hover:text-purple-300">View HTML</button>
+                            </div>
+                            <div id="markdownPreview" class="w-full h-80 bg-gray-700 text-gray-200 rounded-lg p-3 text-sm border border-gray-600 overflow-auto prose prose-invert"></div>
+                            <textarea id="htmlOutput" class="w-full h-80 bg-gray-700 text-gray-200 rounded-lg p-3 text-sm border border-gray-600 font-mono hidden" readonly></textarea>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <button onclick="copyHtml()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition">
+                            <i class="fas fa-code mr-2"></i>Copy HTML
+                        </button>
+                        <button onclick="downloadHtml()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                            <i class="fas fa-download mr-2"></i>Download HTML
+                        </button>
+                    </div>
+                `
+            },
+            // ==================== GENERAL & FILE UTILITIES ====================
+            {
+                id: 'file-archiver',
+                name: 'File Archiver/Extractor',
+                description: 'Create ZIP archives or extract files from ZIP',
+                icon: 'fas fa-file-archive',
+                gradient: 'bg-gradient-to-br from-amber-500 to-amber-700',
+                category: 'Utility',
+                content: `
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-700 rounded-xl p-6 text-center cursor-pointer hover:bg-gray-600 transition" onclick="document.getElementById('createZipInput').click()">
+                                <i class="fas fa-compress text-3xl text-amber-400 mb-3"></i>
+                                <h4 class="text-white font-semibold">Create ZIP</h4>
+                                <p class="text-gray-400 text-sm mt-1">Select files to compress</p>
+                                <input type="file" id="createZipInput" multiple class="hidden" onchange="handleCreateZip(this)">
+                            </div>
+                            <div class="bg-gray-700 rounded-xl p-6 text-center cursor-pointer hover:bg-gray-600 transition" onclick="document.getElementById('extractZipInput').click()">
+                                <i class="fas fa-expand text-3xl text-amber-400 mb-3"></i>
+                                <h4 class="text-white font-semibold">Extract ZIP</h4>
+                                <p class="text-gray-400 text-sm mt-1">Upload ZIP to extract</p>
+                                <input type="file" id="extractZipInput" accept=".zip" class="hidden" onchange="handleExtractZip(this)">
+                            </div>
+                        </div>
+                        <div id="zipFileList" class="space-y-2"></div>
+                        <div id="zipActions" class="hidden">
+                            <button onclick="downloadZip()" class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition">
+                                <i class="fas fa-download mr-2"></i>Download ZIP
+                            </button>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'qr-generator',
+                name: 'QR Code Generator',
+                description: 'Create QR codes from URLs, text, WiFi, or contact info',
+                icon: 'fas fa-qrcode',
+                gradient: 'bg-gradient-to-br from-emerald-500 to-emerald-700',
+                category: 'Utility',
+                badge: 'Popular',
+                content: `
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-gray-300 text-sm mb-2 block">QR Type:</label>
+                                <select id="qrType" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600" onchange="updateQrFields()">
+                                    <option value="url">URL</option>
+                                    <option value="text">Plain Text</option>
+                                    <option value="wifi">WiFi</option>
+                                    <option value="email">Email</option>
+                                    <option value="phone">Phone</option>
+                                </select>
+                            </div>
+                            <div id="qrFields">
+                                <label class="text-gray-300 text-sm mb-2 block">URL:</label>
+                                <input type="text" id="qrContent" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600" placeholder="https://example.com">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-gray-300 text-sm mb-2 block">Size:</label>
+                                    <select id="qrSize" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600">
+                                        <option value="128">128x128</option>
+                                        <option value="256" selected>256x256</option>
+                                        <option value="512">512x512</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-gray-300 text-sm mb-2 block">Color:</label>
+                                    <input type="color" id="qrColor" value="#000000" class="w-full h-10 bg-gray-700 rounded-lg border border-gray-600 cursor-pointer">
+                                </div>
+                            </div>
+                            <button onclick="generateQR()" class="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition">
+                                <i class="fas fa-qrcode mr-2"></i>Generate QR Code
+                            </button>
+                        </div>
+                        <div class="bg-gray-700 rounded-xl p-6 flex flex-col items-center justify-center">
+                            <div id="qrOutput" class="bg-white p-4 rounded-lg"></div>
+                            <button onclick="downloadQR()" class="mt-4 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition">
+                                <i class="fas fa-download mr-2"></i>Download PNG
+                            </button>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'qr-scanner',
+                name: 'QR Code Scanner',
+                description: 'Use your camera to scan QR codes and display content',
+                icon: 'fas fa-camera',
+                gradient: 'bg-gradient-to-br from-cyan-500 to-cyan-700',
+                category: 'Utility',
+                content: `
+                    <div class="space-y-4">
+                        <div class="bg-gray-700 rounded-xl overflow-hidden">
+                            <video id="qrVideo" class="w-full h-64 object-cover"></video>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="startQrScanner()" class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition">
+                                <i class="fas fa-play mr-2"></i>Start Camera
+                            </button>
+                            <button onclick="stopQrScanner()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition">
+                                <i class="fas fa-stop mr-2"></i>Stop Camera
+                            </button>
+                            <button onclick="document.getElementById('qrImageInput').click()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition">
+                                <i class="fas fa-image mr-2"></i>Upload Image
+                            </button>
+                            <input type="file" id="qrImageInput" accept="image/*" class="hidden" onchange="scanQrImage(this)">
+                        </div>
+                        <div id="qrScanResult" class="bg-gray-700 rounded-lg p-4 hidden">
+                            <h4 class="text-white font-semibold mb-2">Scan Result:</h4>
+                            <p id="qrResultText" class="text-gray-300 break-all"></p>
+                            <button onclick="copyQrResult()" class="mt-2 px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-500">
+                                <i class="fas fa-copy mr-1"></i>Copy
+                            </button>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'hash-generator',
+                name: 'Hash Generator',
+                description: 'Calculate MD5, SHA-1, or SHA-256 hash of files or text',
+                icon: 'fas fa-fingerprint',
+                gradient: 'bg-gradient-to-br from-violet-500 to-violet-700',
+                category: 'Utility',
+                content: `
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-700 rounded-xl p-6 text-center cursor-pointer hover:bg-gray-600 transition" onclick="document.getElementById('hashFileInput').click()">
+                                <i class="fas fa-file text-3xl text-violet-400 mb-3"></i>
+                                <h4 class="text-white font-semibold">Hash a File</h4>
+                                <input type="file" id="hashFileInput" class="hidden" onchange="hashFile(this)">
+                            </div>
+                            <div class="bg-gray-700 rounded-xl p-6">
+                                <h4 class="text-white font-semibold mb-2">Hash Text</h4>
+                                <input type="text" id="hashTextInput" class="w-full bg-gray-800 text-white rounded p-2 text-sm" placeholder="Enter text to hash">
+                                <button onclick="hashText()" class="mt-2 px-3 py-1 bg-violet-600 text-white rounded text-sm hover:bg-violet-700">Generate Hash</button>
+                            </div>
+                        </div>
+                        <div id="hashResults" class="bg-gray-700 rounded-lg p-4 hidden">
+                            <h4 class="text-white font-semibold mb-3">Hash Results:</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-gray-400 text-xs">MD5:</label>
+                                    <div class="flex items-center gap-2">
+                                        <code id="hashMd5" class="flex-1 bg-gray-800 text-green-400 p-2 rounded text-xs font-mono break-all"></code>
+                                        <button onclick="copyHash('hashMd5')" class="text-gray-400 hover:text-white"><i class="fas fa-copy"></i></button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-gray-400 text-xs">SHA-1:</label>
+                                    <div class="flex items-center gap-2">
+                                        <code id="hashSha1" class="flex-1 bg-gray-800 text-yellow-400 p-2 rounded text-xs font-mono break-all"></code>
+                                        <button onclick="copyHash('hashSha1')" class="text-gray-400 hover:text-white"><i class="fas fa-copy"></i></button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-gray-400 text-xs">SHA-256:</label>
+                                    <div class="flex items-center gap-2">
+                                        <code id="hashSha256" class="flex-1 bg-gray-800 text-blue-400 p-2 rounded text-xs font-mono break-all"></code>
+                                        <button onclick="copyHash('hashSha256')" class="text-gray-400 hover:text-white"><i class="fas fa-copy"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'unit-converter',
+                name: 'Unit Converter',
+                description: 'Convert between various units of length, weight, temperature',
+                icon: 'fas fa-exchange-alt',
+                gradient: 'bg-gradient-to-br from-sky-500 to-sky-700',
+                category: 'Utility',
+                content: `
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-gray-300 text-sm mb-2 block">Category:</label>
+                            <select id="unitCategory" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600" onchange="updateUnitOptions()">
+                                <option value="length">Length</option>
+                                <option value="weight">Weight</option>
+                                <option value="temperature">Temperature</option>
+                                <option value="area">Area</option>
+                                <option value="volume">Volume</option>
+                                <option value="speed">Speed</option>
+                                <option value="data">Data Storage</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-5 gap-4 items-end">
+                            <div class="col-span-2">
+                                <label class="text-gray-300 text-sm mb-2 block">From:</label>
+                                <input type="number" id="unitFromValue" value="1" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600" oninput="convertUnits()">
+                                <select id="unitFrom" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600 mt-2" onchange="convertUnits()"></select>
+                            </div>
+                            <div class="flex justify-center">
+                                <button onclick="swapUnits()" class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 transition">
+                                    <i class="fas fa-exchange-alt text-white"></i>
+                                </button>
+                            </div>
+                            <div class="col-span-2">
+                                <label class="text-gray-300 text-sm mb-2 block">To:</label>
+                                <input type="number" id="unitToValue" readonly class="w-full bg-gray-800 text-white rounded-lg p-2 border border-gray-600">
+                                <select id="unitTo" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600 mt-2" onchange="convertUnits()"></select>
+                            </div>
+                        </div>
+                        <div id="unitFormula" class="bg-gray-700 rounded-lg p-3 text-center text-gray-300 text-sm"></div>
+                    </div>
+                `,
+                init: function() {
+                    updateUnitOptions();
+                }
+            },
+            {
+                id: 'password-generator',
+                name: 'Password Generator',
+                description: 'Create strong, random passwords with custom options',
+                icon: 'fas fa-key',
+                gradient: 'bg-gradient-to-br from-rose-500 to-rose-700',
+                category: 'Utility',
+                badge: 'Secure',
+                content: `
+                    <div class="space-y-4">
+                        <div class="bg-gray-700 rounded-xl p-4">
+                            <div class="flex items-center gap-3">
+                                <input type="text" id="generatedPassword" readonly class="flex-1 bg-gray-800 text-white text-xl font-mono rounded-lg p-3 border border-gray-600">
+                                <button onclick="copyPassword()" class="px-4 py-3 bg-gray-600 rounded-lg hover:bg-gray-500 transition">
+                                    <i class="fas fa-copy text-white"></i>
+                                </button>
+                                <button onclick="generatePassword()" class="px-4 py-3 bg-rose-600 rounded-lg hover:bg-rose-700 transition">
+                                    <i class="fas fa-sync text-white"></i>
+                                </button>
+                            </div>
+                            <div id="passwordStrength" class="mt-3 h-2 bg-gray-800 rounded-full overflow-hidden">
+                                <div id="strengthBar" class="h-full bg-red-500 transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <p id="strengthText" class="text-gray-400 text-sm mt-1">Generate a password</p>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-gray-300 text-sm mb-2 block">Length: <span id="lengthValue">16</span></label>
+                                <input type="range" id="passwordLength" min="6" max="64" value="16" class="w-full" oninput="document.getElementById('lengthValue').textContent = this.value; generatePassword()">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <label class="flex items-center gap-2 text-gray-300 cursor-pointer">
+                                    <input type="checkbox" id="includeUppercase" checked class="w-4 h-4 rounded" onchange="generatePassword()">
+                                    <span>Uppercase (A-Z)</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-gray-300 cursor-pointer">
+                                    <input type="checkbox" id="includeLowercase" checked class="w-4 h-4 rounded" onchange="generatePassword()">
+                                    <span>Lowercase (a-z)</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-gray-300 cursor-pointer">
+                                    <input type="checkbox" id="includeNumbers" checked class="w-4 h-4 rounded" onchange="generatePassword()">
+                                    <span>Numbers (0-9)</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-gray-300 cursor-pointer">
+                                    <input type="checkbox" id="includeSymbols" checked class="w-4 h-4 rounded" onchange="generatePassword()">
+                                    <span>Symbols (!@#$%)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                init: function() {
+                    generatePassword();
+                }
+            },
+            {
+                id: 'screen-recorder',
+                name: 'Screen Recorder',
+                description: 'Record your screen or application window and download video',
+                icon: 'fas fa-desktop',
+                gradient: 'bg-gradient-to-br from-red-600 to-red-800',
+                category: 'Utility',
+                badge: 'Pro',
+                content: `
+                    <div class="space-y-4">
+                        <div class="bg-gray-700 rounded-xl overflow-hidden">
+                            <video id="screenPreview" class="w-full h-64 object-contain bg-black" autoplay muted></video>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button id="startRecordBtn" onclick="startScreenRecording()" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2">
+                                <i class="fas fa-circle"></i>
+                                Start Recording
+                            </button>
+                            <button id="stopRecordBtn" onclick="stopScreenRecording()" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition flex items-center gap-2 hidden">
+                                <i class="fas fa-stop"></i>
+                                Stop Recording
+                            </button>
+                            <span id="recordingTime" class="text-gray-400 font-mono hidden">00:00</span>
+                        </div>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 text-gray-300 cursor-pointer">
+                                <input type="checkbox" id="includeAudio" class="w-4 h-4 rounded">
+                                <span>Include System Audio</span>
+                            </label>
+                        </div>
+                        <div id="recordingResult" class="hidden">
+                            <h4 class="text-white font-semibold mb-2">Recording Complete!</h4>
+                            <video id="recordedVideo" class="w-full rounded-lg" controls></video>
+                            <button onclick="downloadRecording()" class="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                                <i class="fas fa-download mr-2"></i>Download Video
+                            </button>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'voice-recorder',
+                name: 'Voice Memo Recorder',
+                description: 'Record audio from your microphone and download as MP3',
+                icon: 'fas fa-microphone',
+                gradient: 'bg-gradient-to-br from-fuchsia-500 to-fuchsia-700',
+                category: 'Utility',
+                content: `
+                    <div class="space-y-4">
+                        <div class="bg-gray-700 rounded-xl p-8 text-center">
+                            <div id="voiceWaveform" class="h-24 flex items-center justify-center gap-1 mb-4">
+                                <div class="text-gray-500">
+                                    <i class="fas fa-microphone text-4xl"></i>
+                                    <p class="mt-2 text-sm">Click Start to begin recording</p>
+                                </div>
+                            </div>
+                            <p id="voiceTimer" class="text-3xl font-mono text-white mb-4">00:00</p>
+                            <div class="flex justify-center gap-3">
+                                <button id="startVoiceBtn" onclick="startVoiceRecording()" class="px-6 py-3 bg-fuchsia-600 text-white rounded-full hover:bg-fuchsia-700 transition">
+                                    <i class="fas fa-microphone mr-2"></i>Start
+                                </button>
+                                <button id="stopVoiceBtn" onclick="stopVoiceRecording()" class="px-6 py-3 bg-gray-600 text-white rounded-full hover:bg-gray-500 transition hidden">
+                                    <i class="fas fa-stop mr-2"></i>Stop
+                                </button>
+                            </div>
+                        </div>
+                        <div id="voiceResult" class="hidden">
+                            <h4 class="text-white font-semibold mb-2">Recording Complete!</h4>
+                            <audio id="recordedAudio" class="w-full" controls></audio>
+                            <button onclick="downloadVoiceRecording()" class="mt-3 px-4 py-2 bg-fuchsia-600 text-white rounded-lg hover:bg-fuchsia-700 transition">
+                                <i class="fas fa-download mr-2"></i>Download Audio
+                            </button>
+                        </div>
+                    </div>
+                `
+            }
+        ];
+
+        // ==================== TOOL FUNCTIONS ====================
+
+        // PDF to Word
+        async function handlePdfToWord(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
+                const pages = pdf.getPages();
+                let text = `Document: ${file.name}\n${'='.repeat(50)}\n\n`;
+                text += `This PDF has ${pages.length} page(s).\n\n`;
+                text += 'Note: Full text extraction requires additional processing.\nFor now, basic document info is extracted.\n';
+                
+                document.getElementById('extractedText').value = text;
+                document.getElementById('pdfToWordResult').classList.remove('hidden');
+            } catch (error) {
+                alert('Error processing PDF: ' + error.message);
+            }
+        }
+
+        function downloadAsWord() {
+            const text = document.getElementById('extractedText').value;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'extracted_text.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Word to PDF
+        async function convertToPdf() {
+            const text = document.getElementById('textToPdf').value;
+            if (!text.trim()) {
+                alert('Please enter some text to convert');
+                return;
+            }
+            
+            const pdf = await PDFLib.PDFDocument.create();
+            const page = pdf.addPage([612, 792]);
+            const font = await pdf.embedFont(PDFLib.StandardFonts.Helvetica);
+            
+            const lines = text.split('\n');
+            let y = 750;
+            for (const line of lines) {
+                if (y < 50) {
+                    const newPage = pdf.addPage([612, 792]);
+                    y = 750;
+                }
+                page.drawText(line.substring(0, 80), { x: 50, y, size: 12, font });
+                y -= 18;
+            }
+            
+            const pdfBytes = await pdf.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'document.pdf';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function loadTextFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('textToPdf').value = e.target.result;
+            };
+            reader.readAsText(file);
+        }
+
+        // Merge PDFs
+        let pdfFilesToMerge = [];
+        async function handleMergePdfs(input) {
+            pdfFilesToMerge = Array.from(input.files);
+            const list = document.getElementById('pdfFileList');
+            list.innerHTML = pdfFilesToMerge.map((f, i) => `
+                <div class="bg-gray-700 rounded-lg p-3 flex items-center justify-between">
+                    <span class="text-white"><i class="fas fa-file-pdf text-red-400 mr-2"></i>${f.name}</span>
+                    <span class="text-gray-400 text-sm">${(f.size / 1024).toFixed(1)} KB</span>
+                </div>
+            `).join('');
+            document.getElementById('mergeBtn').classList.remove('hidden');
+        }
+
+        async function mergePdfs() {
+            if (pdfFilesToMerge.length < 2) {
+                alert('Please select at least 2 PDF files');
+                return;
+            }
+            
+            const mergedPdf = await PDFLib.PDFDocument.create();
+            
+            for (const file of pdfFilesToMerge) {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
+                const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                pages.forEach(page => mergedPdf.addPage(page));
+            }
+            
+            const pdfBytes = await mergedPdf.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'merged.pdf';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Split PDF
+        let pdfToSplit = null;
+        async function handleSplitPdf(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const arrayBuffer = await file.arrayBuffer();
+            pdfToSplit = await PDFLib.PDFDocument.load(arrayBuffer);
+            const pageCount = pdfToSplit.getPageCount();
+            
+            document.getElementById('totalPages').textContent = pageCount;
+            document.getElementById('toPage').value = pageCount;
+            document.getElementById('toPage').max = pageCount;
+            document.getElementById('fromPage').max = pageCount;
+            document.getElementById('splitOptions').classList.remove('hidden');
+        }
+
+        async function splitPdf() {
+            if (!pdfToSplit) return;
+            
+            const from = parseInt(document.getElementById('fromPage').value) - 1;
+            const to = parseInt(document.getElementById('toPage').value);
+            
+            const newPdf = await PDFLib.PDFDocument.create();
+            const pages = await newPdf.copyPages(pdfToSplit, Array.from({length: to - from}, (_, i) => from + i));
+            pages.forEach(page => newPdf.addPage(page));
+            
+            const pdfBytes = await newPdf.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pages_${from + 1}_to_${to}.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // eSign PDF
+        let signatureCanvas, signatureCtx, isDrawing = false;
+        function initSignatureCanvas() {
+            signatureCanvas = document.getElementById('signatureCanvas');
+            if (!signatureCanvas) return;
+            signatureCtx = signatureCanvas.getContext('2d');
+            signatureCanvas.width = signatureCanvas.offsetWidth;
+            signatureCanvas.height = signatureCanvas.offsetHeight;
+            signatureCtx.fillStyle = 'white';
+            signatureCtx.fillRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+            signatureCtx.strokeStyle = '#000';
+            signatureCtx.lineWidth = 2;
+            signatureCtx.lineCap = 'round';
+            
+            signatureCanvas.addEventListener('mousedown', startDrawing);
+            signatureCanvas.addEventListener('mousemove', draw);
+            signatureCanvas.addEventListener('mouseup', stopDrawing);
+            signatureCanvas.addEventListener('mouseout', stopDrawing);
+            
+            signatureCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e.touches[0]); });
+            signatureCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); });
+            signatureCanvas.addEventListener('touchend', stopDrawing);
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            signatureCtx.beginPath();
+            const rect = signatureCanvas.getBoundingClientRect();
+            signatureCtx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const rect = signatureCanvas.getBoundingClientRect();
+            signatureCtx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            signatureCtx.stroke();
+        }
+
+        function stopDrawing() { isDrawing = false; }
+        
+        function clearSignature() {
+            signatureCtx.fillStyle = 'white';
+            signatureCtx.fillRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+        }
+
+        function updatePenColor() {
+            signatureCtx.strokeStyle = document.getElementById('penColor').value;
+        }
+
+        function useTypedSignature() {
+            const text = document.getElementById('typedSignature').value;
+            if (!text) return;
+            clearSignature();
+            signatureCtx.font = '32px Brush Script MT, cursive';
+            signatureCtx.fillStyle = document.getElementById('penColor').value;
+            signatureCtx.fillText(text, 20, 60);
+        }
+
+        function downloadSignature() {
+            const link = document.createElement('a');
+            link.download = 'signature.png';
+            link.href = signatureCanvas.toDataURL();
+            link.click();
+        }
+
+        function handleSignPdf(input) {
+            alert('PDF signing feature: In a full implementation, this would overlay your signature on the PDF. For now, download your signature and use a PDF editor.');
+        }
+
+        // Lorem Ipsum Generator
+        const loremWords = ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit', 'sed', 'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore', 'et', 'dolore', 'magna', 'aliqua', 'enim', 'ad', 'minim', 'veniam', 'quis', 'nostrud', 'exercitation', 'ullamco', 'laboris', 'nisi', 'aliquip', 'ex', 'ea', 'commodo', 'consequat', 'duis', 'aute', 'irure', 'in', 'reprehenderit', 'voluptate', 'velit', 'esse', 'cillum', 'fugiat', 'nulla', 'pariatur', 'excepteur', 'sint', 'occaecat', 'cupidatat', 'non', 'proident', 'sunt', 'culpa', 'qui', 'officia', 'deserunt', 'mollit', 'anim', 'id', 'est', 'laborum'];
+        
+        function generateLorem() {
+            const type = document.getElementById('loremType').value;
+            const count = parseInt(document.getElementById('loremCount').value) || 1;
+            let result = '';
+            
+            if (type === 'words') {
+                result = generateWords(count);
+            } else if (type === 'sentences') {
+                result = generateSentences(count);
+            } else {
+                result = generateParagraphs(count);
+            }
+            
+            document.getElementById('loremOutput').value = result;
+        }
+
+        function generateWords(count) {
+            return Array.from({length: count}, () => loremWords[Math.floor(Math.random() * loremWords.length)]).join(' ');
+        }
+
+        function generateSentences(count) {
+            return Array.from({length: count}, () => {
+                const words = generateWords(8 + Math.floor(Math.random() * 8));
+                return words.charAt(0).toUpperCase() + words.slice(1) + '.';
+            }).join(' ');
+        }
+
+        function generateParagraphs(count) {
+            return Array.from({length: count}, () => generateSentences(4 + Math.floor(Math.random() * 4))).join('\n\n');
+        }
+
+        function copyLorem() {
+            navigator.clipboard.writeText(document.getElementById('loremOutput').value);
+            alert('Copied to clipboard!');
+        }
+
+        // Case Converter
+        function convertCase(type) {
+            const input = document.getElementById('caseInput').value;
+            let output = '';
+            
+            switch(type) {
+                case 'upper': output = input.toUpperCase(); break;
+                case 'lower': output = input.toLowerCase(); break;
+                case 'title': output = input.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); break;
+                case 'sentence': output = input.toLowerCase().replace(/(^\s*\w|[.!?]\s*\w)/g, c => c.toUpperCase()); break;
+                case 'toggle': output = input.split('').map(c => c === c.toUpperCase() ? c.toLowerCase() : c.toUpperCase()).join(''); break;
+                case 'alternating': output = input.split('').map((c, i) => i % 2 ? c.toUpperCase() : c.toLowerCase()).join(''); break;
+            }
+            
+            document.getElementById('caseOutput').value = output;
+            document.getElementById('caseCharCount').textContent = `${output.length} characters`;
+        }
+
+        function copyCaseOutput() {
+            navigator.clipboard.writeText(document.getElementById('caseOutput').value);
+            alert('Copied to clipboard!');
+        }
+
+        // Markdown to HTML
+        function updateMarkdownPreview() {
+            const md = document.getElementById('markdownInput').value;
+            const html = marked.parse(md);
+            document.getElementById('markdownPreview').innerHTML = html;
+            document.getElementById('htmlOutput').value = html;
+        }
+
+        let showingHtml = false;
+        function toggleHtmlView() {
+            showingHtml = !showingHtml;
+            document.getElementById('markdownPreview').classList.toggle('hidden', showingHtml);
+            document.getElementById('htmlOutput').classList.toggle('hidden', !showingHtml);
+        }
+
+        function copyHtml() {
+            navigator.clipboard.writeText(document.getElementById('htmlOutput').value);
+            alert('HTML copied to clipboard!');
+        }
+
+        function downloadHtml() {
+            const html = document.getElementById('htmlOutput').value;
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'document.html';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // File Archiver
+        let zipFiles = [];
+        async function handleCreateZip(input) {
+            zipFiles = Array.from(input.files);
+            const list = document.getElementById('zipFileList');
+            list.innerHTML = '<h4 class="text-white font-semibold mb-2">Files to compress:</h4>' + 
+                zipFiles.map(f => `
+                    <div class="bg-gray-700 rounded-lg p-2 flex items-center justify-between">
+                        <span class="text-white text-sm"><i class="fas fa-file mr-2"></i>${f.name}</span>
+                        <span class="text-gray-400 text-xs">${(f.size / 1024).toFixed(1)} KB</span>
+                    </div>
+                `).join('');
+            document.getElementById('zipActions').classList.remove('hidden');
+        }
+
+        async function downloadZip() {
+            const zip = new JSZip();
+            for (const file of zipFiles) {
+                const content = await file.arrayBuffer();
+                zip.file(file.name, content);
+            }
+            const blob = await zip.generateAsync({type: 'blob'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'archive.zip';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        async function handleExtractZip(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const zip = new JSZip();
+            const content = await zip.loadAsync(file);
+            const list = document.getElementById('zipFileList');
+            let html = '<h4 class="text-white font-semibold mb-2">Files in archive:</h4>';
+            
+            for (const [name, zipEntry] of Object.entries(content.files)) {
+                if (!zipEntry.dir) {
+                    html += `
+                        <div class="bg-gray-700 rounded-lg p-2 flex items-center justify-between">
+                            <span class="text-white text-sm"><i class="fas fa-file mr-2"></i>${name}</span>
+                            <button onclick="extractFile('${name}')" class="text-amber-400 text-sm hover:text-amber-300">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+            list.innerHTML = html;
+            window.currentZip = content;
+        }
+
+        async function extractFile(name) {
+            const file = await window.currentZip.files[name].async('blob');
+            const url = URL.createObjectURL(file);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = name;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // QR Code Generator
+        function updateQrFields() {
+            const type = document.getElementById('qrType').value;
+            const fields = document.getElementById('qrFields');
+            
+            const templates = {
+                url: '<label class="text-gray-300 text-sm mb-2 block">URL:</label><input type="text" id="qrContent" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600" placeholder="https://example.com">',
+                text: '<label class="text-gray-300 text-sm mb-2 block">Text:</label><textarea id="qrContent" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600 h-24" placeholder="Enter your text..."></textarea>',
+                wifi: '<label class="text-gray-300 text-sm mb-1 block">Network Name:</label><input type="text" id="qrWifiName" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600 mb-2" placeholder="SSID"><label class="text-gray-300 text-sm mb-1 block">Password:</label><input type="text" id="qrWifiPass" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600" placeholder="Password">',
+                email: '<label class="text-gray-300 text-sm mb-2 block">Email:</label><input type="email" id="qrContent" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600" placeholder="email@example.com">',
+                phone: '<label class="text-gray-300 text-sm mb-2 block">Phone:</label><input type="tel" id="qrContent" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600" placeholder="+1234567890">'
+            };
+            fields.innerHTML = templates[type];
+        }
+
+        function generateQR() {
+            const type = document.getElementById('qrType').value;
+            const size = parseInt(document.getElementById('qrSize').value);
+            const color = document.getElementById('qrColor').value;
+            
+            let content = '';
+            if (type === 'wifi') {
+                const name = document.getElementById('qrWifiName').value;
+                const pass = document.getElementById('qrWifiPass').value;
+                content = `WIFI:T:WPA;S:${name};P:${pass};;`;
+            } else if (type === 'email') {
+                content = 'mailto:' + document.getElementById('qrContent').value;
+            } else if (type === 'phone') {
+                content = 'tel:' + document.getElementById('qrContent').value;
+            } else {
+                content = document.getElementById('qrContent').value;
+            }
+            
+            if (!content) {
+                alert('Please enter content for the QR code');
+                return;
+            }
+            
+            const qrOutput = document.getElementById('qrOutput');
+            qrOutput.innerHTML = '';
+            new QRCode(qrOutput, {
+                text: content,
+                width: size,
+                height: size,
+                colorDark: color,
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        function downloadQR() {
+            const canvas = document.querySelector('#qrOutput canvas');
+            if (!canvas) {
+                alert('Please generate a QR code first');
+                return;
+            }
+            const link = document.createElement('a');
+            link.download = 'qrcode.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // QR Scanner
+        let qrStream = null;
+        async function startQrScanner() {
+            try {
+                qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                document.getElementById('qrVideo').srcObject = qrStream;
+            } catch (error) {
+                alert('Could not access camera: ' + error.message);
+            }
+        }
+
+        function stopQrScanner() {
+            if (qrStream) {
+                qrStream.getTracks().forEach(track => track.stop());
+                document.getElementById('qrVideo').srcObject = null;
+            }
+        }
+
+        function scanQrImage(input) {
+            alert('Image QR scanning requires additional libraries. For now, please use the camera scanner or an online tool.');
+        }
+
+        function copyQrResult() {
+            navigator.clipboard.writeText(document.getElementById('qrResultText').textContent);
+            alert('Copied!');
+        }
+
+        // Hash Generator
+        function hashText() {
+            const text = document.getElementById('hashTextInput').value;
+            if (!text) return;
+            
+            document.getElementById('hashMd5').textContent = CryptoJS.MD5(text).toString();
+            document.getElementById('hashSha1').textContent = CryptoJS.SHA1(text).toString();
+            document.getElementById('hashSha256').textContent = CryptoJS.SHA256(text).toString();
+            document.getElementById('hashResults').classList.remove('hidden');
+        }
+
+        async function hashFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const arrayBuffer = await file.arrayBuffer();
+            const wordArray = CryptoJS.lib.WordArray.create(arrayBuffer);
+            
+            document.getElementById('hashMd5').textContent = CryptoJS.MD5(wordArray).toString();
+            document.getElementById('hashSha1').textContent = CryptoJS.SHA1(wordArray).toString();
+            document.getElementById('hashSha256').textContent = CryptoJS.SHA256(wordArray).toString();
+            document.getElementById('hashResults').classList.remove('hidden');
+        }
+
+        function copyHash(id) {
+            navigator.clipboard.writeText(document.getElementById(id).textContent);
+            alert('Hash copied!');
+        }
+
+        // Unit Converter
+        const unitData = {
+            length: { units: ['meters', 'kilometers', 'miles', 'feet', 'inches', 'centimeters', 'yards'], base: 'meters', factors: { meters: 1, kilometers: 0.001, miles: 0.000621371, feet: 3.28084, inches: 39.3701, centimeters: 100, yards: 1.09361 }},
+            weight: { units: ['kilograms', 'grams', 'pounds', 'ounces', 'tons'], base: 'kilograms', factors: { kilograms: 1, grams: 1000, pounds: 2.20462, ounces: 35.274, tons: 0.001 }},
+            temperature: { units: ['celsius', 'fahrenheit', 'kelvin'], base: 'celsius' },
+            area: { units: ['sq meters', 'sq kilometers', 'sq feet', 'sq miles', 'acres', 'hectares'], base: 'sq meters', factors: { 'sq meters': 1, 'sq kilometers': 0.000001, 'sq feet': 10.7639, 'sq miles': 3.861e-7, acres: 0.000247105, hectares: 0.0001 }},
+            volume: { units: ['liters', 'milliliters', 'gallons', 'cups', 'cubic meters'], base: 'liters', factors: { liters: 1, milliliters: 1000, gallons: 0.264172, cups: 4.22675, 'cubic meters': 0.001 }},
+            speed: { units: ['m/s', 'km/h', 'mph', 'knots'], base: 'm/s', factors: { 'm/s': 1, 'km/h': 3.6, mph: 2.23694, knots: 1.94384 }},
+            data: { units: ['bytes', 'KB', 'MB', 'GB', 'TB'], base: 'bytes', factors: { bytes: 1, KB: 0.001, MB: 0.000001, GB: 1e-9, TB: 1e-12 }}
+        };
+
+        function updateUnitOptions() {
+            const category = document.getElementById('unitCategory').value;
+            const units = unitData[category].units;
+            const fromSelect = document.getElementById('unitFrom');
+            const toSelect = document.getElementById('unitTo');
+            
+            fromSelect.innerHTML = units.map(u => `<option value="${u}">${u}</option>`).join('');
+            toSelect.innerHTML = units.map((u, i) => `<option value="${u}" ${i === 1 ? 'selected' : ''}>${u}</option>`).join('');
+            convertUnits();
+        }
+
+        function convertUnits() {
+            const category = document.getElementById('unitCategory').value;
+            const fromValue = parseFloat(document.getElementById('unitFromValue').value) || 0;
+            const fromUnit = document.getElementById('unitFrom').value;
+            const toUnit = document.getElementById('unitTo').value;
+            
+            let result;
+            if (category === 'temperature') {
+                result = convertTemperature(fromValue, fromUnit, toUnit);
+            } else {
+                const data = unitData[category];
+                const baseValue = fromValue / data.factors[fromUnit];
+                result = baseValue * data.factors[toUnit];
+            }
+            
+            document.getElementById('unitToValue').value = result.toFixed(6).replace(/\.?0+$/, '');
+            document.getElementById('unitFormula').textContent = `${fromValue} ${fromUnit} = ${result.toFixed(6).replace(/\.?0+$/, '')} ${toUnit}`;
+        }
+
+        function convertTemperature(value, from, to) {
+            let celsius;
+            if (from === 'celsius') celsius = value;
+            else if (from === 'fahrenheit') celsius = (value - 32) * 5/9;
+            else celsius = value - 273.15;
+            
+            if (to === 'celsius') return celsius;
+            if (to === 'fahrenheit') return celsius * 9/5 + 32;
+            return celsius + 273.15;
+        }
+
+        function swapUnits() {
+            const from = document.getElementById('unitFrom');
+            const to = document.getElementById('unitTo');
+            [from.value, to.value] = [to.value, from.value];
+            convertUnits();
+        }
+
+        // Password Generator
+        function generatePassword() {
+            const length = parseInt(document.getElementById('passwordLength').value);
+            const upper = document.getElementById('includeUppercase').checked;
+            const lower = document.getElementById('includeLowercase').checked;
+            const numbers = document.getElementById('includeNumbers').checked;
+            const symbols = document.getElementById('includeSymbols').checked;
+            
+            let chars = '';
+            if (upper) chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            if (lower) chars += 'abcdefghijklmnopqrstuvwxyz';
+            if (numbers) chars += '0123456789';
+            if (symbols) chars += '!@#$%^&*()_+-=[]{}|;:,.<>?';
+            
+            if (!chars) {
+                alert('Please select at least one character type');
+                return;
+            }
+            
+            let password = '';
+            for (let i = 0; i < length; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            
+            document.getElementById('generatedPassword').value = password;
+            updatePasswordStrength(password);
+        }
+
+        function updatePasswordStrength(password) {
+            let strength = 0;
+            if (password.length >= 8) strength += 25;
+            if (password.length >= 12) strength += 15;
+            if (password.length >= 16) strength += 10;
+            if (/[a-z]/.test(password)) strength += 10;
+            if (/[A-Z]/.test(password)) strength += 10;
+            if (/[0-9]/.test(password)) strength += 10;
+            if (/[^a-zA-Z0-9]/.test(password)) strength += 20;
+            
+            const bar = document.getElementById('strengthBar');
+            const text = document.getElementById('strengthText');
+            
+            bar.style.width = strength + '%';
+            if (strength < 40) { bar.className = 'h-full bg-red-500 transition-all duration-300'; text.textContent = 'Weak'; }
+            else if (strength < 70) { bar.className = 'h-full bg-yellow-500 transition-all duration-300'; text.textContent = 'Medium'; }
+            else { bar.className = 'h-full bg-green-500 transition-all duration-300'; text.textContent = 'Strong'; }
+        }
+
+        function copyPassword() {
+            navigator.clipboard.writeText(document.getElementById('generatedPassword').value);
+            alert('Password copied!');
+        }
+
+        // Screen Recorder
+        let mediaRecorder, recordedChunks = [], recordingInterval;
+        async function startScreenRecording() {
+            try {
+                const displayStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: true,
+                    audio: document.getElementById('includeAudio').checked
+                });
+                
+                document.getElementById('screenPreview').srcObject = displayStream;
+                document.getElementById('startRecordBtn').classList.add('hidden');
+                document.getElementById('stopRecordBtn').classList.remove('hidden');
+                document.getElementById('recordingTime').classList.remove('hidden');
+                
+                recordedChunks = [];
+                mediaRecorder = new MediaRecorder(displayStream);
+                
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+                
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    document.getElementById('recordedVideo').src = URL.createObjectURL(blob);
+                    document.getElementById('recordingResult').classList.remove('hidden');
+                    window.recordedBlob = blob;
+                };
+                
+                mediaRecorder.start();
+                
+                let seconds = 0;
+                recordingInterval = setInterval(() => {
+                    seconds++;
+                    const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+                    const secs = (seconds % 60).toString().padStart(2, '0');
+                    document.getElementById('recordingTime').textContent = `${mins}:${secs}`;
+                }, 1000);
+                
+                displayStream.getVideoTracks()[0].onended = stopScreenRecording;
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function stopScreenRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+            clearInterval(recordingInterval);
+            document.getElementById('screenPreview').srcObject = null;
+            document.getElementById('startRecordBtn').classList.remove('hidden');
+            document.getElementById('stopRecordBtn').classList.add('hidden');
+        }
+
+        function downloadRecording() {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(window.recordedBlob);
+            a.download = 'recording.webm';
+            a.click();
+        }
+
+        // Voice Recorder
+        let voiceRecorder, voiceChunks = [], voiceInterval;
+        async function startVoiceRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                document.getElementById('startVoiceBtn').classList.add('hidden');
+                document.getElementById('stopVoiceBtn').classList.remove('hidden');
+                document.getElementById('voiceWaveform').innerHTML = '<div class="flex items-center gap-1">' + 
+                    Array(20).fill('<div class="w-1 bg-fuchsia-500 rounded animate-pulse" style="height: ' + (Math.random() * 60 + 20) + 'px; animation-delay: ' + Math.random() * 0.5 + 's"></div>').join('') + '</div>';
+                
+                voiceChunks = [];
+                voiceRecorder = new MediaRecorder(stream);
+                
+                voiceRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) voiceChunks.push(e.data);
+                };
+                
+                voiceRecorder.onstop = () => {
+                    const blob = new Blob(voiceChunks, { type: 'audio/webm' });
+                    document.getElementById('recordedAudio').src = URL.createObjectURL(blob);
+                    document.getElementById('voiceResult').classList.remove('hidden');
+                    window.voiceBlob = blob;
+                };
+                
+                voiceRecorder.start();
+                
+                let seconds = 0;
+                voiceInterval = setInterval(() => {
+                    seconds++;
+                    const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+                    const secs = (seconds % 60).toString().padStart(2, '0');
+                    document.getElementById('voiceTimer').textContent = `${mins}:${secs}`;
+                }, 1000);
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function stopVoiceRecording() {
+            if (voiceRecorder && voiceRecorder.state !== 'inactive') {
+                voiceRecorder.stop();
+                voiceRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+            clearInterval(voiceInterval);
+            document.getElementById('startVoiceBtn').classList.remove('hidden');
+            document.getElementById('stopVoiceBtn').classList.add('hidden');
+            document.getElementById('voiceWaveform').innerHTML = '<div class="text-gray-500"><i class="fas fa-check-circle text-4xl text-green-500"></i><p class="mt-2 text-sm">Recording complete!</p></div>';
+        }
+
+        function downloadVoiceRecording() {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(window.voiceBlob);
+            a.download = 'voice_memo.webm';
+            a.click();
+        }
+
+        // Filter tools
+        function filterTools(category) {
+            const filteredTools = category === 'all' ? tools : tools.filter(t => t.category.toLowerCase() === category);
+            renderFilteredTools(filteredTools);
+        }
+
+        function renderFilteredTools(toolsList) {
+            const grid = document.getElementById('toolsGrid');
+            grid.innerHTML = toolsList.map(tool => `
+                <div class="tool-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 cursor-pointer" onclick="openTool('${tool.id}')">
+                    <div class="h-32 ${tool.gradient} flex items-center justify-center relative">
+                        <i class="${tool.icon} text-4xl text-white/90"></i>
+                        ${tool.badge ? `<span class="feature-badge absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-semibold text-white">${tool.badge}</span>` : ''}
+                    </div>
+                    <div class="p-4">
+                        <h4 class="text-white font-semibold mb-1">${tool.name}</h4>
+                        <p class="text-gray-400 text-sm line-clamp-2">${tool.description}</p>
+                        <div class="mt-3 flex items-center gap-2">
+                            <span class="px-2 py-1 bg-gray-700 rounded text-xs text-gray-300">${tool.category}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render tools grid
+        function renderTools() {
+            const grid = document.getElementById('toolsGrid');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (tools.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            grid.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            
+            grid.innerHTML = tools.map(tool => `
+                <div class="tool-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 cursor-pointer" onclick="openTool('${tool.id}')">
+                    <div class="h-32 ${tool.gradient} flex items-center justify-center relative">
+                        <i class="${tool.icon} text-4xl text-white/90"></i>
+                        ${tool.badge ? `<span class="feature-badge absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-semibold text-white">${tool.badge}</span>` : ''}
+                    </div>
+                    <div class="p-4">
+                        <h4 class="text-white font-semibold mb-1">${tool.name}</h4>
+                        <p class="text-gray-400 text-sm line-clamp-2">${tool.description}</p>
+                        <div class="mt-3 flex items-center gap-2">
+                            <span class="px-2 py-1 bg-gray-700 rounded text-xs text-gray-300">${tool.category}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Open tool modal
+        function openTool(toolId) {
+            const tool = tools.find(t => t.id === toolId);
+            if (!tool) return;
+            
+            document.getElementById('modalTitle').textContent = tool.name;
+            document.getElementById('modalSubtitle').textContent = tool.description;
+            document.getElementById('modalIcon').innerHTML = `<i class="${tool.icon} text-2xl text-white"></i>`;
+            document.getElementById('modalContent').innerHTML = tool.content || '<p class="text-gray-400">Tool content will be loaded here.</p>';
+            document.getElementById('toolModal').classList.remove('hidden');
+            
+            // Initialize tool if it has an init function
+            if (tool.init) {
+                setTimeout(tool.init, 100);
+            }
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('toolModal').classList.add('hidden');
+            stopQrScanner();
+            stopScreenRecording();
+            stopVoiceRecording();
+        }
+
+        // Close modal on backdrop click
+        document.getElementById('toolModal').addEventListener('click', (e) => {
+            if (e.target.id === 'toolModal') closeModal();
+        });
+
+        // Initialize
+        renderTools();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Master - Play, Learn & Challenge</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        .chess-piece {
+            font-size: 2.8rem;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s;
+        }
+        .chess-piece:hover {
+            transform: scale(1.1);
+        }
+        .square {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .light-square {
+            background: linear-gradient(135deg, #f0d9b5 0%, #e8c99b 100%);
+        }
+        .dark-square {
+            background: linear-gradient(135deg, #b58863 0%, #9c7248 100%);
+        }
+        .selected {
+            box-shadow: inset 0 0 0 4px #4ade80 !important;
+        }
+        .valid-move {
+            position: relative;
+        }
+        .valid-move::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: rgba(74, 222, 128, 0.7);
+            border-radius: 50%;
+        }
+        .valid-capture {
+            box-shadow: inset 0 0 0 4px #ef4444 !important;
+        }
+        .check {
+            animation: check-pulse 1s infinite;
+        }
+        @keyframes check-pulse {
+            0%, 100% { box-shadow: inset 0 0 0 4px #ef4444; }
+            50% { box-shadow: inset 0 0 0 6px #dc2626; }
+        }
+        .last-move {
+            background: rgba(255, 255, 0, 0.3) !important;
+        }
+        .suggested-move {
+            box-shadow: inset 0 0 0 4px #3b82f6 !important;
+            animation: suggest-pulse 1s infinite;
+        }
+        @keyframes suggest-pulse {
+            0%, 100% { box-shadow: inset 0 0 0 4px #3b82f6; }
+            50% { box-shadow: inset 0 0 0 6px #2563eb; }
+        }
+        .modal-overlay {
+            backdrop-filter: blur(4px);
+        }
+        .thinking {
+            animation: thinking 1s infinite;
+        }
+        @keyframes thinking {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 8px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: #374151;
+            border-radius: 4px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #6b7280;
+            border-radius: 4px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+        .bot-card {
+            transition: all 0.3s;
+        }
+        .bot-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .lesson-card {
+            transition: all 0.2s;
+        }
+        .lesson-card:hover {
+            transform: scale(1.02);
+        }
+        .tab-active {
+            border-bottom: 3px solid #8b5cf6;
+            color: #8b5cf6;
+        }
+        .piece-demo {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        .mini-board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 0;
+            border: 2px solid #4b5563;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .mini-square {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 min-h-screen">
+    
+    <!-- Main Menu Modal -->
+    <div id="mainMenuModal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50 modal-overlay">
+        <div class="bg-gray-800 rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl border border-purple-500/30">
+            <h2 class="text-4xl font-bold text-white text-center mb-2">♔ Chess Master ♚</h2>
+            <p class="text-gray-400 text-center mb-6">Play, Learn & Master the Game</p>
+            
+            <div class="space-y-3">
+                <button onclick="showGameModeModal()" class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 flex items-center justify-center gap-3">
+                    <span class="text-2xl">🎮</span>
+                    <span>Play Game</span>
+                </button>
+                
+                <button onclick="showLearnModal()" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 flex items-center justify-center gap-3">
+                    <span class="text-2xl">📚</span>
+                    <span>Learn Chess</span>
+                </button>
+                
+                <button onclick="showOpenings()" class="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 flex items-center justify-center gap-3">
+                    <span class="text-2xl">📖</span>
+                    <span>Opening Library</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Mode Selection Modal -->
+    <div id="gameModeModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 modal-overlay overflow-y-auto py-4">
+        <div class="bg-gray-800 rounded-2xl p-6 max-w-4xl w-full mx-4 shadow-2xl border border-purple-500/30 max-h-[95vh] overflow-y-auto scrollbar-thin">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-white">🎮 Choose Game Mode</h2>
+                <button onclick="closeGameModeModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            
+            <!-- Tabs -->
+            <div class="flex border-b border-gray-600 mb-4">
+                <button onclick="switchTab('players')" id="tabPlayers" class="px-4 py-2 text-white tab-active">👥 Two Players</button>
+                <button onclick="switchTab('bots')" id="tabBots" class="px-4 py-2 text-gray-400 hover:text-white">🤖 vs AI Bots</button>
+            </div>
+            
+            <!-- Two Players Tab -->
+            <div id="playersTab" class="space-y-3">
+                <div class="bg-gray-700/50 rounded-xl p-4">
+                    <h3 class="text-lg font-bold text-green-400 mb-2">👥 Two Players (One Device)</h3>
+                    <p class="text-gray-300 text-sm mb-3">Play against a friend on the same device. Take turns!</p>
+                    <button onclick="startGame('player')" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg transition-all">
+                        Start Game
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Bots Tab -->
+            <div id="botsTab" class="hidden">
+                <p class="text-gray-300 text-sm mb-4">Choose your opponent! Each bot has a unique personality and play style.</p>
+                
+                <div class="grid md:grid-cols-2 gap-3">
+                    <!-- Random Bot -->
+                    <div class="bot-card bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl p-4 cursor-pointer border border-gray-600 hover:border-blue-500" onclick="startGame('random')">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-3xl">🎲</span>
+                            <div>
+                                <h4 class="font-bold text-blue-400">Randy Random</h4>
+                                <span class="text-xs bg-blue-900 text-blue-300 px-2 py-0.5 rounded">Beginner</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-sm">Plays random legal moves. Great for beginners to practice!</p>
+                    </div>
+                    
+                    <!-- Aggressive Bot -->
+                    <div class="bot-card bg-gradient-to-br from-red-900/50 to-gray-800 rounded-xl p-4 cursor-pointer border border-gray-600 hover:border-red-500" onclick="startGame('aggressive')">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-3xl">🔥</span>
+                            <div>
+                                <h4 class="font-bold text-red-400">Captain Aggro</h4>
+                                <span class="text-xs bg-red-900 text-red-300 px-2 py-0.5 rounded">Intermediate</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-sm">Loves to attack! Sacrifices pieces for initiative. Very sharp play.</p>
+                    </div>
+                    
+                    <!-- Defensive Bot -->
+                    <div class="bot-card bg-gradient-to-br from-blue-900/50 to-gray-800 rounded-xl p-4 cursor-pointer border border-gray-600 hover:border-blue-500" onclick="startGame('defensive')">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-3xl">🛡️</span>
+                            <div>
+                                <h4 class="font-bold text-blue-400">Sir Fortress</h4>
+                                <span class="text-xs bg-blue-900 text-blue-300 px-2 py-0.5 rounded">Intermediate</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-sm">Defensive master! Prioritizes king safety and solid positions.</p>
+                    </div>
+                    
+                    <!-- Positional Bot -->
+                    <div class="bot-card bg-gradient-to-br from-green-900/50 to-gray-800 rounded-xl p-4 cursor-pointer border border-gray-600 hover:border-green-500" onclick="startGame('positional')">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-3xl">🎯</span>
+                            <div>
+                                <h4 class="font-bold text-green-400">Prof. Position</h4>
+                                <span class="text-xs bg-green-900 text-green-300 px-2 py-0.5 rounded">Intermediate</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-sm">Controls the center, develops pieces, follows opening principles.</p>
+                    </div>
+                    
+                    <!-- Tricky Bot -->
+                    <div class="bot-card bg-gradient-to-br from-purple-900/50 to-gray-800 rounded-xl p-4 cursor-pointer border border-gray-600 hover:border-purple-500" onclick="startGame('tricky')">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-3xl">🎭</span>
+                            <div>
+                                <h4 class="font-bold text-purple-400">Trickster Tim</h4>
+                                <span class="text-xs bg-purple-900 text-purple-300 px-2 py-0.5 rounded">Intermediate</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-sm">Sets traps and looks for tactical tricks. Watch out for surprises!</p>
+                    </div>
+                    
+                    <!-- Tactical Bot -->
+                    <div class="bot-card bg-gradient-to-br from-yellow-900/50 to-gray-800 rounded-xl p-4 cursor-pointer border border-gray-600 hover:border-yellow-500" onclick="startGame('tactical')">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-3xl">⚔️</span>
+                            <div>
+                                <h4 class="font-bold text-yellow-400">Tactical Tanya</h4>
+                                <span class="text-xs bg-yellow-900 text-yellow-300 px-2 py-0.5 rounded">Advanced</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-sm">Looks for forks, pins, and skewers. Strong tactical awareness.</p>
+                    </div>
+                    
+                    <!-- Grandmaster Bot -->
+                    <div class="bot-card bg-gradient-to-br from-orange-900/50 to-gray-800 rounded-xl p-4 cursor-pointer border border-gray-600 hover:border-orange-500" onclick="startGame('grandmaster')">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-3xl">👑</span>
+                            <div>
+                                <h4 class="font-bold text-orange-400">GM Magnus</h4>
+                                <span class="text-xs bg-orange-900 text-orange-300 px-2 py-0.5 rounded">Expert</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-sm">Full minimax search. Plays best moves. Very challenging!</p>
+                    </div>
+                    
+                    <!-- Unpredictable Bot -->
+                    <div class="bot-card bg-gradient-to-br from-pink-900/50 to-gray-800 rounded-xl p-4 cursor-pointer border border-gray-600 hover:border-pink-500" onclick="startGame('unpredictable')">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-3xl">🌀</span>
+                            <div>
+                                <h4 class="font-bold text-pink-400">Chaos Charlie</h4>
+                                <span class="text-xs bg-pink-900 text-pink-300 px-2 py-0.5 rounded">Mixed</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-sm">Randomly switches between styles. Never know what to expect!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Learn Chess Modal -->
+    <div id="learnModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 modal-overlay overflow-y-auto py-4">
+        <div class="bg-gray-800 rounded-2xl p-6 max-w-4xl w-full mx-4 shadow-2xl max-h-[95vh] overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                <h3 class="text-2xl font-bold text-white">📚 Learn Chess</h3>
+                <button onclick="closeLearnModal()" class="text-gray-400 hover:text-white text-3xl">&times;</button>
+            </div>
+            
+            <!-- Lesson Categories -->
+            <div class="flex flex-wrap gap-2 mb-4 flex-shrink-0">
+                <button onclick="showLesson('basics')" class="lesson-tab px-3 py-1 rounded-full text-sm bg-purple-600 text-white" data-lesson="basics">🎓 Basics</button>
+                <button onclick="showLesson('pieces')" class="lesson-tab px-3 py-1 rounded-full text-sm bg-gray-600 text-white hover:bg-gray-500" data-lesson="pieces">♟️ Pieces</button>
+                <button onclick="showLesson('special')" class="lesson-tab px-3 py-1 rounded-full text-sm bg-gray-600 text-white hover:bg-gray-500" data-lesson="special">✨ Special Moves</button>
+                <button onclick="showLesson('tactics')" class="lesson-tab px-3 py-1 rounded-full text-sm bg-gray-600 text-white hover:bg-gray-500" data-lesson="tactics">⚔️ Tactics</button>
+                <button onclick="showLesson('checkmates')" class="lesson-tab px-3 py-1 rounded-full text-sm bg-gray-600 text-white hover:bg-gray-500" data-lesson="checkmates">👑 Checkmates</button>
+                <button onclick="showLesson('strategy')" class="lesson-tab px-3 py-1 rounded-full text-sm bg-gray-600 text-white hover:bg-gray-500" data-lesson="strategy">🧠 Strategy</button>
+            </div>
+            
+            <div id="lessonContent" class="overflow-y-auto flex-1 scrollbar-thin pr-2">
+                <!-- Basics Lesson -->
+                <div id="lesson-basics" class="lesson-section">
+                    <div class="bg-gradient-to-r from-purple-900/50 to-gray-800 rounded-xl p-4 mb-4">
+                        <h4 class="text-xl font-bold text-purple-300 mb-2">🎓 Chess Basics</h4>
+                        <p class="text-gray-300">Learn the fundamentals of chess!</p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-yellow-400 font-bold mb-2">🎯 Objective</h5>
+                            <p class="text-gray-300 text-sm">The goal is to <span class="text-red-400 font-bold">checkmate</span> your opponent's King. This means the King is under attack and has no way to escape!</p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-yellow-400 font-bold mb-2">🔄 Turns</h5>
+                            <p class="text-gray-300 text-sm">White always moves first. Players alternate turns. You must make a move on your turn - you can't pass!</p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-yellow-400 font-bold mb-2">⚠️ Check</h5>
+                            <p class="text-gray-300 text-sm">When your King is attacked, you're in <span class="text-red-400">check</span>. You MUST get out of check! Block, capture, or move the King.</p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-yellow-400 font-bold mb-2">🤝 Draw</h5>
+                            <p class="text-gray-300 text-sm">Games can end in a draw by: Stalemate, insufficient material, threefold repetition, or 50-move rule.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-700 rounded-lg p-4 mt-4">
+                        <h5 class="text-green-400 font-bold mb-2">💡 Beginner Tips</h5>
+                        <ul class="text-gray-300 text-sm space-y-1">
+                            <li>✅ Control the center (d4, d5, e4, e5)</li>
+                            <li>✅ Develop your pieces (Knights and Bishops first)</li>
+                            <li>✅ Castle early to protect your King</li>
+                            <li>✅ Don't move the same piece twice in the opening</li>
+                            <li>❌ Don't bring your Queen out too early</li>
+                            <li>❌ Don't make too many pawn moves in the opening</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Pieces Lesson -->
+                <div id="lesson-pieces" class="lesson-section hidden">
+                    <div class="bg-gradient-to-r from-blue-900/50 to-gray-800 rounded-xl p-4 mb-4">
+                        <h4 class="text-xl font-bold text-blue-300 mb-2">♟️ Chess Pieces</h4>
+                        <p class="text-gray-300">Learn how each piece moves!</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- King -->
+                        <div class="bg-gray-700 rounded-lg p-4 flex gap-4">
+                            <div class="piece-demo bg-gray-600 rounded">♔</div>
+                            <div class="flex-1">
+                                <h5 class="text-yellow-400 font-bold">King ♔ - Value: ∞</h5>
+                                <p class="text-gray-300 text-sm">Moves one square in any direction. Most important piece - if checkmated, you lose!</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Queen -->
+                        <div class="bg-gray-700 rounded-lg p-4 flex gap-4">
+                            <div class="piece-demo bg-gray-600 rounded">♕</div>
+                            <div class="flex-1">
+                                <h5 class="text-purple-400 font-bold">Queen ♕ - Value: 9 points</h5>
+                                <p class="text-gray-300 text-sm">Most powerful piece! Moves any number of squares horizontally, vertically, or diagonally.</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Rook -->
+                        <div class="bg-gray-700 rounded-lg p-4 flex gap-4">
+                            <div class="piece-demo bg-gray-600 rounded">♖</div>
+                            <div class="flex-1">
+                                <h5 class="text-blue-400 font-bold">Rook ♖ - Value: 5 points</h5>
+                                <p class="text-gray-300 text-sm">Moves any number of squares horizontally or vertically. Great on open files!</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Bishop -->
+                        <div class="bg-gray-700 rounded-lg p-4 flex gap-4">
+                            <div class="piece-demo bg-gray-600 rounded">♗</div>
+                            <div class="flex-1">
+                                <h5 class="text-green-400 font-bold">Bishop ♗ - Value: 3 points</h5>
+                                <p class="text-gray-300 text-sm">Moves diagonally any number of squares. Stays on same color squares. Two bishops are powerful!</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Knight -->
+                        <div class="bg-gray-700 rounded-lg p-4 flex gap-4">
+                            <div class="piece-demo bg-gray-600 rounded">♘</div>
+                            <div class="flex-1">
+                                <h5 class="text-orange-400 font-bold">Knight ♘ - Value: 3 points</h5>
+                                <p class="text-gray-300 text-sm">Moves in "L" shape: 2 squares + 1 square. Only piece that can jump over others!</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Pawn -->
+                        <div class="bg-gray-700 rounded-lg p-4 flex gap-4">
+                            <div class="piece-demo bg-gray-600 rounded">♙</div>
+                            <div class="flex-1">
+                                <h5 class="text-gray-300 font-bold">Pawn ♙ - Value: 1 point</h5>
+                                <p class="text-gray-300 text-sm">Moves forward 1 square (2 on first move). Captures diagonally. Promotes at the end!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Special Moves Lesson -->
+                <div id="lesson-special" class="lesson-section hidden">
+                    <div class="bg-gradient-to-r from-yellow-900/50 to-gray-800 rounded-xl p-4 mb-4">
+                        <h4 class="text-xl font-bold text-yellow-300 mb-2">✨ Special Moves</h4>
+                        <p class="text-gray-300">Master these unique chess moves!</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- Castling -->
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-blue-400 font-bold mb-2">🏰 Castling</h5>
+                            <p class="text-gray-300 text-sm mb-2">Move King 2 squares toward a Rook, and Rook jumps to other side.</p>
+                            <div class="bg-gray-800 rounded p-2 text-sm text-gray-400">
+                                <p><span class="text-green-400">✅ Conditions:</span> Neither piece has moved, no pieces between, King not in check, King doesn't pass through check.</p>
+                                <p class="mt-1"><span class="text-yellow-400">💡 Tip:</span> Kingside castling (O-O) is faster, Queenside (O-O-O) activates the Rook more.</p>
+                            </div>
+                        </div>
+                        
+                        <!-- En Passant -->
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-purple-400 font-bold mb-2">👻 En Passant</h5>
+                            <p class="text-gray-300 text-sm mb-2">Capture a pawn "in passing" if it moves 2 squares past your pawn.</p>
+                            <div class="bg-gray-800 rounded p-2 text-sm text-gray-400">
+                                <p><span class="text-green-400">✅ Conditions:</span> Your pawn on 5th rank (4th for black), enemy pawn moves 2 squares landing beside yours.</p>
+                                <p class="mt-1"><span class="text-red-400">⚠️ Important:</span> Must capture immediately on the next move or lose the right!</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Promotion -->
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-orange-400 font-bold mb-2">👑 Pawn Promotion</h5>
+                            <p class="text-gray-300 text-sm mb-2">When a pawn reaches the last rank, it becomes Queen, Rook, Bishop, or Knight!</p>
+                            <div class="bg-gray-800 rounded p-2 text-sm text-gray-400">
+                                <p><span class="text-yellow-400">💡 Tip:</span> Usually promote to Queen, but sometimes Knight (for discovered check) is better!</p>
+                                <p class="mt-1"><span class="text-green-400">🎯 Goal:</span> Advancing passed pawns to promotion is often the key to winning endgames.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tactics Lesson -->
+                <div id="lesson-tactics" class="lesson-section hidden">
+                    <div class="bg-gradient-to-r from-red-900/50 to-gray-800 rounded-xl p-4 mb-4">
+                        <h4 class="text-xl font-bold text-red-300 mb-2">⚔️ Chess Tactics</h4>
+                        <p class="text-gray-300">Win material with these patterns!</p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-yellow-400 font-bold mb-2">🍴 Fork</h5>
+                            <p class="text-gray-300 text-sm">One piece attacks TWO or more enemy pieces at once. Knights are fork masters!</p>
+                            <p class="text-gray-500 text-xs mt-1">Example: Knight attacks King and Queen simultaneously.</p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-blue-400 font-bold mb-2">📌 Pin</h5>
+                            <p class="text-gray-300 text-sm">Attack a piece that can't move because it would expose a more valuable piece behind it.</p>
+                            <p class="text-gray-500 text-xs mt-1">Example: Bishop pins Knight to King.</p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-green-400 font-bold mb-2">🗡️ Skewer</h5>
+                            <p class="text-gray-300 text-sm">Attack a valuable piece, and when it moves, capture the piece behind it.</p>
+                            <p class="text-gray-500 text-xs mt-1">Example: Rook attacks Queen, wins Rook behind.</p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-purple-400 font-bold mb-2">💥 Discovered Attack</h5>
+                            <p class="text-gray-300 text-sm">Move a piece to reveal an attack from another piece behind it.</p>
+                            <p class="text-gray-500 text-xs mt-1">Example: Move Knight, Bishop attacks Queen.</p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-red-400 font-bold mb-2">⚡ Double Check</h5>
+                            <p class="text-gray-300 text-sm">Check with TWO pieces at once. King must move - can't block or capture both!</p>
+                            <p class="text-gray-500 text-xs mt-1">Very powerful - often leads to checkmate.</p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-orange-400 font-bold mb-2">🎁 Sacrifice</h5>
+                            <p class="text-gray-300 text-sm">Give up material for a bigger advantage - attack, checkmate, or promotion.</p>
+                            <p class="text-gray-500 text-xs mt-1">Calculate carefully before sacrificing!</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Checkmates Lesson -->
+                <div id="lesson-checkmates" class="lesson-section hidden">
+                    <div class="bg-gradient-to-r from-orange-900/50 to-gray-800 rounded-xl p-4 mb-4">
+                        <h4 class="text-xl font-bold text-orange-300 mb-2">👑 Checkmate Patterns</h4>
+                        <p class="text-gray-300">Learn these famous mating patterns!</p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-red-400 font-bold mb-2">💀 Back Rank Mate</h5>
+                            <p class="text-gray-300 text-sm">Rook or Queen delivers checkmate on the last rank when King is trapped by own pawns.</p>
+                            <p class="text-green-400 text-xs mt-1">Prevention: Create "luft" (escape square) for your King!</p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-blue-400 font-bold mb-2">😊 Smothered Mate</h5>
+                            <p class="text-gray-300 text-sm">Knight checkmates King surrounded by own pieces. Can't escape!</p>
+                            <p class="text-green-400 text-xs mt-1">Often involves Queen sacrifice!</p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-purple-400 font-bold mb-2">📐 Scholar's Mate</h5>
+                            <p class="text-gray-300 text-sm">4-move checkmate: 1.e4 e5 2.Bc4 Nc6 3.Qh5 Nf6?? 4.Qxf7#</p>
+                            <p class="text-yellow-400 text-xs mt-1">Don't fall for it! Defend f7/f2!</p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-green-400 font-bold mb-2">🐑 Fool's Mate</h5>
+                            <p class="text-gray-300 text-sm">Fastest checkmate: 1.f3 e5 2.g4 Qh4#</p>
+                            <p class="text-red-400 text-xs mt-1">Only works if opponent makes terrible moves!</p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-yellow-400 font-bold mb-2">👸 Queen + King Mate</h5>
+                            <p class="text-gray-300 text-sm">Essential endgame skill. Push enemy King to edge, then corner for checkmate.</p>
+                            <p class="text-gray-400 text-xs mt-1">Use your King to help restrict enemy King!</p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-cyan-400 font-bold mb-2">🏰 Two Rooks Mate</h5>
+                            <p class="text-gray-300 text-sm">"Ladder" or "lawnmower" mate - Rooks alternate to push King to edge.</p>
+                            <p class="text-gray-400 text-xs mt-1">Keep Rooks on adjacent files/ranks!</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Strategy Lesson -->
+                <div id="lesson-strategy" class="lesson-section hidden">
+                    <div class="bg-gradient-to-r from-green-900/50 to-gray-800 rounded-xl p-4 mb-4">
+                        <h4 class="text-xl font-bold text-green-300 mb-2">🧠 Chess Strategy</h4>
+                        <p class="text-gray-300">Long-term planning and positional play!</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-yellow-400 font-bold mb-2">🎯 Control the Center</h5>
+                            <p class="text-gray-300 text-sm">The squares d4, d5, e4, e5 are most important. Pieces in the center control more squares and have more options.</p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-blue-400 font-bold mb-2">🏃 Piece Activity</h5>
+                            <p class="text-gray-300 text-sm">Active pieces > Passive pieces. A Knight on the rim is dim! Place pieces where they have maximum scope.</p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-purple-400 font-bold mb-2">♟️ Pawn Structure</h5>
+                            <p class="text-gray-300 text-sm">
+                                <span class="text-red-400">Weak pawns:</span> Isolated, doubled, backward pawns are targets.<br>
+                                <span class="text-green-400">Strong pawns:</span> Passed pawns, pawn chains, connected pawns.
+                            </p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-orange-400 font-bold mb-2">👑 King Safety</h5>
+                            <p class="text-gray-300 text-sm">In the middlegame, keep your King safe (usually castled). In the endgame, activate your King!</p>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h5 class="text-red-400 font-bold mb-2">📊 Material vs Position</h5>
+                            <p class="text-gray-300 text-sm">Sometimes position is worth more than material. Initiative, attack, and piece coordination can outweigh a pawn or two.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="closeLearnModal()" class="mt-4 w-full bg-gray-600 hover:bg-gray-500 text-white py-2 rounded-lg flex-shrink-0">Back to Menu</button>
+        </div>
+    </div>
+
+    <!-- Undo Confirmation Modal (Two Player) -->
+    <div id="undoConfirmModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-xl p-6 text-center max-w-sm mx-4">
+            <h3 class="text-white text-xl mb-2">⚠️ Undo Move?</h3>
+            <p class="text-gray-300 mb-4" id="undoConfirmText">Player requests to undo the last move.</p>
+            <p class="text-yellow-400 text-sm mb-4">Both players should agree to undo for fair play!</p>
+            <div class="flex gap-3">
+                <button onclick="confirmUndo(true)" class="flex-1 bg-green-600 hover:bg-green-500 text-white py-2 px-4 rounded-lg">✓ Allow</button>
+                <button onclick="confirmUndo(false)" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-2 px-4 rounded-lg">✗ Deny</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 modal-overlay">
+        <div class="bg-gray-800 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl text-center">
+            <div id="gameOverIcon" class="text-6xl mb-4">🏆</div>
+            <h2 id="gameOverTitle" class="text-2xl font-bold text-white mb-2">Game Over!</h2>
+            <p id="gameOverMessage" class="text-gray-300 mb-4"></p>
+            
+            <!-- Stats -->
+            <div class="bg-gray-700 rounded-lg p-4 mb-4">
+                <h4 class="text-yellow-400 font-bold mb-2">📊 Game Statistics</h4>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div class="text-gray-400">Total Moves:</div>
+                    <div id="statMoves" class="text-white font-bold">0</div>
+                    <div class="text-gray-400">Undos Used:</div>
+                    <div id="statUndos" class="text-white font-bold">0</div>
+                    <div class="text-gray-400">Pieces Captured:</div>
+                    <div id="statCaptures" class="text-white font-bold">0</div>
+                </div>
+                <div id="undoWarning" class="hidden mt-2 text-yellow-400 text-xs">
+                    ⚠️ Using undo frequently may hinder your improvement!
+                </div>
+            </div>
+            
+            <div class="flex gap-3">
+                <button onclick="showGameModeModal(); closeGameOverModal();" class="flex-1 bg-green-600 hover:bg-green-500 text-white py-2 px-4 rounded-lg">🔄 New Game</button>
+                <button onclick="showMainMenu()" class="flex-1 bg-gray-600 hover:bg-gray-500 text-white py-2 px-4 rounded-lg">🏠 Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Promotion Modal -->
+    <div id="promotionModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-xl p-6 text-center">
+            <h3 class="text-white text-xl mb-4">Choose Promotion Piece</h3>
+            <div id="promotionPieces" class="flex gap-4"></div>
+        </div>
+    </div>
+
+    <!-- Openings Modal -->
+    <div id="openingsModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 modal-overlay overflow-y-auto py-4">
+        <div class="bg-gray-800 rounded-2xl p-4 max-w-4xl w-full mx-4 shadow-2xl max-h-[95vh] overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                <h3 class="text-2xl font-bold text-white">📚 Opening Library</h3>
+                <button onclick="closeOpenings()" class="text-gray-400 hover:text-white text-3xl">&times;</button>
+            </div>
+            
+            <div class="flex flex-wrap gap-2 mb-4 flex-shrink-0">
+                <button onclick="filterOpenings('all')" class="filter-btn active px-3 py-1 rounded-full text-sm bg-purple-600 text-white" data-filter="all">All</button>
+                <button onclick="filterOpenings('e4')" class="filter-btn px-3 py-1 rounded-full text-sm bg-gray-600 text-white hover:bg-gray-500" data-filter="e4">1.e4</button>
+                <button onclick="filterOpenings('d4')" class="filter-btn px-3 py-1 rounded-full text-sm bg-gray-600 text-white hover:bg-gray-500" data-filter="d4">1.d4</button>
+                <button onclick="filterOpenings('other')" class="filter-btn px-3 py-1 rounded-full text-sm bg-gray-600 text-white hover:bg-gray-500" data-filter="other">Other</button>
+            </div>
+            
+            <div class="overflow-y-auto flex-1 scrollbar-thin pr-2" id="openingsContent">
+                <!-- Openings will be populated by JS -->
+            </div>
+            
+            <button onclick="closeOpenings()" class="mt-4 w-full bg-gray-600 hover:bg-gray-500 text-white py-2 rounded-lg flex-shrink-0">Close</button>
+        </div>
+    </div>
+
+    <!-- Game Area (Hidden initially) -->
+    <div id="gameArea" class="hidden flex flex-col items-center justify-center p-2 min-h-screen">
+        <div class="text-center mb-3">
+            <h1 class="text-2xl font-bold text-white mb-1">♔ Chess Master ♚</h1>
+            <p id="gameMode" class="text-gray-300 text-sm">Two Player Mode</p>
+        </div>
+
+        <div class="flex items-center gap-3 mb-3">
+            <div id="status" class="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 text-lg font-semibold text-white">
+                White's Turn
+            </div>
+            <button onclick="toggleHelp()" id="helpBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg transition-all flex items-center gap-1 text-sm">
+                <span>💡</span> Help
+            </button>
+        </div>
+
+        <div class="bg-gray-800 p-2 rounded-xl shadow-2xl">
+            <div class="flex ml-5">
+                <div class="w-[60px] text-center text-gray-400 font-semibold text-xs">a</div>
+                <div class="w-[60px] text-center text-gray-400 font-semibold text-xs">b</div>
+                <div class="w-[60px] text-center text-gray-400 font-semibold text-xs">c</div>
+                <div class="w-[60px] text-center text-gray-400 font-semibold text-xs">d</div>
+                <div class="w-[60px] text-center text-gray-400 font-semibold text-xs">e</div>
+                <div class="w-[60px] text-center text-gray-400 font-semibold text-xs">f</div>
+                <div class="w-[60px] text-center text-gray-400 font-semibold text-xs">g</div>
+                <div class="w-[60px] text-center text-gray-400 font-semibold text-xs">h</div>
+            </div>
+            
+            <div class="flex">
+                <div class="flex flex-col justify-around pr-1">
+                    <div class="h-[60px] flex items-center text-gray-400 font-semibold text-xs">8</div>
+                    <div class="h-[60px] flex items-center text-gray-400 font-semibold text-xs">7</div>
+                    <div class="h-[60px] flex items-center text-gray-400 font-semibold text-xs">6</div>
+                    <div class="h-[60px] flex items-center text-gray-400 font-semibold text-xs">5</div>
+                    <div class="h-[60px] flex items-center text-gray-400 font-semibold text-xs">4</div>
+                    <div class="h-[60px] flex items-center text-gray-400 font-semibold text-xs">3</div>
+                    <div class="h-[60px] flex items-center text-gray-400 font-semibold text-xs">2</div>
+                    <div class="h-[60px] flex items-center text-gray-400 font-semibold text-xs">1</div>
+                </div>
+                
+                <div id="board" class="grid grid-cols-8 border-4 border-gray-700 rounded-lg overflow-hidden shadow-lg"></div>
+            </div>
+        </div>
+
+        <div class="flex gap-4 mt-3">
+            <div class="bg-white/10 backdrop-blur-sm rounded-lg p-2 min-w-[150px]">
+                <p class="text-gray-300 text-xs mb-1">Captured by White:</p>
+                <div id="capturedByWhite" class="flex flex-wrap gap-0.5 text-lg"></div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-sm rounded-lg p-2 min-w-[150px]">
+                <p class="text-gray-300 text-xs mb-1">Captured by Black:</p>
+                <div id="capturedByBlack" class="flex flex-wrap gap-0.5 text-lg"></div>
+            </div>
+        </div>
+
+        <div class="flex gap-2 mt-3">
+            <button onclick="showMainMenu()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-3 rounded-lg transition-all text-sm">
+                🏠 Menu
+            </button>
+            <button onclick="requestUndo()" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-3 rounded-lg transition-all text-sm">
+                ↩️ Undo <span id="undoCount" class="bg-yellow-800 px-1.5 py-0.5 rounded text-xs ml-1">0</span>
+            </button>
+            <button onclick="showGameModeModal()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg transition-all text-sm">
+                🔄 New Game
+            </button>
+        </div>
+    </div>
+
+    <!-- Help Panel -->
+    <div id="helpPanel" class="fixed right-0 top-0 h-full w-72 bg-gray-900 shadow-2xl transform translate-x-full transition-transform duration-300 z-40 overflow-y-auto scrollbar-thin">
+        <div class="p-3">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-lg font-bold text-white">💡 Helper</h3>
+                <button onclick="toggleHelp()" class="text-gray-400 hover:text-white text-xl">&times;</button>
+            </div>
+            
+            <div id="suggestedMove" class="bg-blue-900/50 rounded-lg p-2 mb-3">
+                <h4 class="text-blue-300 font-semibold text-sm mb-1">🎯 Suggested Move</h4>
+                <p id="suggestionText" class="text-white text-sm">Click "Get Hint"</p>
+                <button onclick="getSuggestion()" class="mt-1 bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-xs">Get Hint</button>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg p-2 mb-3">
+                <h4 class="text-yellow-300 font-semibold text-sm mb-1">📖 Opening</h4>
+                <p id="currentOpening" class="text-white text-xs">Starting Position</p>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg p-2 mb-3">
+                <h4 class="text-green-300 font-semibold text-sm mb-1">📊 Evaluation</h4>
+                <div class="text-white text-xs">
+                    <span id="materialScore">Equal</span>
+                    <div class="w-full bg-gray-700 rounded-full h-2 mt-1">
+                        <div id="evalBar" class="bg-gradient-to-r from-white to-gray-300 h-2 rounded-full transition-all" style="width: 50%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg p-2">
+                <h4 class="text-purple-300 font-semibold text-sm mb-1">♟️ Piece Values</h4>
+                <div class="text-gray-300 text-xs grid grid-cols-2 gap-1">
+                    <span>♙ Pawn = 1</span>
+                    <span>♘ Knight = 3</span>
+                    <span>♗ Bishop = 3</span>
+                    <span>♖ Rook = 5</span>
+                    <span>♕ Queen = 9</span>
+                    <span>♔ King = ∞</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chess piece Unicode symbols
+        const PIECES = {
+            'wK': '♔', 'wQ': '♕', 'wR': '♖', 'wB': '♗', 'wN': '♘', 'wP': '♙',
+            'bK': '♚', 'bQ': '♛', 'bR': '♜', 'bB': '♝', 'bN': '♞', 'bP': '♟'
+        };
+
+        const PIECE_VALUES = { 'P': 100, 'N': 320, 'B': 330, 'R': 500, 'Q': 900, 'K': 20000 };
+
+        // Position tables
+        const PAWN_TABLE = [
+            [0,0,0,0,0,0,0,0],[50,50,50,50,50,50,50,50],[10,10,20,30,30,20,10,10],
+            [5,5,10,25,25,10,5,5],[0,0,0,20,20,0,0,0],[5,-5,-10,0,0,-10,-5,5],
+            [5,10,10,-20,-20,10,10,5],[0,0,0,0,0,0,0,0]
+        ];
+        const KNIGHT_TABLE = [
+            [-50,-40,-30,-30,-30,-30,-40,-50],[-40,-20,0,0,0,0,-20,-40],[-30,0,10,15,15,10,0,-30],
+            [-30,5,15,20,20,15,5,-30],[-30,0,15,20,20,15,0,-30],[-30,5,10,15,15,10,5,-30],
+            [-40,-20,0,5,5,0,-20,-40],[-50,-40,-30,-30,-30,-30,-40,-50]
+        ];
+        const BISHOP_TABLE = [
+            [-20,-10,-10,-10,-10,-10,-10,-20],[-10,0,0,0,0,0,0,-10],[-10,0,5,10,10,5,0,-10],
+            [-10,5,5,10,10,5,5,-10],[-10,0,10,10,10,10,0,-10],[-10,10,10,10,10,10,10,-10],
+            [-10,5,0,0,0,0,5,-10],[-20,-10,-10,-10,-10,-10,-10,-20]
+        ];
+        const ROOK_TABLE = [
+            [0,0,0,0,0,0,0,0],[5,10,10,10,10,10,10,5],[-5,0,0,0,0,0,0,-5],
+            [-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],
+            [-5,0,0,0,0,0,0,-5],[0,0,0,5,5,0,0,0]
+        ];
+        const QUEEN_TABLE = [
+            [-20,-10,-10,-5,-5,-10,-10,-20],[-10,0,0,0,0,0,0,-10],[-10,0,5,5,5,5,0,-10],
+            [-5,0,5,5,5,5,0,-5],[0,0,5,5,5,5,0,-5],[-10,5,5,5,5,5,0,-10],
+            [-10,0,5,0,0,0,0,-10],[-20,-10,-10,-5,-5,-10,-10,-20]
+        ];
+        const KING_TABLE = [
+            [-30,-40,-40,-50,-50,-40,-40,-30],[-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],[-30,-40,-40,-50,-50,-40,-40,-30],
+            [-20,-30,-30,-40,-40,-30,-30,-20],[-10,-20,-20,-20,-20,-20,-20,-10],
+            [20,20,0,0,0,0,20,20],[20,30,10,0,0,10,30,20]
+        ];
+
+        const OPENINGS = {
+            '': { name: 'Starting Position' },
+            'e2e4': { name: 'King\'s Pawn' },
+            'd2d4': { name: 'Queen\'s Pawn' },
+            'e2e4,e7e5': { name: 'Open Game' },
+            'e2e4,c7c5': { name: 'Sicilian Defense' },
+            'e2e4,e7e5,g1f3,b8c6,f1b5': { name: 'Ruy Lopez' },
+            'e2e4,e7e5,g1f3,b8c6,f1c4': { name: 'Italian Game' },
+            'd2d4,d7d5,c2c4': { name: 'Queen\'s Gambit' }
+        };
+
+        const INITIAL_BOARD = [
+            ['bR','bN','bB','bQ','bK','bB','bN','bR'],
+            ['bP','bP','bP','bP','bP','bP','bP','bP'],
+            [null,null,null,null,null,null,null,null],
+            [null,null,null,null,null,null,null,null],
+            [null,null,null,null,null,null,null,null],
+            [null,null,null,null,null,null,null,null],
+            ['wP','wP','wP','wP','wP','wP','wP','wP'],
+            ['wR','wN','wB','wQ','wK','wB','wN','wR']
+        ];
+
+        // Game state
+        let board = [];
+        let currentPlayer = 'w';
+        let selectedSquare = null;
+        let validMoves = [];
+        let moveHistory = [];
+        let moveNotations = [];
+        let capturedByWhite = [];
+        let capturedByBlack = [];
+        let enPassantTarget = null;
+        let castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
+        let lastMove = null;
+        let isInCheck = false;
+        let gameMode = 'player';
+        let aiThinking = false;
+        let suggestedSquares = [];
+        let gameOver = false;
+        let undoCount = 0;
+        let bannedMoves = []; // Moves AI won't play again after undo
+        let totalMoves = 0;
+        let botPersonality = null;
+
+        const BOT_NAMES = {
+            'random': { name: 'Randy Random', emoji: '🎲' },
+            'aggressive': { name: 'Captain Aggro', emoji: '🔥' },
+            'defensive': { name: 'Sir Fortress', emoji: '🛡️' },
+            'positional': { name: 'Prof. Position', emoji: '🎯' },
+            'tricky': { name: 'Trickster Tim', emoji: '🎭' },
+            'tactical': { name: 'Tactical Tanya', emoji: '⚔️' },
+            'grandmaster': { name: 'GM Magnus', emoji: '👑' },
+            'unpredictable': { name: 'Chaos Charlie', emoji: '🌀' }
+        };
+
+        // UI Functions
+        function showMainMenu() {
+            document.getElementById('mainMenuModal').classList.remove('hidden');
+            document.getElementById('mainMenuModal').classList.add('flex');
+            document.getElementById('gameArea').classList.add('hidden');
+            document.getElementById('gameModeModal').classList.add('hidden');
+            document.getElementById('learnModal').classList.add('hidden');
+            document.getElementById('openingsModal').classList.add('hidden');
+            closeGameOverModal();
+        }
+
+        function showGameModeModal() {
+            document.getElementById('mainMenuModal').classList.add('hidden');
+            document.getElementById('gameModeModal').classList.remove('hidden');
+            document.getElementById('gameModeModal').classList.add('flex');
+        }
+
+        function closeGameModeModal() {
+            document.getElementById('gameModeModal').classList.add('hidden');
+        }
+
+        function showLearnModal() {
+            document.getElementById('mainMenuModal').classList.add('hidden');
+            document.getElementById('learnModal').classList.remove('hidden');
+            document.getElementById('learnModal').classList.add('flex');
+        }
+
+        function closeLearnModal() {
+            document.getElementById('learnModal').classList.add('hidden');
+            showMainMenu();
+        }
+
+        function showLesson(lesson) {
+            document.querySelectorAll('.lesson-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('lesson-' + lesson).classList.remove('hidden');
+            
+            document.querySelectorAll('.lesson-tab').forEach(btn => {
+                btn.classList.remove('bg-purple-600');
+                btn.classList.add('bg-gray-600');
+            });
+            document.querySelector(`[data-lesson="${lesson}"]`).classList.remove('bg-gray-600');
+            document.querySelector(`[data-lesson="${lesson}"]`).classList.add('bg-purple-600');
+        }
+
+        function switchTab(tab) {
+            if (tab === 'players') {
+                document.getElementById('playersTab').classList.remove('hidden');
+                document.getElementById('botsTab').classList.add('hidden');
+                document.getElementById('tabPlayers').classList.add('tab-active');
+                document.getElementById('tabBots').classList.remove('tab-active');
+                document.getElementById('tabBots').classList.add('text-gray-400');
+            } else {
+                document.getElementById('playersTab').classList.add('hidden');
+                document.getElementById('botsTab').classList.remove('hidden');
+                document.getElementById('tabBots').classList.add('tab-active');
+                document.getElementById('tabPlayers').classList.remove('tab-active');
+                document.getElementById('tabPlayers').classList.add('text-gray-400');
+            }
+        }
+
+        function showOpenings() {
+            document.getElementById('mainMenuModal').classList.add('hidden');
+            document.getElementById('openingsModal').classList.remove('hidden');
+            document.getElementById('openingsModal').classList.add('flex');
+            populateOpenings();
+        }
+
+        function closeOpenings() {
+            document.getElementById('openingsModal').classList.add('hidden');
+            if (!document.getElementById('gameArea').classList.contains('hidden')) return;
+            showMainMenu();
+        }
+
+        function populateOpenings() {
+            const content = document.getElementById('openingsContent');
+            content.innerHTML = `
+                <div class="opening-category" data-category="e4">
+                    <h4 class="text-red-300 font-bold mb-2">1.e4 Openings</h4>
+                    <div class="grid md:grid-cols-2 gap-2 mb-4">
+                        <div class="bg-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-600" onclick="playOpening([['e4'],['e5'],['Nf3'],['Nc6'],['Bb5']])">
+                            <h5 class="text-orange-400 font-bold">Ruy Lopez</h5>
+                            <p class="text-gray-300 text-sm">1.e4 e5 2.Nf3 Nc6 3.Bb5</p>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-600" onclick="playOpening([['e4'],['e5'],['Nf3'],['Nc6'],['Bc4']])">
+                            <h5 class="text-yellow-400 font-bold">Italian Game</h5>
+                            <p class="text-gray-300 text-sm">1.e4 e5 2.Nf3 Nc6 3.Bc4</p>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-600" onclick="playOpening([['e4'],['c5']])">
+                            <h5 class="text-red-400 font-bold">Sicilian Defense</h5>
+                            <p class="text-gray-300 text-sm">1.e4 c5</p>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-600" onclick="playOpening([['e4'],['e6'],['d4'],['d5']])">
+                            <h5 class="text-blue-400 font-bold">French Defense</h5>
+                            <p class="text-gray-300 text-sm">1.e4 e6 2.d4 d5</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="opening-category" data-category="d4">
+                    <h4 class="text-blue-300 font-bold mb-2">1.d4 Openings</h4>
+                    <div class="grid md:grid-cols-2 gap-2 mb-4">
+                        <div class="bg-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-600" onclick="playOpening([['d4'],['d5'],['c4']])">
+                            <h5 class="text-purple-400 font-bold">Queen's Gambit</h5>
+                            <p class="text-gray-300 text-sm">1.d4 d5 2.c4</p>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-600" onclick="playOpening([['d4'],['Nf6'],['c4'],['g6']])">
+                            <h5 class="text-green-400 font-bold">King's Indian</h5>
+                            <p class="text-gray-300 text-sm">1.d4 Nf6 2.c4 g6</p>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-600" onclick="playOpening([['d4'],['d5'],['Bf4']])">
+                            <h5 class="text-pink-400 font-bold">London System</h5>
+                            <p class="text-gray-300 text-sm">1.d4 d5 2.Bf4</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="opening-category" data-category="other">
+                    <h4 class="text-green-300 font-bold mb-2">Other Openings</h4>
+                    <div class="grid md:grid-cols-2 gap-2">
+                        <div class="bg-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-600" onclick="playOpening([['c4']])">
+                            <h5 class="text-red-400 font-bold">English Opening</h5>
+                            <p class="text-gray-300 text-sm">1.c4</p>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-600" onclick="playOpening([['Nf3']])">
+                            <h5 class="text-blue-400 font-bold">Réti Opening</h5>
+                            <p class="text-gray-300 text-sm">1.Nf3</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function filterOpenings(category) {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-purple-600');
+                btn.classList.add('bg-gray-600');
+            });
+            document.querySelector(`[data-filter="${category}"]`).classList.remove('bg-gray-600');
+            document.querySelector(`[data-filter="${category}"]`).classList.add('bg-purple-600');
+            
+            document.querySelectorAll('.opening-category').forEach(cat => {
+                cat.style.display = category === 'all' || cat.dataset.category === category ? 'block' : 'none';
+            });
+        }
+
+        function startGame(mode) {
+            gameMode = mode;
+            botPersonality = mode !== 'player' ? mode : null;
+            
+            closeGameModeModal();
+            document.getElementById('mainMenuModal').classList.add('hidden');
+            document.getElementById('gameArea').classList.remove('hidden');
+            
+            let modeText = 'Two Player Mode';
+            if (mode !== 'player' && BOT_NAMES[mode]) {
+                modeText = `vs ${BOT_NAMES[mode].emoji} ${BOT_NAMES[mode].name}`;
+            }
+            document.getElementById('gameMode').textContent = modeText;
+            
+            initBoard();
+        }
+
+        function initBoard() {
+            board = INITIAL_BOARD.map(row => [...row]);
+            currentPlayer = 'w';
+            selectedSquare = null;
+            validMoves = [];
+            moveHistory = [];
+            moveNotations = [];
+            capturedByWhite = [];
+            capturedByBlack = [];
+            enPassantTarget = null;
+            castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
+            lastMove = null;
+            isInCheck = false;
+            aiThinking = false;
+            suggestedSquares = [];
+            gameOver = false;
+            undoCount = 0;
+            bannedMoves = [];
+            totalMoves = 0;
+            
+            document.getElementById('undoCount').textContent = undoCount;
+            renderBoard();
+            updateStatus();
+            updateEvaluation();
+            updateOpeningDisplay();
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    const isLight = (row + col) % 2 === 0;
+                    square.className = `square ${isLight ? 'light-square' : 'dark-square'}`;
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+
+                    if (lastMove && ((lastMove.fromRow === row && lastMove.fromCol === col) || 
+                        (lastMove.toRow === row && lastMove.toCol === col))) {
+                        square.classList.add('last-move');
+                    }
+
+                    if (suggestedSquares.some(s => s.row === row && s.col === col)) {
+                        square.classList.add('suggested-move');
+                    }
+
+                    if (selectedSquare && selectedSquare.row === row && selectedSquare.col === col) {
+                        square.classList.add('selected');
+                    }
+
+                    const isValidMove = validMoves.some(m => m.row === row && m.col === col);
+                    if (isValidMove) {
+                        if (board[row][col]) {
+                            square.classList.add('valid-capture');
+                        } else {
+                            square.classList.add('valid-move');
+                        }
+                    }
+
+                    if (isInCheck && board[row][col] === currentPlayer + 'K') {
+                        square.classList.add('check');
+                    }
+
+                    const piece = board[row][col];
+                    if (piece) {
+                        const pieceEl = document.createElement('span');
+                        pieceEl.className = 'chess-piece';
+                        pieceEl.textContent = PIECES[piece];
+                        pieceEl.style.color = piece[0] === 'w' ? '#ffffff' : '#1a1a1a';
+                        pieceEl.style.textShadow = piece[0] === 'w' ? '2px 2px 4px rgba(0,0,0,0.5)' : '2px 2px 4px rgba(255,255,255,0.3)';
+                        square.appendChild(pieceEl);
+                    }
+
+                    square.addEventListener('click', () => handleSquareClick(row, col));
+                    boardEl.appendChild(square);
+                }
+            }
+
+            document.getElementById('capturedByWhite').innerHTML = capturedByWhite.map(p => PIECES[p]).join('');
+            document.getElementById('capturedByBlack').innerHTML = capturedByBlack.map(p => PIECES[p]).join('');
+        }
+
+        function handleSquareClick(row, col) {
+            if (aiThinking || gameOver) return;
+            if (gameMode !== 'player' && currentPlayer === 'b') return;
+
+            const piece = board[row][col];
+
+            if (selectedSquare) {
+                const isValidMove = validMoves.some(m => m.row === row && m.col === col);
+                
+                if (isValidMove) {
+                    makeMove(selectedSquare.row, selectedSquare.col, row, col);
+                    selectedSquare = null;
+                    validMoves = [];
+                    suggestedSquares = [];
+                } else if (piece && piece[0] === currentPlayer) {
+                    selectedSquare = { row, col };
+                    validMoves = getValidMoves(row, col);
+                } else {
+                    selectedSquare = null;
+                    validMoves = [];
+                }
+            } else {
+                if (piece && piece[0] === currentPlayer) {
+                    selectedSquare = { row, col };
+                    validMoves = getValidMoves(row, col);
+                }
+            }
+            renderBoard();
+        }
+
+        function getValidMoves(row, col) {
+            const piece = board[row][col];
+            if (!piece) return [];
+
+            const moves = [];
+            const color = piece[0];
+            const type = piece[1];
+
+            switch (type) {
+                case 'P': moves.push(...getPawnMoves(row, col, color)); break;
+                case 'R': moves.push(...getRookMoves(row, col, color)); break;
+                case 'N': moves.push(...getKnightMoves(row, col, color)); break;
+                case 'B': moves.push(...getBishopMoves(row, col, color)); break;
+                case 'Q': moves.push(...getQueenMoves(row, col, color)); break;
+                case 'K': moves.push(...getKingMoves(row, col, color)); break;
+            }
+
+            return moves.filter(move => !wouldBeInCheck(row, col, move.row, move.col, color));
+        }
+
+        function getPawnMoves(row, col, color) {
+            const moves = [];
+            const direction = color === 'w' ? -1 : 1;
+            const startRow = color === 'w' ? 6 : 1;
+
+            if (isInBounds(row + direction, col) && !board[row + direction][col]) {
+                moves.push({ row: row + direction, col });
+                if (row === startRow && !board[row + 2 * direction][col]) {
+                    moves.push({ row: row + 2 * direction, col });
+                }
+            }
+
+            for (const dc of [-1, 1]) {
+                const newRow = row + direction;
+                const newCol = col + dc;
+                if (isInBounds(newRow, newCol)) {
+                    const target = board[newRow][newCol];
+                    if (target && target[0] !== color) {
+                        moves.push({ row: newRow, col: newCol });
+                    }
+                    if (enPassantTarget && enPassantTarget.row === newRow && enPassantTarget.col === newCol) {
+                        moves.push({ row: newRow, col: newCol, enPassant: true });
+                    }
+                }
+            }
+            return moves;
+        }
+
+        function getRookMoves(row, col, color) {
+            return getSlidingMoves(row, col, color, [[0, 1], [0, -1], [1, 0], [-1, 0]]);
+        }
+
+        function getBishopMoves(row, col, color) {
+            return getSlidingMoves(row, col, color, [[1, 1], [1, -1], [-1, 1], [-1, -1]]);
+        }
+
+        function getQueenMoves(row, col, color) {
+            return getSlidingMoves(row, col, color, [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]]);
+        }
+
+        function getSlidingMoves(row, col, color, directions) {
+            const moves = [];
+            for (const [dr, dc] of directions) {
+                let r = row + dr, c = col + dc;
+                while (isInBounds(r, c)) {
+                    if (!board[r][c]) {
+                        moves.push({ row: r, col: c });
+                    } else {
+                        if (board[r][c][0] !== color) moves.push({ row: r, col: c });
+                        break;
+                    }
+                    r += dr; c += dc;
+                }
+            }
+            return moves;
+        }
+
+        function getKnightMoves(row, col, color) {
+            const moves = [];
+            const offsets = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+            for (const [dr, dc] of offsets) {
+                const r = row + dr, c = col + dc;
+                if (isInBounds(r, c) && (!board[r][c] || board[r][c][0] !== color)) {
+                    moves.push({ row: r, col: c });
+                }
+            }
+            return moves;
+        }
+
+        function getKingMoves(row, col, color) {
+            const moves = [];
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    const r = row + dr, c = col + dc;
+                    if (isInBounds(r, c) && (!board[r][c] || board[r][c][0] !== color)) {
+                        moves.push({ row: r, col: c });
+                    }
+                }
+            }
+
+            if (!isKingInCheck(color)) {
+                if (castlingRights[color + 'K'] && !board[row][5] && !board[row][6] && 
+                    !wouldBeInCheck(row, col, row, 5, color) && !wouldBeInCheck(row, col, row, 6, color)) {
+                    moves.push({ row, col: 6, castling: 'K' });
+                }
+                if (castlingRights[color + 'Q'] && !board[row][1] && !board[row][2] && !board[row][3] && 
+                    !wouldBeInCheck(row, col, row, 3, color) && !wouldBeInCheck(row, col, row, 2, color)) {
+                    moves.push({ row, col: 2, castling: 'Q' });
+                }
+            }
+            return moves;
+        }
+
+        function isInBounds(row, col) {
+            return row >= 0 && row < 8 && col >= 0 && col < 8;
+        }
+
+        function wouldBeInCheck(fromRow, fromCol, toRow, toCol, color) {
+            const tempBoard = board.map(row => [...row]);
+            board[toRow][toCol] = board[fromRow][fromCol];
+            board[fromRow][fromCol] = null;
+            const inCheck = isKingInCheck(color);
+            board = tempBoard;
+            return inCheck;
+        }
+
+        function isKingInCheck(color) {
+            let kingRow, kingCol;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (board[r][c] === color + 'K') { kingRow = r; kingCol = c; break; }
+                }
+            }
+
+            const opponent = color === 'w' ? 'b' : 'w';
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const piece = board[r][c];
+                    if (piece && piece[0] === opponent) {
+                        const attacks = getAttackSquares(r, c, piece);
+                        if (attacks.some(a => a.row === kingRow && a.col === kingCol)) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function getAttackSquares(row, col, piece) {
+            const color = piece[0], type = piece[1];
+            if (type === 'P') {
+                const direction = color === 'w' ? -1 : 1;
+                return [[-1, 1].map(dc => ({ row: row + direction, col: col + dc }))].flat().filter(m => isInBounds(m.row, m.col));
+            }
+            switch (type) {
+                case 'R': return getSlidingMoves(row, col, color, [[0,1],[0,-1],[1,0],[-1,0]]);
+                case 'N': return getKnightMoves(row, col, color);
+                case 'B': return getSlidingMoves(row, col, color, [[1,1],[1,-1],[-1,1],[-1,-1]]);
+                case 'Q': return getSlidingMoves(row, col, color, [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]);
+                case 'K':
+                    const moves = [];
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            if (dr === 0 && dc === 0) continue;
+                            if (isInBounds(row + dr, col + dc)) moves.push({ row: row + dr, col: col + dc });
+                        }
+                    }
+                    return moves;
+            }
+            return [];
+        }
+
+        function makeMove(fromRow, fromCol, toRow, toCol, promotion = null) {
+            const piece = board[fromRow][fromCol];
+            const captured = board[toRow][toCol];
+            const moveData = {
+                fromRow, fromCol, toRow, toCol, piece, captured,
+                enPassantTarget: enPassantTarget ? {...enPassantTarget} : null,
+                castlingRights: {...castlingRights},
+                enPassantCapture: null, castling: null
+            };
+
+            const files = 'abcdefgh';
+            moveNotations.push(`${files[fromCol]}${8-fromRow}${files[toCol]}${8-toRow}`);
+
+            if (captured) {
+                (currentPlayer === 'w' ? capturedByWhite : capturedByBlack).push(captured);
+            }
+
+            const allMoves = getAllMovesForPiece(fromRow, fromCol);
+            const move = allMoves.find(m => m.row === toRow && m.col === toCol);
+
+            if (move && move.enPassant) {
+                const capturedPawnRow = currentPlayer === 'w' ? toRow + 1 : toRow - 1;
+                const capturedPawn = board[capturedPawnRow][toCol];
+                moveData.enPassantCapture = { row: capturedPawnRow, col: toCol, piece: capturedPawn };
+                (currentPlayer === 'w' ? capturedByWhite : capturedByBlack).push(capturedPawn);
+                board[capturedPawnRow][toCol] = null;
+            }
+
+            if (move && move.castling) {
+                moveData.castling = move.castling;
+                if (move.castling === 'K') {
+                    board[toRow][5] = board[toRow][7]; board[toRow][7] = null;
+                } else {
+                    board[toRow][3] = board[toRow][0]; board[toRow][0] = null;
+                }
+            }
+
+            board[toRow][toCol] = piece;
+            board[fromRow][fromCol] = null;
+
+            enPassantTarget = null;
+            if (piece[1] === 'P' && Math.abs(toRow - fromRow) === 2) {
+                enPassantTarget = { row: (fromRow + toRow) / 2, col: fromCol };
+            }
+
+            if (piece[1] === 'K') {
+                castlingRights[currentPlayer + 'K'] = false;
+                castlingRights[currentPlayer + 'Q'] = false;
+            }
+            if (piece[1] === 'R') {
+                if (fromCol === 0) castlingRights[currentPlayer + 'Q'] = false;
+                if (fromCol === 7) castlingRights[currentPlayer + 'K'] = false;
+            }
+
+            if (piece[1] === 'P' && (toRow === 0 || toRow === 7)) {
+                if (promotion) {
+                    board[toRow][toCol] = currentPlayer + promotion;
+                    moveData.promotion = promotion;
+                    finishMove(moveData);
+                } else {
+                    showPromotionModal(toRow, toCol, moveData);
+                    return;
+                }
+            } else {
+                finishMove(moveData);
+            }
+        }
+
+        function getAllMovesForPiece(row, col) {
+            const piece = board[row][col];
+            if (!piece) return [];
+            const moves = [], color = piece[0], type = piece[1];
+            switch (type) {
+                case 'P': moves.push(...getPawnMoves(row, col, color)); break;
+                case 'R': moves.push(...getRookMoves(row, col, color)); break;
+                case 'N': moves.push(...getKnightMoves(row, col, color)); break;
+                case 'B': moves.push(...getBishopMoves(row, col, color)); break;
+                case 'Q': moves.push(...getQueenMoves(row, col, color)); break;
+                case 'K': moves.push(...getKingMoves(row, col, color)); break;
+            }
+            return moves;
+        }
+
+        function showPromotionModal(row, col, moveData) {
+            const modal = document.getElementById('promotionModal');
+            const piecesDiv = document.getElementById('promotionPieces');
+            const color = currentPlayer;
+            piecesDiv.innerHTML = '';
+            ['Q', 'R', 'B', 'N'].forEach(type => {
+                const btn = document.createElement('button');
+                btn.className = 'text-5xl p-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition';
+                btn.textContent = PIECES[color + type];
+                btn.style.color = color === 'w' ? '#ffffff' : '#1a1a1a';
+                btn.onclick = () => {
+                    board[row][col] = color + type;
+                    moveData.promotion = type;
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                    finishMove(moveData);
+                };
+                piecesDiv.appendChild(btn);
+            });
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function finishMove(moveData) {
+            moveHistory.push(moveData);
+            totalMoves++;
+            lastMove = { fromRow: moveData.fromRow, fromCol: moveData.fromCol, toRow: moveData.toRow, toCol: moveData.toCol };
+            currentPlayer = currentPlayer === 'w' ? 'b' : 'w';
+            isInCheck = isKingInCheck(currentPlayer);
+            
+            renderBoard();
+            updateStatus();
+            updateEvaluation();
+            updateOpeningDisplay();
+
+            if (gameMode !== 'player' && currentPlayer === 'b' && !gameOver) {
+                aiThinking = true;
+                const botInfo = BOT_NAMES[botPersonality] || { name: 'AI', emoji: '🤖' };
+                document.getElementById('status').innerHTML = `<span class="thinking">${botInfo.emoji} ${botInfo.name} is thinking...</span>`;
+                setTimeout(() => {
+                    makeAIMove();
+                    aiThinking = false;
+                }, 600);
+            }
+        }
+
+        function updateStatus() {
+            const statusEl = document.getElementById('status');
+            const playerName = currentPlayer === 'w' ? 'White' : 'Black';
+            
+            let hasValidMove = false;
+            outer: for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (board[r][c] && board[r][c][0] === currentPlayer && getValidMoves(r, c).length > 0) {
+                        hasValidMove = true; break outer;
+                    }
+                }
+            }
+
+            if (!hasValidMove) {
+                gameOver = true;
+                if (isInCheck) {
+                    const winner = currentPlayer === 'w' ? 'Black' : 'White';
+                    showGameOverModal('checkmate', winner);
+                } else {
+                    showGameOverModal('stalemate');
+                }
+            } else if (isInCheck) {
+                statusEl.innerHTML = `<span class="text-red-400">⚠️ ${playerName} in Check!</span>`;
+            } else {
+                statusEl.textContent = `${playerName}'s Turn`;
+            }
+        }
+
+        function showGameOverModal(type, winner = null) {
+            const modal = document.getElementById('gameOverModal');
+            const icon = document.getElementById('gameOverIcon');
+            const title = document.getElementById('gameOverTitle');
+            const message = document.getElementById('gameOverMessage');
+            
+            if (type === 'checkmate') {
+                icon.textContent = '🏆';
+                title.textContent = `${winner} Wins!`;
+                message.textContent = 'Checkmate! The King is trapped.';
+            } else {
+                icon.textContent = '🤝';
+                title.textContent = 'Draw!';
+                message.textContent = 'Stalemate - no legal moves available.';
+            }
+            
+            document.getElementById('statMoves').textContent = Math.ceil(totalMoves / 2);
+            document.getElementById('statUndos').textContent = undoCount;
+            document.getElementById('statCaptures').textContent = capturedByWhite.length + capturedByBlack.length;
+            
+            const undoWarning = document.getElementById('undoWarning');
+            if (undoCount > 3) {
+                undoWarning.classList.remove('hidden');
+            } else {
+                undoWarning.classList.add('hidden');
+            }
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeGameOverModal() {
+            document.getElementById('gameOverModal').classList.add('hidden');
+            document.getElementById('gameOverModal').classList.remove('flex');
+        }
+
+        // Undo functions
+        function requestUndo() {
+            if (moveHistory.length === 0 || aiThinking || gameOver) return;
+            
+            if (gameMode === 'player') {
+                const playerName = currentPlayer === 'w' ? 'Black' : 'White';
+                document.getElementById('undoConfirmText').textContent = `${playerName} requests to undo the last move.`;
+                document.getElementById('undoConfirmModal').classList.remove('hidden');
+                document.getElementById('undoConfirmModal').classList.add('flex');
+            } else {
+                performUndo();
+            }
+        }
+
+        function confirmUndo(allowed) {
+            document.getElementById('undoConfirmModal').classList.add('hidden');
+            document.getElementById('undoConfirmModal').classList.remove('flex');
+            if (allowed) performUndo();
+        }
+
+        function performUndo() {
+            if (gameMode !== 'player' && currentPlayer === 'w' && moveHistory.length >= 2) {
+                // Store the AI's last move as banned
+                const aiMove = moveHistory[moveHistory.length - 1];
+                bannedMoves.push(`${aiMove.fromRow},${aiMove.fromCol},${aiMove.toRow},${aiMove.toCol}`);
+                undoSingleMove();
+                undoSingleMove();
+            } else {
+                undoSingleMove();
+            }
+            
+            undoCount++;
+            document.getElementById('undoCount').textContent = undoCount;
+            gameOver = false;
+            renderBoard();
+            updateStatus();
+            updateEvaluation();
+            updateOpeningDisplay();
+        }
+
+        function undoSingleMove() {
+            const move = moveHistory.pop();
+            moveNotations.pop();
+            
+            board[move.fromRow][move.fromCol] = move.promotion ? move.piece[0] + 'P' : move.piece;
+            board[move.toRow][move.toCol] = move.captured;
+            
+            if (move.enPassantCapture) {
+                board[move.enPassantCapture.row][move.enPassantCapture.col] = move.enPassantCapture.piece;
+                (currentPlayer === 'w' ? capturedByWhite : capturedByBlack).pop();
+            }
+            
+            if (move.captured) {
+                (currentPlayer === 'w' ? capturedByWhite : capturedByBlack).pop();
+            }
+            
+            if (move.castling) {
+                if (move.castling === 'K') {
+                    board[move.toRow][7] = board[move.toRow][5]; board[move.toRow][5] = null;
+                } else {
+                    board[move.toRow][0] = board[move.toRow][3]; board[move.toRow][3] = null;
+                }
+            }
+            
+            enPassantTarget = move.enPassantTarget;
+            castlingRights = move.castlingRights;
+            currentPlayer = currentPlayer === 'w' ? 'b' : 'w';
+            
+            if (moveHistory.length > 0) {
+                const prevMove = moveHistory[moveHistory.length - 1];
+                lastMove = { fromRow: prevMove.fromRow, fromCol: prevMove.fromCol, toRow: prevMove.toRow, toCol: prevMove.toCol };
+            } else {
+                lastMove = null;
+            }
+            
+            selectedSquare = null;
+            validMoves = [];
+            isInCheck = isKingInCheck(currentPlayer);
+        }
+
+        // AI Functions
+        function makeAIMove() {
+            let move;
+            switch(botPersonality) {
+                case 'random': move = getRandomMove(); break;
+                case 'aggressive': move = getAggressiveMove(); break;
+                case 'defensive': move = getDefensiveMove(); break;
+                case 'positional': move = getPositionalMove(); break;
+                case 'tricky': move = getTrickyMove(); break;
+                case 'tactical': move = getTacticalMove(); break;
+                case 'grandmaster': move = getGrandmasterMove(); break;
+                case 'unpredictable': move = getUnpredictableMove(); break;
+                default: move = getRandomMove();
+            }
+            
+            if (move) makeMove(move.fromRow, move.fromCol, move.toRow, move.toCol, move.promotion || 'Q');
+        }
+
+        function getAllValidMoves(color) {
+            const moves = [];
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (board[r][c] && board[r][c][0] === color) {
+                        const pieceMoves = getValidMoves(r, c);
+                        for (const move of pieceMoves) {
+                            moves.push({ fromRow: r, fromCol: c, toRow: move.row, toCol: move.col, ...move });
+                        }
+                    }
+                }
+            }
+            return moves;
+        }
+
+        function filterBannedMoves(moves) {
+            return moves.filter(m => !bannedMoves.includes(`${m.fromRow},${m.fromCol},${m.toRow},${m.toCol}`));
+        }
+
+        function getRandomMove() {
+            let moves = filterBannedMoves(getAllValidMoves('b'));
+            if (moves.length === 0) moves = getAllValidMoves('b');
+            return moves.length > 0 ? moves[Math.floor(Math.random() * moves.length)] : null;
+        }
+
+        function getAggressiveMove() {
+            let moves = filterBannedMoves(getAllValidMoves('b'));
+            if (moves.length === 0) moves = getAllValidMoves('b');
+            if (moves.length === 0) return null;
+
+            moves.sort((a, b) => {
+                let scoreA = 0, scoreB = 0;
+                // Prefer captures
+                if (board[a.toRow][a.toCol]) scoreA += PIECE_VALUES[board[a.toRow][a.toCol][1]] * 10;
+                if (board[b.toRow][b.toCol]) scoreB += PIECE_VALUES[board[b.toRow][b.toCol][1]] * 10;
+                // Prefer moving toward enemy king
+                const enemyKingPos = findKing('w');
+                const distA = Math.abs(a.toRow - enemyKingPos.row) + Math.abs(a.toCol - enemyKingPos.col);
+                const distB = Math.abs(b.toRow - enemyKingPos.row) + Math.abs(b.toCol - enemyKingPos.col);
+                scoreA -= distA * 5;
+                scoreB -= distB * 5;
+                // Prefer using attacking pieces
+                const pieceA = board[a.fromRow][a.fromCol];
+                const pieceB = board[b.fromRow][b.fromCol];
+                if (pieceA[1] === 'Q') scoreA += 20;
+                if (pieceB[1] === 'Q') scoreB += 20;
+                return scoreB - scoreA;
+            });
+            
+            return moves[0];
+        }
+
+        function getDefensiveMove() {
+            let moves = filterBannedMoves(getAllValidMoves('b'));
+            if (moves.length === 0) moves = getAllValidMoves('b');
+            if (moves.length === 0) return null;
+
+            moves.sort((a, b) => {
+                let scoreA = 0, scoreB = 0;
+                // Prefer moves that keep pieces safe
+                const tempBoard = board.map(r => [...r]);
+                board[a.toRow][a.toCol] = board[a.fromRow][a.fromCol];
+                board[a.fromRow][a.fromCol] = null;
+                if (!isSquareAttacked(a.toRow, a.toCol, 'w')) scoreA += 50;
+                board = tempBoard.map(r => [...r]);
+                
+                board[b.toRow][b.toCol] = board[b.fromRow][b.fromCol];
+                board[b.fromRow][b.fromCol] = null;
+                if (!isSquareAttacked(b.toRow, b.toCol, 'w')) scoreB += 50;
+                board = tempBoard;
+                
+                // Prefer castling
+                if (a.castling) scoreA += 100;
+                if (b.castling) scoreB += 100;
+                // Still take free pieces
+                if (board[a.toRow][a.toCol]) scoreA += PIECE_VALUES[board[a.toRow][a.toCol][1]];
+                if (board[b.toRow][b.toCol]) scoreB += PIECE_VALUES[board[b.toRow][b.toCol][1]];
+                return scoreB - scoreA;
+            });
+            
+            return moves[0];
+        }
+
+        function getPositionalMove() {
+            let moves = filterBannedMoves(getAllValidMoves('b'));
+            if (moves.length === 0) moves = getAllValidMoves('b');
+            if (moves.length === 0) return null;
+
+            moves.sort((a, b) => {
+                let scoreA = 0, scoreB = 0;
+                // Center control
+                if ((a.toRow === 3 || a.toRow === 4) && (a.toCol === 3 || a.toCol === 4)) scoreA += 30;
+                if ((b.toRow === 3 || b.toRow === 4) && (b.toCol === 3 || b.toCol === 4)) scoreB += 30;
+                // Develop pieces
+                const pieceA = board[a.fromRow][a.fromCol];
+                const pieceB = board[b.fromRow][b.fromCol];
+                if ((pieceA[1] === 'N' || pieceA[1] === 'B') && a.fromRow < 2) scoreA += 25;
+                if ((pieceB[1] === 'N' || pieceB[1] === 'B') && b.fromRow < 2) scoreB += 25;
+                // Castling bonus
+                if (a.castling) scoreA += 80;
+                if (b.castling) scoreB += 80;
+                // Captures
+                if (board[a.toRow][a.toCol]) scoreA += PIECE_VALUES[board[a.toRow][a.toCol][1]] / 10;
+                if (board[b.toRow][b.toCol]) scoreB += PIECE_VALUES[board[b.toRow][b.toCol][1]] / 10;
+                return scoreB - scoreA;
+            });
+            
+            return moves[0];
+        }
+
+        function getTrickyMove() {
+            let moves = filterBannedMoves(getAllValidMoves('b'));
+            if (moves.length === 0) moves = getAllValidMoves('b');
+            if (moves.length === 0) return null;
+
+            // Look for moves that create threats
+            moves.sort((a, b) => {
+                let scoreA = 0, scoreB = 0;
+                const tempBoard = board.map(r => [...r]);
+                
+                // Check if move creates attack on queen or undefended piece
+                board[a.toRow][a.toCol] = board[a.fromRow][a.fromCol];
+                board[a.fromRow][a.fromCol] = null;
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        if (board[r][c] && board[r][c][0] === 'w') {
+                            if (isSquareAttacked(r, c, 'b')) {
+                                if (board[r][c][1] === 'Q') scoreA += 100;
+                                else if (!isSquareAttacked(r, c, 'w')) scoreA += PIECE_VALUES[board[r][c][1]] / 5;
+                            }
+                        }
+                    }
+                }
+                board = tempBoard.map(r => [...r]);
+                
+                board[b.toRow][b.toCol] = board[b.fromRow][b.fromCol];
+                board[b.fromRow][b.fromCol] = null;
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        if (board[r][c] && board[r][c][0] === 'w') {
+                            if (isSquareAttacked(r, c, 'b')) {
+                                if (board[r][c][1] === 'Q') scoreB += 100;
+                                else if (!isSquareAttacked(r, c, 'w')) scoreB += PIECE_VALUES[board[r][c][1]] / 5;
+                            }
+                        }
+                    }
+                }
+                board = tempBoard;
+                
+                if (board[a.toRow][a.toCol]) scoreA += PIECE_VALUES[board[a.toRow][a.toCol][1]] * 5;
+                if (board[b.toRow][b.toCol]) scoreB += PIECE_VALUES[board[b.toRow][b.toCol][1]] * 5;
+                
+                return scoreB - scoreA;
+            });
+            
+            return moves[0];
+        }
+
+        function getTacticalMove() {
+            let moves = filterBannedMoves(getAllValidMoves('b'));
+            if (moves.length === 0) moves = getAllValidMoves('b');
+            if (moves.length === 0) return null;
+
+            moves.sort((a, b) => {
+                let scoreA = evaluateTacticalMove(a);
+                let scoreB = evaluateTacticalMove(b);
+                return scoreB - scoreA;
+            });
+            
+            return moves[0];
+        }
+
+        function evaluateTacticalMove(move) {
+            let score = 0;
+            const piece = board[move.fromRow][move.fromCol];
+            const captured = board[move.toRow][move.toCol];
+            
+            if (captured) score += PIECE_VALUES[captured[1]] * 10;
+            
+            // Check for forks after move
+            const tempBoard = board.map(r => [...r]);
+            board[move.toRow][move.toCol] = piece;
+            board[move.fromRow][move.fromCol] = null;
+            
+            let attackedPieces = 0;
+            let attackedValue = 0;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (board[r][c] && board[r][c][0] === 'w') {
+                        if (canPieceAttack(move.toRow, move.toCol, piece, r, c)) {
+                            attackedPieces++;
+                            attackedValue += PIECE_VALUES[board[r][c][1]];
+                        }
+                    }
+                }
+            }
+            if (attackedPieces >= 2) score += attackedValue / 2;
+            
+            board = tempBoard;
+            return score;
+        }
+
+        function canPieceAttack(fromRow, fromCol, piece, toRow, toCol) {
+            const attacks = getAttackSquares(fromRow, fromCol, piece);
+            return attacks.some(a => a.row === toRow && a.col === toCol);
+        }
+
+        function getGrandmasterMove() {
+            let moves = filterBannedMoves(getAllValidMoves('b'));
+            if (moves.length === 0) moves = getAllValidMoves('b');
+            if (moves.length === 0) return null;
+
+            let bestMove = null;
+            let bestScore = -Infinity;
+
+            for (const move of moves) {
+                const tempBoard = board.map(row => [...row]);
+                const tempEnPassant = enPassantTarget ? {...enPassantTarget} : null;
+                const tempCastling = {...castlingRights};
+                
+                simulateMove(move);
+                const score = -negamax(3, -Infinity, Infinity, 'w');
+                
+                board = tempBoard;
+                enPassantTarget = tempEnPassant;
+                castlingRights = tempCastling;
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = move;
+                }
+            }
+
+            return bestMove || moves[0];
+        }
+
+        function getUnpredictableMove() {
+            const styles = ['random', 'aggressive', 'defensive', 'positional', 'tactical'];
+            const style = styles[Math.floor(Math.random() * styles.length)];
+            switch(style) {
+                case 'random': return getRandomMove();
+                case 'aggressive': return getAggressiveMove();
+                case 'defensive': return getDefensiveMove();
+                case 'positional': return getPositionalMove();
+                case 'tactical': return getTacticalMove();
+            }
+        }
+
+        function findKing(color) {
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (board[r][c] === color + 'K') return { row: r, col: c };
+                }
+            }
+            return { row: 0, col: 4 };
+        }
+
+        function isSquareAttacked(row, col, byColor) {
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const piece = board[r][c];
+                    if (piece && piece[0] === byColor) {
+                        const attacks = getAttackSquares(r, c, piece);
+                        if (attacks.some(a => a.row === row && a.col === col)) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function simulateMove(move) {
+            const piece = board[move.fromRow][move.fromCol];
+            board[move.toRow][move.toCol] = piece;
+            board[move.fromRow][move.fromCol] = null;
+            if (move.enPassant) {
+                const capturedRow = piece[0] === 'w' ? move.toRow + 1 : move.toRow - 1;
+                board[capturedRow][move.toCol] = null;
+            }
+            if (move.castling) {
+                if (move.castling === 'K') {
+                    board[move.toRow][5] = board[move.toRow][7]; board[move.toRow][7] = null;
+                } else {
+                    board[move.toRow][3] = board[move.toRow][0]; board[move.toRow][0] = null;
+                }
+            }
+            if (piece[1] === 'P' && (move.toRow === 0 || move.toRow === 7)) {
+                board[move.toRow][move.toCol] = piece[0] + 'Q';
+            }
+        }
+
+        function negamax(depth, alpha, beta, color) {
+            if (depth === 0) return evaluateBoard(color);
+            const moves = getAllValidMoves(color);
+            if (moves.length === 0) return isKingInCheck(color) ? -100000 - depth : 0;
+
+            let maxScore = -Infinity;
+            for (const move of moves) {
+                const tempBoard = board.map(row => [...row]);
+                simulateMove(move);
+                const score = -negamax(depth - 1, -beta, -alpha, color === 'w' ? 'b' : 'w');
+                board = tempBoard;
+                maxScore = Math.max(maxScore, score);
+                alpha = Math.max(alpha, score);
+                if (alpha >= beta) break;
+            }
+            return maxScore;
+        }
+
+        function evaluateBoard(perspective) {
+            let score = 0;
+            const tables = { 'P': PAWN_TABLE, 'N': KNIGHT_TABLE, 'B': BISHOP_TABLE, 'R': ROOK_TABLE, 'Q': QUEEN_TABLE, 'K': KING_TABLE };
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const piece = board[r][c];
+                    if (piece) {
+                        const value = PIECE_VALUES[piece[1]];
+                        const table = tables[piece[1]];
+                        const tableValue = piece[0] === 'w' ? table[r][c] : table[7-r][c];
+                        score += piece[0] === perspective ? value + tableValue : -(value + tableValue);
+                    }
+                }
+            }
+            return score;
+        }
+
+        // Helper functions
+        function toggleHelp() {
+            document.getElementById('helpPanel').classList.toggle('translate-x-full');
+        }
+
+        function getSuggestion() {
+            if (gameOver) { document.getElementById('suggestionText').textContent = 'Game over!'; return; }
+            const moves = getAllValidMoves(currentPlayer);
+            let bestMove = null, bestScore = -Infinity;
+            for (const move of moves) {
+                const tempBoard = board.map(row => [...row]);
+                simulateMove(move);
+                const score = evaluateBoard(currentPlayer);
+                board = tempBoard;
+                if (score > bestScore) { bestScore = score; bestMove = move; }
+            }
+            if (bestMove) {
+                const files = 'abcdefgh';
+                const piece = PIECES[board[bestMove.fromRow][bestMove.fromCol]];
+                document.getElementById('suggestionText').innerHTML = `${piece} ${files[bestMove.fromCol]}${8-bestMove.fromRow} → ${files[bestMove.toCol]}${8-bestMove.toRow}`;
+                suggestedSquares = [{ row: bestMove.fromRow, col: bestMove.fromCol }, { row: bestMove.toRow, col: bestMove.toCol }];
+                renderBoard();
+            }
+        }
+
+        function updateEvaluation() {
+            let whiteScore = 0, blackScore = 0;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const piece = board[r][c];
+                    if (piece) {
+                        const value = PIECE_VALUES[piece[1]] / 100;
+                        if (piece[0] === 'w') whiteScore += value; else blackScore += value;
+                    }
+                }
+            }
+            const diff = whiteScore - blackScore;
+            document.getElementById('materialScore').textContent = diff > 0 ? `White +${diff.toFixed(0)}` : diff < 0 ? `Black +${Math.abs(diff).toFixed(0)}` : 'Equal';
+            document.getElementById('evalBar').style.width = `${Math.min(95, Math.max(5, 50 + diff * 2))}%`;
+        }
+
+        function updateOpeningDisplay() {
+            const moveString = moveNotations.join(',');
+            let opening = { name: 'Unknown' };
+            for (const [moves, data] of Object.entries(OPENINGS)) {
+                if (moveString === moves || moveString.startsWith(moves + ',')) opening = data;
+            }
+            document.getElementById('currentOpening').textContent = opening.name;
+        }
+
+        function playOpening(moves) {
+            // TODO: Implement opening playback
+            closeOpenings();
+            startGame('player');
+        }
+
+        // Initialize
+        showMainMenu();
+    </script>
+</body>
+</html>

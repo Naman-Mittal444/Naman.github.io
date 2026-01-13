@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Spy Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root {
+  --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  --neon-blue: #00f2ff;
+  --neon-purple: #bc13fe;
+  --glass-bg: rgba(255,255,255,0.05);
+  --glass-border: rgba(255,255,255,0.1);
+  --text-main: #fff;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--bg-gradient);
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--text-main);
+}
+
+.game-container {
+  width: 100%;
+  max-width: 400px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  padding: 24px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hidden { display: none; }
+
+h1, h2 {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+p {
+  text-align: center;
+  opacity: 0.85;
+}
+
+input, button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 12px;
+  border: none;
+  font-size: 16px;
+}
+
+input {
+  background: rgba(0,0,0,0.3);
+  color: white;
+  outline: none;
+}
+
+input:focus {
+  border: 2px solid var(--neon-blue);
+  box-shadow: 0 0 10px var(--neon-blue);
+}
+
+button {
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue));
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+.role-card {
+  margin-top: 25px;
+  padding: 40px 20px;
+  border-radius: 18px;
+  border: 2px solid var(--neon-purple);
+  text-align: center;
+  font-size: 1.8rem;
+  box-shadow: 0 0 25px rgba(188,19,254,0.6);
+}
+</style>
+</head>
+<body>
+
+<div class="game-container">
+
+  <!-- Welcome -->
+  <div id="welcome">
+    <h1>🕵️ Spy Game</h1>
+    <p>One device • Pass & play • No cheating 👀</p>
+    <button onclick="goToSetup()">Start Game</button>
+  </div>
+
+  <!-- Player Setup -->
+  <div id="setup" class="hidden">
+    <h2>Players</h2>
+    <input type="number" id="playerCount" min="3" placeholder="Number of players">
+    <div id="playerInputs"></div>
+    <button onclick="confirmPlayers()">Continue</button>
+  </div>
+
+  <!-- Handover -->
+  <div id="handover" class="hidden">
+    <h2 id="handoverText"></h2>
+    <button onclick="showReveal()">I am ready</button>
+  </div>
+
+  <!-- Reveal -->
+  <div id="reveal" class="hidden">
+    <h2>Your Word</h2>
+    <div class="role-card" id="roleText">Tap to reveal</div>
+    <button onclick="hideRole()">Hide & Pass</button>
+  </div>
+
+  <!-- Discussion -->
+  <div id="discussion" class="hidden">
+    <h2>🗣️ Discussion Time</h2>
+    <p>Ask questions. Find the spy.</p>
+    <button onclick="revealSpy()">Reveal Spy</button>
+  </div>
+
+  <!-- Result -->
+  <div id="result" class="hidden">
+    <h2>🕵️ Spy Revealed</h2>
+    <p id="resultText"></p>
+    <button onclick="location.reload()">New Game</button>
+  </div>
+
+</div>
+
+<script>
+const morePairs = [
+  // --- Sports & Games (Expanded) - 50 Pairs ---
+  ["Cricket", "Baseball"],
+  ["Football", "Rugby"],
+  ["Tennis", "Badminton"],
+  ["Chess", "Checkers"],
+  ["Ludo", "Snakes & Ladders"],
+  ["Swimming", "Diving"],
+  ["Boxing", "Wrestling"],
+  ["Running", "Jogging"],
+  ["Yoga", "Gym"],
+  ["Skiing", "Skating"],
+  ["Golf", "Polo"],
+  ["Hockey", "Lacrosse"],
+  ["Karate", "Judo"],
+  ["Marathon", "Sprint"],
+  ["Cycling", "Biking"],
+  ["Volleyball", "Netball"],
+  ["Surfing", "Windsurfing"],
+  ["Sailing", "Rowing"],
+  ["Archery", "Dart"],
+  ["Billiards", "Snooker"],
+  ["Poker", "Blackjack"],
+  ["Monopoly", "Scrabble"],
+  ["Puzzle", "Jigsaw"],
+  ["Hike", "Trek"],
+  ["Camping", "Glamping"],
+  ["Fishing", "Angling"],
+  ["Hunting", "Trapping"],
+  ["Board Game", "Card Game"],
+  ["Video Game", "Arcade"],
+  ["Gymnastics", "Acrobatics"],
+  ["Fencing", "Sword Fighting"],
+  ["Curling", "Shuffleboard"],
+  ["Skateboard", "Rollerblade"],
+  ["Frisbee", "Boomerang"],
+  ["Goal", "Score"],
+  ["Referee", "Umpire"],
+  ["Helmet", "Padding"],
+  ["Ball", "Puck"],
+  ["Racket", "Bat"],
+  ["Club", "Cue"],
+  ["Court", "Pitch"],
+  ["Stadium", "Arena"],
+  ["Cheer", "Applaud"],
+  ["Champion", "Victor"],
+  ["Amateur", "Professional"],
+  ["Race", "Heat"],
+  ["Whistle", "Buzzer"],
+  ["Jump Rope", "Hula Hoop"],
+  ["Catcher", "Pitcher"],
+  ["Goalkeeper", "Striker"],
+
+  // --- Professions & Roles (Expanded) - 50 Pairs ---
+  ["Doctor", "Nurse"],
+  ["Police", "Soldier"],
+  ["Teacher", "Professor"],
+  ["Chef", "Waiter"],
+  ["Pilot", "Driver"],
+  ["Artist", "Painter"],
+  ["Actor", "Director"],
+  ["Judge", "Lawyer"],
+  ["King", "President"],
+  ["Singer", "Dancer"],
+  ["Engineer", "Architect"],
+  ["Plumber", "Electrician"],
+  ["Fisherman", "Hunter"],
+  ["Farmer", "Gardener"],
+  ["Scientist", "Researcher"],
+  ["Astronaut", "Cosmonaut"],
+  ["Librarian", "Archivist"],
+  ["Cashier", "Clerk"],
+  ["Baker", "Butcher"],
+  ["Mechanic", "Technician"],
+  ["Barber", "Hair Stylist"],
+  ["Journalist", "Reporter"],
+  ["Politician", "Diplomat"],
+  ["Author", "Writer"],
+  ["Editor", "Publisher"],
+  ["Guard", "Bouncer"],
+  ["Sailor", "Marine"],
+  ["Shepherd", "Cowboy"],
+  ["Mason", "Carpenter"],
+  ["Tailor", "Seamstress"],
+  ["Coach", "Trainer"],
+  ["Janitor", "Custodian"],
+  ["Secretary", "Assistant"],
+  ["Welder", "Blacksmith"],
+  ["Optician", "Dentist"],
+  ["Monk", "Priest"],
+  ["Sheriff", "Marshal"],
+  ["Witch", "Wizard"],
+  ["Pirate", "Smuggler"],
+  ["Spy", "Detective"],
+  ["Magician", "Illusionist"],
+  ["Voter", "Candidate"],
+  ["Patient", "Client"],
+  ["Boss", "Supervisor"],
+  ["Apprentice", "Trainee"],
+  ["Model", "Mascot"],
+  ["Historian", "Curator"],
+  ["Economist", "Analyst"],
+  ["Philosopher", "Thinker"],
+  ["Critic", "Reviewer"],
+
+  // --- Nature & Weather (Expanded) - 50 Pairs ---
+  ["Sun", "Moon"],
+  ["Star", "Planet"],
+  ["Rain", "Snow"],
+  ["Thunder", "Lightning"],
+  ["Wind", "Storm"],
+  ["Fire", "Smoke"],
+  ["Sand", "Dust"],
+  ["Grass", "Leaf"],
+  ["Flower", "Rose"],
+  ["Cloud", "Fog"],
+  ["Ice", "Frost"],
+  ["Tornado", "Hurricane"],
+  ["Wave", "Tide"],
+  ["Volcano", "Geyser"],
+  ["Cave", "Cavern"],
+  ["Mountain", "Peak"],
+  ["Valley", "Canyon"],
+  ["Ocean", "Sea"],
+  ["River", "Stream"],
+  ["Lake", "Pond"],
+  ["Forest", "Woodland"],
+  ["Jungle", "Swamp"],
+  ["Stone", "Rock"],
+  ["Soil", "Dirt"],
+  ["Air", "Mist"],
+  ["Heat", "Warmth"],
+  ["Cold", "Chill"],
+  ["Sky", "Heaven"],
+  ["Horizon", "Atmosphere"],
+  ["Earthquake", "Tremor"],
+  ["Island", "Archipelago"],
+  ["Desert", "Oasis"],
+  ["Coast", "Shore"],
+  ["Seed", "Sprout"],
+  ["Branch", "Root"],
+  ["Tree", "Bush"],
+  ["Clay", "Mud"],
+  ["Drizzle", "Shower"],
+  ["Hail", "Sleet"],
+  ["Rainbow", "Aurora"],
+  ["Dew", "Moisture"],
+  ["Gravel", "Pebble"],
+  ["Crystal", "Gem"],
+  ["Metal", "Ore"],
+  ["Bubble", "Foam"],
+  ["Shadow", "Silhouette"],
+  ["Echo", "Reverb"],
+  ["Gravity", "Magnetism"],
+  ["Vapor", "Steam"],
+  ["Ash", "Cinder"],
+
+  // --- Clothes & Accessories (Expanded) - 50 Pairs ---
+  ["Shirt", "T-shirt"],
+  ["Jeans", "Trousers"],
+  ["Shoe", "Sandal"],
+  ["Socks", "Gloves"],
+  ["Hat", "Cap"],
+  ["Ring", "Necklace"],
+  ["Glasses", "Sunglasses"],
+  ["Coat", "Jacket"],
+  ["Scarf", "Tie"],
+  ["Belt", "Watch"],
+  ["Dress", "Gown"],
+  ["Skirt", "Kilt"],
+  ["Suit", "Tuxedo"],
+  ["Blazer", "Vest"],
+  ["Sweater", "Jumper"],
+  ["Pajamas", "Nightgown"],
+  ["Underwear", "Boxers"],
+  ["Hood", "Collar"],
+  ["Pocket", "Pouch"],
+  ["Zipper", "Button"],
+  ["Leather", "Suede"],
+  ["Cotton", "Linen"],
+  ["Wool", "Cashmere"],
+  ["Diamond", "Pearl"],
+  ["Bracelet", "Bangle"],
+  ["Earring", "Hoop"],
+  ["Purse", "Wallet"],
+  ["Backpack", "Satchel"],
+  ["Umbrella", "Parasol"],
+  ["Stole", "Shawl"],
+  ["Mitten", "Gauntlet"],
+  ["Boots", "Waders"],
+  ["Sneaker", "Loafer"],
+  ["Veil", "Turban"],
+  ["Crown", "Tiara"],
+  ["Wig", "Toupee"],
+  ["Pin", "Brooch"],
+  ["Patch", "Embroidery"],
+  ["Ribbon", "Lace"],
+  ["Perfume", "Cologne"],
+  ["Tattoo", "Piercing"],
+  ["Lipstick", "Mascara"],
+  ["Shampoo", "Conditioner"],
+  ["Mirror", "Compact"],
+  ["Towel", "Washcloth"],
+  ["Soap", "Detergent"],
+  ["Razor", "Shaver"],
+  ["Comb", "Brush"],
+  ["Clip", "Band"],
+  ["Wand", "Stick"],
+
+  // --- Household Items & Furniture (Expanded) - 60 Pairs ---
+  ["Spoon", "Fork"],
+  ["Cup", "Glass"],
+  ["Plate", "Bowl"],
+  ["Chair", "Stool"],
+  ["Bed", "Sofa"],
+  ["Door", "Window"],
+  ["Key", "Lock"],
+  ["Soap", "Shampoo"],
+  ["Towel", "Napkin"],
+  ["Broom", "Mop"],
+  ["Table", "Desk"],
+  ["Cabinet", "Shelf"],
+  ["Lamp", "Lantern"],
+  ["Candle", "Wick"],
+  ["Pillow", "Cushion"],
+  ["Blanket", "Duvet"],
+  ["Curtain", "Blind"],
+  ["Carpet", "Rug"],
+  ["Vase", "Pot"],
+  ["Trash", "Recycle"],
+  ["Oven", "Stove"],
+  ["Fridge", "Freezer"],
+  ["Toaster", "Blender"],
+  ["Kettle", "Teapot"],
+  ["Mug", "Goblet"],
+  ["Knife", "Cleaver"],
+  ["Corkscrew", "Can Opener"],
+  ["Bottle", "Flask"],
+  ["Can", "Tin"],
+  ["Tape", "Glue"],
+  ["Nail", "Screw"],
+  ["Hammer", "Mallet"],
+  ["Saw", "Axe"],
+  ["Wire", "Cable"],
+  ["Battery", "Charger"],
+  ["Toolbox", "Workbench"],
+  ["Ruler", "Scale"],
+  ["Map", "Atlas"],
+  ["Calendar", "Planner"],
+  ["Pen", "Pencil"],
+  ["Book", "Notebook"],
+  ["Paper", "Card"],
+  ["Envelope", "Stamp"],
+  ["Scissors", "Shears"],
+  ["Needle", "Thread"],
+  ["Iron", "Steamer"],
+  ["Basket", "Hamper"],
+  ["Mirror", "Reflector"],
+  ["Alarm", "Siren"],
+  ["Clock", "Timer"],
+  ["Welcome Mat", "Doormat"],
+  ["Hanger", "Closet"],
+  ["Wall", "Ceiling"],
+  ["Floor", "Tile"],
+  ["Light", "Shade"],
+  ["Picture", "Frame"],
+  ["Statue", "Figurine"],
+  ["Vellum", "Parchment"],
+  ["Chalk", "Eraser"],
+  ["Stapler", "Punch"],
+
+  // --- Technology & Media (Expanded) - 60 Pairs ---
+  ["Facebook", "Instagram"],
+  ["Whatsapp", "Telegram"],
+  ["Google", "Yahoo"],
+  ["Android", "iPhone"],
+  ["Keyboard", "Mouse"],
+  ["Wifi", "Internet"],
+  ["Movie", "Series"],
+  ["Song", "Music"],
+  ["Photo", "Video"],
+  ["Email", "Letter"],
+  ["Laptop", "Desktop"],
+  ["Tablet", "Smartphone"],
+  ["Speaker", "Headphone"],
+  ["Camera", "Camcorder"],
+  ["Microphone", "Headset"],
+  ["Screen", "Projector"],
+  ["Cable", "Adapter"],
+  ["Browser", "App"],
+  ["Website", "Portal"],
+  ["Cloud", "Server"],
+  ["Code", "Script"],
+  ["Data", "Information"],
+  ["Upload", "Download"],
+  ["Stream", "Broadcast"],
+  ["Podcast", "Radio"],
+  ["Article", "Blog"],
+  ["Novel", "Fable"],
+  ["Poem", "Lyric"],
+  ["Cartoon", "Animation"],
+  ["Robot", "Cyborg"],
+  ["Artificial", "Virtual"],
+  ["Satellite", "Drone"],
+  ["Router", "Modem"],
+  ["Pixel", "Resolution"],
+  ["Zoom", "Crop"],
+  ["Filter", "Effect"],
+  ["Link", "Hyperlink"],
+  ["Password", "PIN"],
+  ["Virus", "Malware"],
+  ["Backup", "Archive"],
+  ["Hard Drive", "SSD"],
+  ["Disk", "Cartridge"],
+  ["Remote", "Controller"],
+  ["Ebook", "Audiobook"],
+  ["Twitter", "Threads"],
+  ["Reddit", "Forum"],
+  ["Wikipedia", "Encyclopedia"],
+  ["Algorithm", "Formula"],
+  ["Interface", "Dashboard"],
+  ["Input", "Output"],
+  ["Signal", "Wavelength"],
+  ["Transistor", "Chip"],
+  ["Speakerphone", "Handsfree"],
+  ["Notification", "Alert"],
+  ["Click", "Tap"],
+  ["Scroll", "Swipe"],
+  ["Digital", "Analog"],
+  ["Console", "Controller"],
+  ["Software", "Hardware"],
+  ["Online", "Offline"],
+
+  // --- Food & Cooking (Expanded) - 70 Pairs ---
+  ["Soup", "Stew"],
+  ["Salad", "Sandwich"],
+  ["Lemon", "Lime"],
+  ["Onion", "Garlic"],
+  ["Salt", "Sugar"],
+  ["Butter", "Cheese"],
+  ["Egg", "Omelet"],
+  ["Juice", "Smoothie"],
+  ["Popcorn", "Chips"],
+  ["Ketchup", "Sauce"],
+  ["Apple", "Pear"],
+  ["Banana", "Plantain"],
+  ["Grape", "Currant"],
+  ["Orange", "Tangerine"],
+  ["Mango", "Papaya"],
+  ["Strawberry", "Raspberry"],
+  ["Tomato", "Bell Pepper"],
+  ["Potato", "Sweet Potato"],
+  ["Carrot", "Celery"],
+  ["Broccoli", "Cauliflower"],
+  ["Rice", "Couscous"],
+  ["Bread", "Toast"],
+  ["Flour", "Dough"],
+  ["Meat", "Poultry"],
+  ["Beef", "Veal"],
+  ["Chicken", "Turkey"],
+  ["Pork", "Bacon"],
+  ["Fish", "Shrimp"],
+  ["Tuna", "Salmon"],
+  ["Coffee", "Latte"],
+  ["Tea", "Herbal"],
+  ["Water", "Sparkling"],
+  ["Wine", "Champagne"],
+  ["Beer", "Ale"],
+  ["Vodka", "Gin"],
+  ["Whiskey", "Bourbon"],
+  ["Cocktail", "Mocktail"],
+  ["Dessert", "Pudding"],
+  ["Cake", "Pastry"],
+  ["Cookie", "Brownie"],
+  ["Ice Cream", "Sorbet"],
+  ["Candy", "Gummy"],
+  ["Chocolate", "Fudge"],
+  ["Syrup", "Molasses"],
+  ["Cereal", "Granola"],
+  ["Yogurt", "Kefir"],
+  ["Mustard", "Relish"],
+  ["Vinegar", "Oil"],
+  ["Herb", "Spice"],
+  ["Cinnamon", "Nutmeg"],
+  ["Ginger", "Turmeric"],
+  ["Frying", "Sautéing"],
+  ["Boiling", "Steaming"],
+  ["Grilling", "Barbecue"],
+  ["Baking", "Roasting"],
+  ["Dicing", "Chopping"],
+  ["Mixing", "Whisking"],
+  ["Recipe", "Cookbook"],
+  ["Dish", "Platter"],
+  ["Apron", "Tongs"],
+  ["Oven Mitt", "Pot Holder"],
+  ["Salt Shaker", "Grinder"],
+  ["Pitcher", "Carafe"],
+  ["Buffet", "A La Carte"],
+  ["Vegan", "Vegetarian"],
+  ["Gluten", "Yeast"],
+  ["Honey", "Maple Syrup"],
+  ["Almond", "Walnut"],
+  ["Peanut", "Cashew"],
+
+  // --- Concepts & Opposites (Expanded) - 80 Pairs ---
+  ["Day", "Night"],
+  ["Summer", "Winter"],
+  ["Rich", "Poor"],
+  ["Big", "Huge"],
+  ["Fast", "Slow"],
+  ["Truth", "Lie"],
+  ["War", "Peace"],
+  ["Life", "Death"],
+  ["Heaven", "Hell"],
+  ["North", "South"],
+  ["East", "West"],
+  ["Up", "Down"],
+  ["In", "Out"],
+  ["Front", "Back"],
+  ["Hot", "Cold"],
+  ["Wet", "Dry"],
+  ["Loud", "Quiet"],
+  ["Near", "Far"],
+  ["Open", "Closed"],
+  ["Empty", "Full"],
+  ["Hard", "Soft"],
+  ["Light", "Heavy"],
+  ["Clean", "Dirty"],
+  ["Simple", "Complex"],
+  ["Early", "Late"],
+  ["Start", "Finish"],
+  ["Give", "Receive"],
+  ["Buy", "Sell"],
+  ["Ask", "Answer"],
+  ["Win", "Lose"],
+  ["Love", "Hate"],
+  ["Friend", "Enemy"],
+  ["Young", "Old"],
+  ["New", "Antique"],
+  ["Possible", "Impossible"],
+  ["Legal", "Illegal"],
+  ["Known", "Secret"],
+  ["Reality", "Illusion"],
+  ["Future", "Past"],
+  ["Freedom", "Captivity"],
+  ["Justice", "Mercy"],
+  ["Order", "Chaos"],
+  ["Fact", "Opinion"],
+  ["Wisdom", "Knowledge"],
+  ["Skill", "Talent"],
+  ["Luck", "Chance"],
+  ["Power", "Authority"],
+  ["Strength", "Weakness"],
+  ["Beginning", "Origin"],
+  ["End", "Conclusion"],
+  ["Cause", "Effect"],
+  ["Permanent", "Temporary"],
+  ["General", "Specific"],
+  ["Quantity", "Quality"],
+  ["Maximum", "Minimum"],
+  ["Increase", "Decrease"],
+  ["Grow", "Shrink"],
+  ["Gain", "Loss"],
+  ["Accept", "Reject"],
+  ["Allow", "Forbid"],
+  ["Appear", "Vanish"],
+  ["Bless", "Curse"],
+  ["Create", "Destroy"],
+  ["Enter", "Exit"],
+  ["Fix", "Break"],
+  ["Mourn", "Celebrate"],
+  ["Praise", "Criticize"],
+  ["Remember", "Forget"],
+  ["Save", "Spend"],
+  ["Thick", "Thin"],
+  ["Tight", "Loose"],
+  ["Visible", "Invisible"],
+  ["Wide", "Narrow"],
+  ["Deep", "Shallow"],
+  ["Smooth", "Rough"],
+  ["Sweet", "Sour"],
+  ["Bitter", "Salty"],
+  ["Alive", "Deceased"],
+  ["Human", "Divine"],
+
+  // --- Body Parts & Health (Expanded) - 60 Pairs ---
+  ["Hand", "Foot"],
+  ["Eye", "Ear"],
+  ["Nose", "Mouth"],
+  ["Finger", "Thumb"],
+  ["Hair", "Beard"],
+  ["Heart", "Brain"],
+  ["Knee", "Elbow"],
+  ["Teeth", "Tongue"],
+  ["Face", "Head"],
+  ["Stomach", "Belly"],
+  ["Arm", "Leg"],
+  ["Shoulder", "Hip"],
+  ["Chest", "Back"],
+  ["Neck", "Throat"],
+  ["Skin", "Flesh"],
+  ["Bone", "Muscle"],
+  ["Blood", "Vein"],
+  ["Lungs", "Kidneys"],
+  ["Liver", "Spleen"],
+  ["Wrist", "Ankle"],
+  ["Palm", "Sole"],
+  ["Cheek", "Chin"],
+  ["Forehead", "Temple"],
+  ["Eyelash", "Eyebrow"],
+  ["Tongue", "Palate"],
+  ["Lip", "Gum"],
+  ["Spine", "Ribs"],
+  ["Joint", "Tendon"],
+  ["Nerve", "Artery"],
+  ["Scent", "Taste Bud"],
+  ["Fever", "Flu"],
+  ["Cough", "Sneeze"],
+  ["Ache", "Pain"],
+  ["Cut", "Bruise"],
+  ["Healing", "Recovery"],
+  ["Medicine", "Pill"],
+  ["Vaccine", "Antibiotic"],
+  ["Surgery", "Therapy"],
+  ["Diet", "Nutrition"],
+  ["Exercise", "Workout"],
+  ["Stamina", "Endurance"],
+  ["Relax", "Meditate"],
+  ["Sleep", "Insomnia"],
+  ["Rest", "Slumber"],
+  ["Wound", "Infection"],
+  ["Allergy", "Rash"],
+  ["Fatigue", "Exhaustion"],
+  ["Soreness", "Tender"],
+  ["Posture", "Balance"],
+  ["Inhale", "Exhale"],
+  ["Symptom", "Diagnosis"],
+  ["Doctor", "Patient"],
+  ["Hospital", "Ambulance"],
+  ["Vitamins", "Supplements"],
+  ["Hydration", "Thirst"],
+  ["Hunger", "Appetite"],
+  ["Checkup", "Screening"],
+  ["Vision", "Hearing"],
+  ["Fitness", "Vigor"],
+
+  // --- Animals & Creatures (Expanded) - 70 Pairs ---
+  ["Butterfly", "Moth"],
+  ["Bee", "Wasp"],
+  ["Frog", "Toad"],
+  ["Duck", "Swan"],
+  ["Wolf", "Fox"],
+  ["Rabbit", "Hare"],
+  ["Mouse", "Rat"],
+  ["Dolphin", "Whale"],
+  ["Penguin", "Ostrich"],
+  ["Ant", "Spider"],
+  ["Lion", "Tiger"],
+  ["Cow", "Buffalo"],
+  ["Horse", "Donkey"],
+  ["Elephant", "Rhino"],
+  ["Monkey", "Gorilla"],
+  ["Snake", "Lizard"],
+  ["Fish", "Shark"],
+  ["Eagle", "Vulture"],
+  ["Parrot", "Pigeon"],
+  ["Cat", "Kitten"],
+  ["Dog", "Puppy"],
+  ["Bear", "Grizzly"],
+  ["Deer", "Moose"],
+  ["Zebra", "Giraffe"],
+  ["Camel", "Dromedary"],
+  ["Hippopotamus", "Manatee"],
+  ["Crocodile", "Alligator"],
+  ["Turtle", "Tortoise"],
+  ["Seal", "Walrus"],
+  ["Octopus", "Squid"],
+  ["Jellyfish", "Anemone"],
+  ["Crab", "Lobster"],
+  ["Snail", "Slug"],
+  ["Worm", "Caterpillar"],
+  ["Fly", "Mosquito"],
+  ["Beetle", "Roach"],
+  ["Dragonfly", "Cricket"],
+  ["Owl", "Raven"],
+  ["Hawk", "Falcon"],
+  ["Seagull", "Pelican"],
+  ["Goose", "Turkey"],
+  ["Chimpanzee", "Orangutan"],
+  ["Llama", "Alpaca"],
+  ["Badger", "Weasel"],
+  ["Otter", "Beaver"],
+  ["Hedgehog", "Porcupine"],
+  ["Skunk", "Raccoon"],
+  ["Kangaroo", "Wallaby"],
+  ["Dinosaur", "Reptile"],
+  ["Mammal", "Amphibian"],
+  ["Prey", "Predator"],
+  ["Herd", "Flock"],
+  ["Den", "Nest"],
+  ["Claw", "Paw"],
+  ["Tail", "Wing"],
+  ["Feather", "Fur"],
+  ["Scale", "Shell"],
+  ["Venom", "Poison"],
+  ["Roar", "Growl"],
+  ["Chirp", "Tweet"],
+  ["Bark", "Meow"],
+  ["Sting", "Bite"],
+  ["Habitat", "Ecosystem"],
+  ["Pet", "Stray"],
+  ["Carnivore", "Herbivore"],
+  ["Tamer", "Breeder"],
+  ["Aquarium", "Terrarium"],
+
+  // --- New Category: Measurements & Units - 30 Pairs ---
+  ["Mile", "Kilometer"],
+  ["Pound", "Kilogram"],
+  ["Inch", "Centimeter"],
+  ["Foot", "Meter"],
+  ["Yard", "Fathom"],
+  ["Acre", "Hectare"],
+  ["Liter", "Gallon"],
+  ["Quart", "Pint"],
+  ["Cup", "Ounce"],
+  ["Second", "Minute"],
+  ["Hour", "Day"],
+  ["Week", "Month"],
+  ["Year", "Decade"],
+  ["Century", "Millennium"],
+  ["Volume", "Capacity"],
+  ["Length", "Height"],
+  ["Weight", "Mass"],
+  ["Temperature", "Fahrenheit"],
+  ["Celsius", "Kelvin"],
+  ["Speed", "Velocity"],
+  ["Distance", "Range"],
+  ["Area", "Perimeter"],
+  ["Pressure", "Atmosphere"],
+  ["Watt", "Joule"],
+  ["Volt", "Ampere"],
+  ["Frequency", "Hertz"],
+  ["Calorie", "Energy"],
+  ["Pixel", "DPI"],
+  ["Ratio", "Proportion"],
+  ["Fraction", "Decimal"],
+
+  // --- New Category: Musical Instruments & Terms - 30 Pairs ---
+  ["Guitar", "Ukulele"],
+  ["Piano", "Keyboard"],
+  ["Violin", "Cello"],
+  ["Drum", "Cymbal"],
+  ["Flute", "Clarinet"],
+  ["Trumpet", "Trombone"],
+  ["Saxophone", "Oboe"],
+  ["Harp", "Lyre"],
+  ["Accordion", "Concertina"],
+  ["Banjo", "Mandolin"],
+  ["Melody", "Harmony"],
+  ["Rhythm", "Tempo"],
+  ["Chord", "Scale"],
+  ["Note", "Rest"],
+  ["Treble", "Bass"],
+  ["Soprano", "Tenor"],
+  ["Alto", "Baritone"],
+  ["Opera", "Musical"],
+  ["Concert", "Recital"],
+  ["Orchestra", "Band"],
+  ["Composer", "Lyricist"],
+  ["Chorus", "Verse"],
+  ["Solo", "Duet"],
+  ["Acoustic", "Electric"],
+  ["Amplifier", "Mixer"],
+  ["Mic", "Woofer"],
+  ["Vinyl", "Cassette"],
+  ["CD", "MP3"],
+  ["Jazz", "Blues"],
+  ["Pop", "Rock"]
+];
+
+
+/* ================= GAME STATE ================= */
+let players = [];
+let current = 0;
+let spyIndex = 0;
+let normalWord = "";
+let spyWord = "";
+
+/* ================= HELPERS ================= */
+function getSavedPlayers() {
+  try {
+    const data = localStorage.getItem("spyGamePlayers");
+    const arr = JSON.parse(data);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePlayers(arr) {
+  localStorage.setItem("spyGamePlayers", JSON.stringify(arr));
+}
+
+function switchScreen(id) {
+  document.querySelectorAll(".game-container > div")
+    .forEach(d => d.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+}
+
+function generatePlayerInputs(count, saved = []) {
+  const container = document.getElementById("playerInputs");
+  container.innerHTML = "";
+
+  for (let i = 0; i < count; i++) {
+    const input = document.createElement("input");
+    input.placeholder = `Player ${i + 1} Name`;
+    input.value = saved[i] || "";
+    container.appendChild(input);
+  }
+}
+
+function setupRound() {
+  const pair = morePairs[Math.floor(Math.random() * morePairs.length)];
+  normalWord = pair[0];
+  spyWord = pair[1];
+
+  spyIndex = Math.floor(Math.random() * players.length);
+  current = 0;
+
+  showHandover();
+}
+
+/* ================= FLOW ================= */
+function goToSetup() {
+  switchScreen("setup");
+
+  // auto-fill from saved
+  const saved = getSavedPlayers();
+  if (saved.length >= 3) {
+    const playerCountEl = document.getElementById("playerCount");
+    playerCountEl.value = saved.length;
+    generatePlayerInputs(saved.length, saved);
+  }
+}
+
+function confirmPlayers() {
+  const inputs = document.querySelectorAll("#playerInputs input");
+  if (!inputs.length) {
+    alert("Enter number of players first");
+    return;
+  }
+  if (inputs.length < 3) {
+    alert("Minimum 3 players required");
+    return;
+  }
+
+  players = [...inputs].map((i, idx) => (i.value || "").trim() || `Player ${idx + 1}`);
+
+  // ✅ SAVE names so you don't re-enter next time
+  savePlayers(players);
+
+  setupRound();
+}
+
+function showHandover() {
+  switchScreen("handover");
+  document.getElementById("handoverText").innerText =
+    `Pass phone to ${players[current]}`;
+}
+
+function showReveal() {
+  switchScreen("reveal");
+  const roleCard = document.getElementById("roleText");
+  roleCard.innerText = "Tap to reveal";
+
+  roleCard.onclick = () => {
+    roleCard.innerText = (current === spyIndex) ? spyWord : normalWord;
+  };
+}
+
+function hideRole() {
+  current++;
+  if (current >= players.length) switchScreen("discussion");
+  else showHandover();
+}
+
+function revealSpy() {
+  switchScreen("result");
+  document.getElementById("resultText").innerText =
+    `${players[spyIndex]} was the SPY (${spyWord})`;
+
+  // Add Restart button automatically (same players, new spy/words)
+  const resultBox = document.getElementById("result");
+  if (!document.getElementById("restartBtn")) {
+    const btn = document.createElement("button");
+    btn.id = "restartBtn";
+    btn.textContent = "Restart (Same Players)";
+    btn.onclick = restartSamePlayers;
+    resultBox.appendChild(btn);
+  }
+}
+
+function restartSamePlayers() {
+  // Use saved players if available, otherwise current players
+  const saved = getSavedPlayers();
+  if (saved.length >= 3) players = saved;
+  if (!players || players.length < 3) {
+    alert("No saved players found. Please set up players.");
+    switchScreen("setup");
+    return;
+  }
+  setupRound();
+}
+
+/* ================= INIT ================= */
+document.addEventListener("DOMContentLoaded", () => {
+  const playerCountEl = document.getElementById("playerCount");
+
+  // safer: generate inputs on change
+  playerCountEl.addEventListener("input", (e) => {
+    const count = Number(e.target.value);
+    if (!Number.isFinite(count) || count < 0) return;
+    generatePlayerInputs(count);
+  });
+
+  // expose functions for your existing onclick buttons
+  window.goToSetup = goToSetup;
+  window.confirmPlayers = confirmPlayers;
+  window.showReveal = showReveal;
+  window.hideRole = hideRole;
+  window.revealSpy = revealSpy;
+  window.restartSamePlayers = restartSamePlayers;
+});
+</script>

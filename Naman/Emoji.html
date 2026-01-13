@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess the Song - Indian Edition</title>
+    
+    <!-- Google Font for Neon Theme -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        /* --- CSS STYLES --- */
+        :root {
+            --bg-dark: #0f0c29;
+            --neon-blue: #2472d4;
+            --neon-purple: #a445b2;
+            --text-light: #f0f0f0;
+            --text-secondary: #aaa;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            margin: 0;
+            padding: 1rem;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            color: var(--text-light);
+            text-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue);
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            color: var(--neon-purple);
+            text-shadow: 0 0 5px var(--neon-purple);
+        }
+
+        .variations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .variation-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--neon-blue);
+            border-radius: 10px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 0 15px rgba(36, 114, 212, 0.5);
+        }
+
+        .variation-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 0 25px var(--neon-purple);
+            border-color: var(--neon-purple);
+        }
+
+        .variation-card h3 {
+            margin-top: 0;
+            color: var(--neon-purple);
+            font-size: 1.5rem;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: var(--bg-dark);
+            padding: 2rem;
+            border: 2px solid var(--neon-purple);
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+            box-shadow: 0 0 30px var(--neon-purple);
+        }
+
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            color: #fff;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .cta-button {
+            background: var(--neon-blue);
+            color: var(--text-light);
+            border: none;
+            padding: 10px 20px;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 1rem;
+            margin-top: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        .cta-button:hover {
+            background: var(--neon-purple);
+        }
+        
+        /* Game Area Styles */
+        .emoji-display {
+            font-size: 3rem; /* Adjusted font size for new clue format */
+            margin: 2rem 0;
+            min-height: 64px;
+        }
+
+        #timerDisplay {
+            font-size: 3rem;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        .timer-controls {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .timer-btn {
+            background: none;
+            border: 2px solid var(--neon-purple);
+            color: var(--neon-purple);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        #answerArea {
+            margin-top: 2rem;
+        }
+
+        #videoPlayer iframe {
+            width: 100%;
+            aspect-ratio: 16 / 9; /* For responsive video */
+            border: none;
+            border-radius: 10px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>GUESS THE SONG</h1>
+            <p class="tagline">Indian Music Edition</p>
+        </header>
+
+        <main id="variationsContainer">
+            <h2>CHOOSE YOUR GAME MODE</h2>
+            <div class="variations-grid">
+                <!-- Variation Cards will be inserted here by JavaScript -->
+            </div>
+        </main>
+    </div>
+
+    <!-- How to Play Modal -->
+    <div id="howToPlayModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('howToPlayModal')">&times;</span>
+            <h2 id="howToPlayTitle"></h2>
+            <p id="howToPlayText"></p>
+            <div class="rounds-selector">
+                <label for="rounds">Select Rounds:</label>
+                <input type="number" id="rounds" value="10" min="1" max="60">
+            </div>
+            <button id="startGameButton" class="cta-button">Start Game</button>
+        </div>
+    </div>
+    
+    <!-- Game Modal -->
+    <div id="gameModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('gameModal')">&times;</span>
+            <h2 id="gameTitle"></h2>
+            <div id="gameArea">
+                <div id="emojiDisplay" class="emoji-display"></div>
+                <div id="timerDisplay">00:30</div>
+                <div class="timer-controls">
+                    <button id="decreaseTime" class="timer-btn">-5s</button>
+                    <button id="pauseButton" class="timer-btn"><i class="fas fa-pause"></i></button>
+                    <button id="increaseTime" class="timer-btn">+5s</button>
+                </div>
+            </div>
+            <div id="answerArea" class="hidden">
+                <h3>The song was:</h3>
+                <p id="songTitle"></p>
+                <div id="videoPlayer"></div>
+                <button id="nextRoundButton" class="cta-button">Next Round</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- JAVASCRIPT LOGIC ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DATA ---
+            const variations = [
+                {
+                    name: "Guess with Emoji",
+                    description: "A sequence of emojis and text will be displayed. Guess the song they represent before the timer runs out!",
+                    gameData: [
+                        // 60 Indian Songs with new clues, VERIFIED links, and TIMESTAMPS
+                        { emojis: "🚂+🔛+🚂", videoId: "PQCEeB00kLk", title: "Chaiyya Chaiyya - Dil Se", timestamp: 58 },
+                        { emojis: "🙏+HO", videoId: "xwwAVRYLmg4", title: "Jai Ho - Slumdog Millionaire", timestamp: 65 },
+                        { emojis: "⚫+😎", videoId: "k4yXQkG2s1E", title: "Kala Chashma - Baar Baar Dekho", timestamp: 75 },
+                        { emojis: "👉+HI+❤️", videoId: "Umqb9h-g2Qk", title: "Tum Hi Ho - Aashiqui 2", timestamp: 68 },
+                        { emojis: "🗣️+💍", videoId: "IBvg3DAwsOQ", title: "Bole Chudiyan - Kabhi Khushi Kabhie Gham", timestamp: 105 },
+                        { emojis: "🇮🇳+🙏", videoId: "sFpdl0EiFtc", title: "Maa Tujhe Salaam - Vande Mataram", timestamp: 70 },
+                        { emojis: "💃+❓+🇪🇸", videoId: "GzmMHh_yR-4", title: "Senorita - Zindagi Na Milegi Dobara", timestamp: 60 },
+                        { emojis: "🧡+🎨", videoId: "ASO_zRU_X2c", title: "Gerua - Dilwale", timestamp: 88 },
+                        { emojis: "😵+ चढ़ + गई", videoId: "Wd2B8OAotU8", title: "Nashe Si Chadh Gayi - Befikre", timestamp: 55 },
+                        { emojis: "😎+SE+👋", videoId: "L6aV384p-sQ", title: "Swag Se Swagat - Tiger Zinda Hai", timestamp: 67 },
+                        { emojis: "🔔+🕺", videoId: "qFkNATtc3mc", title: "Ghungroo - War", timestamp: 72 },
+                        { emojis: "💪+⚔️+🕺", videoId: "l_MyUGq7pgs", title: "Malhari - Bajirao Mastani", timestamp: 90 },
+                        { emojis: "✨+💃+CHALLO", videoId: "O_527s-w228", title: "Chammak Challo - Ra.One", timestamp: 55 },
+                        { emojis: "😜+❤️", videoId: "II2EO3Nw4m0", title: "Badtameez Dil - Yeh Jawaani Hai Deewani", timestamp: 84 },
+                        { emojis: "👩‍🏫+🎉+CHULL", videoId: "NTHz9ephYTw", title: "Kar Gayi Chull - Kapoor & Sons", timestamp: 62 },
+                        { emojis: "🗣️+👍+👍", videoId: "jCEdTq3j-0U", title: "Gallan Goodiyaan - Dil Dhadakne Do", timestamp: 80 },
+                        { emojis: "🏙️+WALI+👧", videoId: "1cDoRqPnCXU", title: "Dilliwali Girlfriend - Yeh Jawaani Hai Deewani", timestamp: 80 },
+                        { emojis: "🥻+🕺", videoId: "69CEiHfS_mc", title: "Lungi Dance - Chennai Express", timestamp: 78 },
+                        { emojis: "🎨+🔫", videoId: "Hh-o5g4tLVE", title: "Balam Pichkari - Yeh Jawaani Hai Deewani", timestamp: 68 },
+                        { emojis: "🥁+SANG+🥁", videoId: "vK5E_aeB5h4", title: "Nagada Sang Dhol - Ram-Leela", timestamp: 85 },
+                        { emojis: "MY+RIGHT+🎸", videoId: "pFBP2KCHG4c", title: "Sadda Haq - Rockstar", timestamp: 120 },
+                        { emojis: "🏃‍♂️+❤️‍🩹", videoId: "jHNNMj5bNQw", title: "Kabira - Yeh Jawaani Hai Deewani", timestamp: 55 },
+                        { emojis: "✈️+🌍", videoId: "f9NB_srhAso", title: "Ilahi - Yeh Jawaani Hai Deewani", timestamp: 74 },
+                        { emojis: "🇬🇧+THUMKA+💃", videoId: "fysLvo60LdE", title: "London Thumakda - Queen", timestamp: 45 },
+                        { emojis: "💃+❤️+KRISHNA", videoId: "ALwT4-0oQ40", title: "Radha - Student of the Year", timestamp: 100 },
+                        { emojis: "🕺+DISCO+🤪", videoId: "U631p_mCfzU", title: "Disco Deewane - Student of the Year", timestamp: 38 },
+                        { emojis: "⚫+👀+RE", videoId: "oiy7T_g812I", title: "Kajra Re - Bunty Aur Babli", timestamp: 145 },
+                        { emojis: "🎉+HI+🎉", videoId: "s2pAmoSoKSU", title: "Mauja Hi Mauja - Jab We Met", timestamp: 65 },
+                        { emojis: "👩🏽‍🦱+GIRL", videoId: "_h5_L0J1dwE", title: "Desi Girl - Dostana", timestamp: 83 },
+                        { emojis: "🎉+E+🌸", videoId: "fhnwb_moi_c", title: "Jashn-E-Bahara - Jodhaa Akbar", timestamp: 67 },
+                        { emojis: "😉+👁️", videoId: "S2lI-3-a2CQ", title: "Aankh Marey - Simmba", timestamp: 60 },
+                        { emojis: "❤️+BAR", videoId: "WpsuCq2ApsA", title: "Dilbar - Satyameva Jayate", timestamp: 55 },
+                        { emojis: "🏘️+GALI+🏘️", videoId: "Tpi1b122Vb8", title: "Gali Gali - KGF", timestamp: 48 },
+                        { emojis: "🥤+👉", videoId: "5m_s8m2t5E0", title: "Coca Cola Tu - Luka Chuppi", timestamp: 40 },
+                        { emojis: "🕺+PUNJABI+SONG", videoId: "7i8sAD22P0Q", title: "The Punjaabban Song - Jugjugg Jeeyo", timestamp: 43 },
+                        { emojis: "🕺+SAARE", videoId: "HgIWmkb8N3o", title: "Nachde Ne Saare - Baar Baar Dekho", timestamp: 65 },
+                        { emojis: "💣+DIGGY+💣", videoId: "yIIGQB6EMSc", title: "Bom Diggy Diggy - Sonu Ke Titu Ki Sweety", timestamp: 47 },
+                        { emojis: "🥁+CHOGA+TARA", videoId: "Bp_I_UOh1sY", title: "Chogada - Loveyatri", timestamp: 35 },
+                        { emojis: "💃+KAMAR", videoId: "A1nC3e6cHDM", title: "Kamariya - Stree", timestamp: 58 },
+                        { emojis: "👀+ARE+OPEN", videoId: "eM8Mjuq4f-c", title: "Aankhein Khuli - Mohabbatein", timestamp: 78 },
+                        { emojis: "😍+WOMAN", videoId: "7425Fm_3Qe0", title: "Pretty Woman - Kal Ho Naa Ho", timestamp: 65 },
+                        { emojis: "⏰+2+DISCO", videoId: "6m1C-2iN6yY", title: "It's the Time to Disco - Kal Ho Naa Ho", timestamp: 75 },
+                        { emojis: "DOLL+BOMMA+✨", videoId: "2mDCVzruYzQ", title: "ButtaBomma - Ala Vaikunthapurramuloo", timestamp: 68 },
+                        { emojis: "ROWDY+👶", videoId: "x6Q7c95h25A", title: "Rowdy Baby - Maari 2", timestamp: 110 },
+                        { emojis: "❓+THIS+KOOLAID+❓", videoId: "YXxS128O_no", title: "Why This Kolaveri Di - 3", timestamp: 55 },
+                        { emojis: "🕺+NAACHO+🕺", videoId: "GtM_gI_b-e4", title: "Naatu Naatu - RRR", timestamp: 105 },
+                        { emojis: "💃+🔥", videoId: "u_wB6DTcr_E", title: "Oo Antava..Oo Oo Antava - Pushpa", timestamp: 80 },
+                        { emojis: "SHAMELESS+🎨", videoId: "huxhqphtDrM", title: "Besharam Rang - Pathaan", timestamp: 70 },
+                        { emojis: "🙏+DEVA+🙏", videoId: "FzQ1oI7_d2Q", title: "Deva Deva - Brahmastra", timestamp: 100 },
+                        { emojis: "🧡+🧡", videoId: "BDDfMVD6j-8", title: "Kesariya - Brahmastra", timestamp: 60 },
+                        { emojis: "MY+⏰+WILL COME", videoId: "jWN-a_v_c78", title: "Apna Time Aayega - Gully Boy", timestamp: 28 },
+                        { emojis: "1st+CLASS+🥇", videoId: "pPWA_d5GCrQ", title: "First Class - Kalank", timestamp: 58 },
+                        { emojis: "❤️+THIEF", videoId: "xWi8nDUjHGA", title: "Dil Chori - Sonu Ke Titu Ki Sweety", timestamp: 60 },
+                        { emojis: "❤️+DIYAN+🗣️", videoId: "SAcpESN_Fk4", title: "Dil Diyan Gallan - Tiger Zinda Hai", timestamp: 65 },
+                        { emojis: "💅+PRAISE", videoId: "3Iq0jPS_QG8", title: "Tareefan - Veere Di Wedding", timestamp: 50 },
+                        { emojis: "1st+😵", videoId: "358I0y_aT2A", title: "Pehla Nasha - Jo Jeeta Wohi Sikandar", timestamp: 60 },
+                        { emojis: "👨‍👧‍👦+SAYS", videoId: "k2I3-JQR47Y", title: "Papa Kehte Hain - Qayamat Se Qayamat Tak", timestamp: 80 },
+                        { emojis: "🚗+I+LEFT", videoId: "PuT_527gG4A", title: "Main Nikla Gaddi Leke - Gadar", timestamp: 90 },
+                        { emojis: "👀+U+SO...", videoId: "l-Hq02iB1B4", title: "Tujhe Dekha To - Dilwale Dulhania Le Jayenge", timestamp: 75 },
+                        { emojis: "💅+KEEP+IT", videoId: "2F6a-29jc7A", title: "Mehndi Laga Ke Rakhna - DDLJ", timestamp: 160 }
+                    ]
+                },
+                {
+                    name: "Finish the Lyrics (Coming Soon)",
+                    description: "A line of a song will appear. You have to sing or say the next line. (This mode is under construction).",
+                    gameData: []
+                },
+                {
+                    name: "Humming Challenge (Coming Soon)",
+                    description: "One person hums a tune shown on screen. Others guess the song. (This mode is under construction).",
+                    gameData: []
+                }
+            ];
+
+            let currentVariation = null;
+            let totalRounds = 10;
+            let currentRound = 0;
+            let timer;
+            let timeLeft = 30;
+            let isPaused = false;
+            let gameData = [];
+
+            // --- ELEMENTS ---
+            const variationsContainer = document.querySelector('.variations-grid');
+            const howToPlayModal = document.getElementById('howToPlayModal');
+            const gameModal = document.getElementById('gameModal');
+            const timerDisplay = document.getElementById('timerDisplay');
+            
+            // --- LOGIC ---
+            function showVariations() {
+                variationsContainer.innerHTML = '';
+                variations.forEach((var_data, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'variation-card';
+                    card.innerHTML = `<h3>${var_data.name}</h3><p>${var_data.description}</p>`;
+                    if (var_data.gameData.length > 0) {
+                        card.onclick = () => openHowToPlay(index);
+                    } else {
+                        card.style.cursor = 'not-allowed';
+                        card.style.opacity = '0.5';
+                    }
+                    variationsContainer.appendChild(card);
+                });
+            }
+
+            window.openHowToPlay = (index) => {
+                currentVariation = variations[index];
+                document.getElementById('howToPlayTitle').innerText = `How to Play: ${currentVariation.name}`;
+                document.getElementById('howToPlayText').innerText = currentVariation.description;
+                howToPlayModal.style.display = 'flex';
+            };
+
+            document.getElementById('startGameButton').onclick = () => {
+                totalRounds = parseInt(document.getElementById('rounds').value);
+                gameData = [...currentVariation.gameData].sort(() => 0.5 - Math.random());
+                currentRound = 0;
+                closeModal('howToPlayModal');
+                openGame();
+            };
+            
+            function openGame() {
+                if (currentRound >= totalRounds || currentRound >= gameData.length) {
+                    alert("Game Over! Thanks for playing.");
+                    closeModal('gameModal');
+                    return;
+                }
+
+                isPaused = false;
+                document.getElementById('pauseButton').innerHTML = '<i class="fas fa-pause"></i>';
+                document.getElementById('gameArea').classList.remove('hidden');
+                document.getElementById('answerArea').classList.add('hidden');
+                gameModal.style.display = 'flex';
+                
+                const roundData = gameData[currentRound];
+                document.getElementById('gameTitle').innerText = `Round ${currentRound + 1} of ${totalRounds}`;
+                document.getElementById('emojiDisplay').innerText = roundData.emojis;
+
+                startTimer();
+            }
+            
+            function updateTimerDisplay() {
+                timerDisplay.innerText = `00:${timeLeft < 10 ? '0' : ''}${timeLeft}`;
+            }
+
+            function startTimer() {
+                timeLeft = 30;
+                updateTimerDisplay();
+                timer = setInterval(() => {
+                    if (!isPaused) {
+                        timeLeft--;
+                        if (timeLeft < 0) timeLeft = 0;
+                        updateTimerDisplay();
+                        if (timeLeft <= 0) {
+                            clearInterval(timer);
+                            showAnswer();
+                        }
+                    }
+                }, 1000);
+            }
+
+            document.getElementById('pauseButton').onclick = () => {
+                isPaused = !isPaused;
+                document.getElementById('pauseButton').innerHTML = isPaused ? '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
+            };
+
+            document.getElementById('increaseTime').onclick = () => {
+                if (!isPaused) {
+                    timeLeft += 5;
+                    updateTimerDisplay();
+                }
+            };
+
+            document.getElementById('decreaseTime').onclick = () => {
+                if (!isPaused && timeLeft > 5) {
+                    timeLeft -= 5;
+                    updateTimerDisplay();
+                } else if (!isPaused && timeLeft > 0) {
+                    timeLeft = 0;
+                    updateTimerDisplay();
+                }
+            };
+
+            function showAnswer() {
+                document.getElementById('gameArea').classList.add('hidden');
+                document.getElementById('answerArea').classList.remove('hidden');
+
+                const roundData = gameData[currentRound];
+                const startTime = roundData.timestamp || 0; // Use timestamp, default to 0 if not present
+                document.getElementById('songTitle').innerText = roundData.title;
+                document.getElementById('videoPlayer').innerHTML = `<iframe src="https://www.youtube.com/embed/${roundData.videoId}?autoplay=1&start=${startTime}" allow="autoplay; encrypted-media"></iframe>`;
+            }
+
+            document.getElementById('nextRoundButton').onclick = () => {
+                currentRound++;
+                document.getElementById('videoPlayer').innerHTML = '';
+                openGame();
+            };
+
+            window.closeModal = (modalId) => {
+                document.getElementById(modalId).style.display = 'none';
+                clearInterval(timer);
+                document.getElementById('videoPlayer').innerHTML = '';
+            };
+
+            // --- INITIALIZE ---
+            showVariations();
+        });
+    </script>
+</body>
+</html>

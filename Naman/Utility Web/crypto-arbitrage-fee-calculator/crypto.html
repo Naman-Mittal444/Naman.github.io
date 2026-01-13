@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Arbitrage Pro - Ultimate Trading Intelligence</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="text-white font-sans dark-theme">
+    <!-- Audio for alerts -->
+    <audio id="alertSound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZOQiHttZWNvfIqTl5KJfXBkYGd0goqQkYuBeW5qbHN+iI2OioN6c3BxdnyDiImHgnt2c3R3fIGFhoR/endydHh8gISDgX56d3Z4e3+CgoF+e3l3eHp9gIGAf3x6eHh6fH+AgH99e3l4eXt+f4B/fXt5eHl7fX9/fnt6eXl6fH5/fn18enl5ent9fn58e3p5eXp8fX19fHt6eXl6e3x9fXx7enl5ent8fHx8e3p5eXp7fHx8e3t6eXl6e3t8fHt6enl5ent7fHt7enp5eXp7e3t7e3p6eXl6ent7e3t6enl5enp7e3t6enp5eXp6e3t7enp6eXl6ent7enp6eXl5enp7e3p6enl5eXp6enp6enl5eXp6enp6enl5eXp6enp6enl5eXl6enp6eXl5eXp6enp6eXl5eXp6" type="audio/wav">
+    </audio>
+
+    <div class="container mx-auto px-4 py-6 max-w-[1800px]">
+        <!-- Header -->
+        <header class="text-center mb-6">
+            <div class="flex items-center justify-center gap-4 mb-2 flex-wrap">
+                <div class="relative">
+                    <div class="radar-ring absolute inset-0 w-12 h-12 border-2 border-yellow-400 rounded-full"></div>
+                    <i class="fas fa-satellite-dish text-3xl text-yellow-400 relative z-10"></i>
+                </div>
+                <h1 class="text-3xl md:text-4xl font-bold gradient-text">Crypto Arbitrage Pro</h1>
+                <div class="flex gap-2">
+                    <button onclick="toggleTheme()" class="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition tooltip-custom" data-tooltip="Toggle Theme">
+                        <i id="themeIcon" class="fas fa-moon text-yellow-400"></i>
+                    </button>
+                    <button onclick="toggleMode()" class="px-3 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 transition text-sm tooltip-custom" id="modeBtn" data-tooltip="Switch Mode">
+                        <i class="fas fa-graduation-cap"></i> <span id="modeText">Expert</span>
+                    </button>
+                    <button onclick="exportOpportunities()" class="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition tooltip-custom" data-tooltip="Export Data">
+                        <i class="fas fa-download text-green-400"></i>
+                    </button>
+                </div>
+            </div>
+            <p class="text-gray-400 text-sm">Real-time arbitrage intelligence across 6 exchanges with realistic market simulation</p>
+            <div class="flex items-center justify-center gap-4 mt-2 flex-wrap">
+                <div class="flex items-center gap-2">
+                    <span class="pulse-dot w-2 h-2 bg-green-500 rounded-full"></span>
+                    <span id="status" class="text-green-400 text-sm">Initializing...</span>
+                </div>
+                <div class="text-gray-500 text-sm">|</div>
+                <div class="flex items-center gap-2 text-sm">
+                    <i class="fas fa-clock text-gray-500"></i>
+                    <span id="lastUpdate">--:--:--</span>
+                </div>
+                <div class="text-gray-500 text-sm">|</div>
+                <div class="flex items-center gap-2 text-sm">
+                    <i class="fas fa-bolt text-yellow-400"></i>
+                    <span id="fetchLatency">-- ms</span>
+                </div>
+                <div class="text-gray-500 text-sm hide-mobile">|</div>
+                <div class="flex items-center gap-2 text-sm hide-mobile">
+                    <i class="fas fa-keyboard text-gray-500"></i>
+                    <span class="text-gray-400">Ctrl+R Refresh | Ctrl+P Pause</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Alert Banner -->
+        <div id="alertBanner" class="hidden card-glass rounded-xl p-3 mb-4 border-l-4 border-green-500 glow-green fade-in">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-bell text-green-400 text-xl animate-bounce"></i>
+                    <div>
+                        <p class="font-semibold text-green-400" id="alertTitle">High ROI Opportunity!</p>
+                        <p class="text-sm text-gray-300" id="alertMessage">BTC: Buy on Binance, Sell on Coinbase for $125 profit</p>
+                    </div>
+                </div>
+                <button onclick="dismissAlert()" class="text-gray-400 hover:text-white transition"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="card-glass rounded-xl mb-4 overflow-x-auto">
+            <div class="flex border-b border-gray-700">
+                <button onclick="switchTab('dashboard')" class="tab-btn px-6 py-3 text-sm font-medium hover:text-yellow-400 transition tab-active" data-tab="dashboard">
+                    <i class="fas fa-chart-line mr-2"></i><span class="hide-mobile">Dashboard</span>
+                </button>
+                <button onclick="switchTab('opportunities')" class="tab-btn px-6 py-3 text-sm font-medium hover:text-yellow-400 transition" data-tab="opportunities">
+                    <i class="fas fa-bolt mr-2"></i><span class="hide-mobile">Opportunities</span>
+                </button>
+                <button onclick="switchTab('analytics')" class="tab-btn px-6 py-3 text-sm font-medium hover:text-yellow-400 transition" data-tab="analytics">
+                    <i class="fas fa-chart-bar mr-2"></i><span class="hide-mobile">Analytics</span>
+                </button>
+                <button onclick="switchTab('simulation')" class="tab-btn px-6 py-3 text-sm font-medium hover:text-yellow-400 transition" data-tab="simulation">
+                    <i class="fas fa-flask mr-2"></i><span class="hide-mobile">Simulation</span>
+                </button>
+                <button onclick="switchTab('settings')" class="tab-btn px-6 py-3 text-sm font-medium hover:text-yellow-400 transition" data-tab="settings">
+                    <i class="fas fa-cog mr-2"></i><span class="hide-mobile">Settings</span>
+                </button>
+                <button onclick="switchTab('alerts')" class="tab-btn px-6 py-3 text-sm font-medium hover:text-yellow-400 transition" data-tab="alerts">
+                    <i class="fas fa-bell mr-2"></i><span class="hide-mobile">Alerts</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Stats Bar -->
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
+            <div class="card-glass rounded-lg p-3 stats-card">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-blue-500/20 rounded flex items-center justify-center">
+                        <i class="fas fa-exchange-alt text-blue-400 text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-xs">Active Pairs</p>
+                        <p id="statActivePairs" class="text-lg font-bold">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-glass rounded-lg p-3 stats-card">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-green-500/20 rounded flex items-center justify-center">
+                        <i class="fas fa-trophy text-green-400 text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-xs">Best Profit</p>
+                        <p id="statBestProfit" class="text-lg font-bold text-green-400">$0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-glass rounded-lg p-3 stats-card">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-yellow-500/20 rounded flex items-center justify-center">
+                        <i class="fas fa-percentage text-yellow-400 text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-xs">Best ROI</p>
+                        <p id="statBestROI" class="text-lg font-bold text-yellow-400">0%</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-glass rounded-lg p-3 stats-card">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-purple-500/20 rounded flex items-center justify-center">
+                        <i class="fas fa-check-circle text-purple-400 text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-xs">Profitable</p>
+                        <p id="statProfitable" class="text-lg font-bold text-purple-400">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-glass rounded-lg p-3 stats-card">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-red-500/20 rounded flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-red-400 text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-xs">High Risk</p>
+                        <p id="statHighRisk" class="text-lg font-bold text-red-400">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-glass rounded-lg p-3 stats-card">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-cyan-500/20 rounded flex items-center justify-center">
+                        <i class="fas fa-chart-area text-cyan-400 text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-xs">Confidence</p>
+                        <p id="statConfidence" class="text-lg font-bold text-cyan-400">--</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Tabs -->
+        
+        <!-- Dashboard Tab -->
+        <div id="tab-dashboard" class="tab-content">
+            <!-- Controls -->
+            <div class="card-glass rounded-xl p-4 mb-4">
+                <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="text-gray-400 text-xs block mb-1">Trade Amount (USD)</label>
+                        <input type="number" id="tradeAmount" value="10000" min="100" step="100"
+                            class="w-full focus:border-yellow-500 focus:outline-none">
+                    </div>
+                    <div class="flex-1 min-w-[150px]">
+                        <label class="text-gray-400 text-xs block mb-1">Min Profit %</label>
+                        <input type="number" id="minProfit" value="-10" min="-100" step="0.1" max="100"
+                            class="w-full focus:border-yellow-500 focus:outline-none">
+                    </div>
+                    <div class="flex-1 min-w-[150px]">
+                        <label class="text-gray-400 text-xs block mb-1">Slippage %</label>
+                        <input type="number" id="slippagePercent" value="0.1" min="0" step="0.05" max="5"
+                            class="w-full focus:border-yellow-500 focus:outline-none">
+                    </div>
+                    <div class="flex-1 min-w-[150px]">
+                        <label class="text-gray-400 text-xs block mb-1">Refresh Rate</label>
+                        <select id="refreshRate" class="w-full focus:border-yellow-500 focus:outline-none">
+                            <option value="3000">3 seconds</option>
+                            <option value="5000" selected>5 seconds</option>
+                            <option value="10000">10 seconds</option>
+                            <option value="30000">30 seconds</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <button onclick="fetchAllPrices()" class="btn btn-primary" title="Refresh Now">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button id="toggleAutoBtn" onclick="toggleAutoRefresh()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-lg transition" title="Toggle Auto-Refresh">
+                            <i class="fas fa-pause"></i>
+                        </button>
+                        <button onclick="showRealisticMode()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-lg transition tooltip-custom" data-tooltip="Realistic Mode Info">
+                            <i class="fas fa-glasses"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- Realistic Mode Toggle -->
+                <div class="mt-3 flex items-center gap-4 flex-wrap text-sm">
+                    <label class="flex items-center gap-2 cursor-pointer hover:text-yellow-400 transition">
+                        <input type="checkbox" id="realisticMode" class="w-4 h-4 accent-yellow-500" checked>
+                        <span>Realistic Profit Mode</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer hover:text-yellow-400 transition">
+                        <input type="checkbox" id="useBidAsk" class="w-4 h-4 accent-yellow-500" checked>
+                        <span>Use Bid/Ask Prices</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer hover:text-yellow-400 transition">
+                        <input type="checkbox" id="includeLatency" class="w-4 h-4 accent-yellow-500" checked>
+                        <span>Include Latency Risk</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer hover:text-yellow-400 transition advanced-feature">
+                        <input type="checkbox" id="dynamicGas" class="w-4 h-4 accent-yellow-500">
+                        <span>Dynamic Gas Fees</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="card-glass rounded-xl p-4 mb-4">
+                <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex-1 min-w-[200px]">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                            <input type="text" id="coinSearch" placeholder="Search coins (e.g., BTC, ETH)..." 
+                                class="pl-10 pr-4 py-2 w-full focus:border-yellow-500 focus:outline-none">
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-gray-400 text-sm">Exchanges:</span>
+                        <label class="flex items-center gap-1 text-sm cursor-pointer hover:opacity-80 transition">
+                            <input type="checkbox" class="exchange-toggle accent-yellow-500" data-exchange="binance" checked>
+                            <span class="text-yellow-400">Binance</span>
+                        </label>
+                        <label class="flex items-center gap-1 text-sm cursor-pointer hover:opacity-80 transition">
+                            <input type="checkbox" class="exchange-toggle accent-blue-500" data-exchange="coinbase" checked>
+                            <span class="text-blue-400">Coinbase</span>
+                        </label>
+                        <label class="flex items-center gap-1 text-sm cursor-pointer hover:opacity-80 transition">
+                            <input type="checkbox" class="exchange-toggle accent-purple-500" data-exchange="kraken" checked>
+                            <span class="text-purple-400">Kraken</span>
+                        </label>
+                        <label class="flex items-center gap-1 text-sm cursor-pointer hover:opacity-80 transition">
+                            <input type="checkbox" class="exchange-toggle accent-orange-500" data-exchange="bybit" checked>
+                            <span class="text-orange-400">Bybit</span>
+                        </label>
+                        <label class="flex items-center gap-1 text-sm cursor-pointer hover:opacity-80 transition">
+                            <input type="checkbox" class="exchange-toggle accent-cyan-500" data-exchange="okx" checked>
+                            <span class="text-cyan-400">OKX</span>
+                        </label>
+                        <label class="flex items-center gap-1 text-sm cursor-pointer hover:opacity-80 transition">
+                            <input type="checkbox" class="exchange-toggle accent-green-500" data-exchange="kucoin" checked>
+                            <span class="text-green-400">KuCoin</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exchange Status -->
+            <div class="grid grid-cols-2 md:grid-cols-6 gap-2 mb-4">
+                <div class="card-glass rounded-lg p-2 flex items-center justify-between" id="status-binance">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
+                        <span class="text-yellow-400 text-sm font-medium">Binance</span>
+                    </div>
+                    <span class="text-xs text-gray-400">--ms</span>
+                </div>
+                <div class="card-glass rounded-lg p-2 flex items-center justify-between" id="status-coinbase">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
+                        <span class="text-blue-400 text-sm font-medium">Coinbase</span>
+                    </div>
+                    <span class="text-xs text-gray-400">--ms</span>
+                </div>
+                <div class="card-glass rounded-lg p-2 flex items-center justify-between" id="status-kraken">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
+                        <span class="text-purple-400 text-sm font-medium">Kraken</span>
+                    </div>
+                    <span class="text-xs text-gray-400">--ms</span>
+                </div>
+                <div class="card-glass rounded-lg p-2 flex items-center justify-between" id="status-bybit">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
+                        <span class="text-orange-400 text-sm font-medium">Bybit</span>
+                    </div>
+                    <span class="text-xs text-gray-400">--ms</span>
+                </div>
+                <div class="card-glass rounded-lg p-2 flex items-center justify-between" id="status-okx">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
+                        <span class="text-cyan-400 text-sm font-medium">OKX</span>
+                    </div>
+                    <span class="text-xs text-gray-400">--ms</span>
+                </div>
+                <div class="card-glass rounded-lg p-2 flex items-center justify-between" id="status-kucoin">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
+                        <span class="text-green-400 text-sm font-medium">KuCoin</span>
+                    </div>
+                    <span class="text-xs text-gray-400">--ms</span>
+                </div>
+            </div>
+
+            <!-- Prices Table with Sparklines -->
+            <div class="card-glass rounded-xl p-4 mb-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-lg font-bold flex items-center gap-2">
+                        <i class="fas fa-table text-yellow-400"></i> Live Prices
+                        <span class="text-xs text-gray-400 font-normal">(click coin to pin, star to watch)</span>
+                    </h2>
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleCompactView()" class="text-sm px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 transition">
+                            <i class="fas fa-compress-alt"></i> <span class="hide-mobile">Compact</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto scrollbar-thin">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="py-2 px-3 sortable" onclick="sortTable('coin')">
+                                    Coin <i class="fas fa-sort text-gray-500 ml-1"></i>
+                                </th>
+                                <th class="py-2 px-3">Trend</th>
+                                <th class="py-2 px-3 text-yellow-400 sortable" onclick="sortTable('binance')">Binance</th>
+                                <th class="py-2 px-3 text-blue-400 sortable" onclick="sortTable('coinbase')">Coinbase</th>
+                                <th class="py-2 px-3 text-purple-400 sortable" onclick="sortTable('kraken')">Kraken</th>
+                                <th class="py-2 px-3 text-orange-400 sortable" onclick="sortTable('bybit')">Bybit</th>
+                                <th class="py-2 px-3 text-cyan-400 sortable" onclick="sortTable('okx')">OKX</th>
+                                <th class="py-2 px-3 text-green-400 sortable" onclick="sortTable('kucoin')">KuCoin</th>
+                                <th class="py-2 px-3 sortable" onclick="sortTable('spread')">Spread</th>
+                                <th class="py-2 px-3">Volatility</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pricesTable">
+                            <tr><td colspan="10" class="text-center py-8 text-gray-500">
+                                <div class="spinner mx-auto mb-2"></div>
+                                Loading prices...
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Arbitrage Opportunities -->
+            <div class="card-glass rounded-xl p-4">
+                <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+                    <h2 class="text-lg font-bold flex items-center gap-2">
+                        <i class="fas fa-bolt text-yellow-400"></i> Arbitrage Opportunities
+                        <span id="oppCount" class="text-xs bg-yellow-500 text-black px-2 py-0.5 rounded-full">0</span>
+                    </h2>
+                    <div class="flex items-center gap-2 text-sm flex-wrap">
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" id="showProfitableOnly" class="accent-green-500">
+                            <span>Profitable Only</span>
+                        </label>
+                        <button onclick="scrollToBest()" class="px-3 py-1 bg-green-600 rounded hover:bg-green-700 transition">
+                            <i class="fas fa-arrow-up"></i> Best
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto scrollbar-thin max-h-[400px]">
+                    <table class="w-full text-left text-sm">
+                        <thead class="sticky top-0 bg-gray-900">
+                            <tr class="border-b border-gray-700">
+                                <th class="py-2 px-3 sortable" onclick="sortOpps('coin')">Coin</th>
+                                <th class="py-2 px-3">Route</th>
+                                <th class="py-2 px-3 sortable" onclick="sortOpps('buyPrice')">Buy @</th>
+                                <th class="py-2 px-3 sortable" onclick="sortOpps('sellPrice')">Sell @</th>
+                                <th class="py-2 px-3">Gross</th>
+                                <th class="py-2 px-3">Fees</th>
+                                <th class="py-2 px-3 sortable" onclick="sortOpps('netProfit')">Net Profit</th>
+                                <th class="py-2 px-3 sortable" onclick="sortOpps('roi')">ROI</th>
+                                <th class="py-2 px-3 sortable" onclick="sortOpps('confidence')">Confidence</th>
+                                <th class="py-2 px-3">Risk</th>
+                                <th class="py-2 px-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="arbitrageTable">
+                            <tr><td colspan="11" class="text-center py-8 text-gray-500">
+                                <div class="spinner mx-auto mb-2"></div>
+                                Calculating opportunities...
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Opportunities Tab -->
+        <div id="tab-opportunities" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- Triangular Arbitrage -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-project-diagram text-purple-400"></i> Triangular Arbitrage
+                    </h3>
+                    <p class="text-gray-400 text-sm mb-3">Same-exchange multi-hop opportunities</p>
+                    <div class="overflow-x-auto scrollbar-thin max-h-[300px]">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-gray-700">
+                                    <th class="py-2 px-2">Exchange</th>
+                                    <th class="py-2 px-2">Path</th>
+                                    <th class="py-2 px-2">Profit</th>
+                                    <th class="py-2 px-2">Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="triangularTable">
+                                <tr><td colspan="4" class="text-center py-4 text-gray-500">Scanning...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Multi-Hop Arbitrage -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-route text-cyan-400"></i> Multi-Hop Routes
+                    </h3>
+                    <p class="text-gray-400 text-sm mb-3">Cross-exchange chain opportunities</p>
+                    <div class="overflow-x-auto scrollbar-thin max-h-[300px]">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-gray-700">
+                                    <th class="py-2 px-2">Route</th>
+                                    <th class="py-2 px-2">Hops</th>
+                                    <th class="py-2 px-2">Net Profit</th>
+                                    <th class="py-2 px-2">Time Est.</th>
+                                </tr>
+                            </thead>
+                            <tbody id="multiHopTable">
+                                <tr><td colspan="4" class="text-center py-4 text-gray-500">Calculating routes...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Opportunity Frequency -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-history text-yellow-400"></i> Opportunity Frequency
+                    </h3>
+                    <div id="frequencyChart" class="h-[200px]">
+                        <canvas id="freqCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Network Selection -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-network-wired text-green-400"></i> Network Fees
+                    </h3>
+                    <div class="space-y-2 max-h-[200px] overflow-y-auto scrollbar-thin">
+                        <div class="flex items-center justify-between p-2 bg-gray-800 rounded hover:bg-gray-700 transition">
+                            <div class="flex items-center gap-2">
+                                <span class="network-badge bg-blue-500 text-white">ERC20</span>
+                                <span>Ethereum</span>
+                            </div>
+                            <span class="text-red-400">$15.50 (45 gwei)</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-gray-800 rounded hover:bg-gray-700 transition">
+                            <div class="flex items-center gap-2">
+                                <span class="network-badge bg-yellow-500 text-black">BEP20</span>
+                                <span>BSC</span>
+                            </div>
+                            <span class="text-green-400">$0.15</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-gray-800 rounded hover:bg-gray-700 transition">
+                            <div class="flex items-center gap-2">
+                                <span class="network-badge bg-purple-500 text-white">TRC20</span>
+                                <span>Tron</span>
+                            </div>
+                            <span class="text-green-400">$1.00</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-gray-800 rounded hover:bg-gray-700 transition">
+                            <div class="flex items-center gap-2">
+                                <span class="network-badge bg-gradient-to-r from-purple-500 to-blue-500 text-white">SOL</span>
+                                <span>Solana</span>
+                            </div>
+                            <span class="text-green-400">$0.02</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-gray-800 rounded hover:bg-gray-700 transition">
+                            <div class="flex items-center gap-2">
+                                <span class="network-badge bg-red-500 text-white">AVAX</span>
+                                <span>Avalanche</span>
+                            </div>
+                            <span class="text-yellow-400">$0.50</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-gray-800 rounded hover:bg-gray-700 transition">
+                            <div class="flex items-center gap-2">
+                                <span class="network-badge bg-purple-600 text-white">MATIC</span>
+                                <span>Polygon</span>
+                            </div>
+                            <span class="text-green-400">$0.05</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-gray-800 rounded hover:bg-gray-700 transition">
+                            <div class="flex items-center gap-2">
+                                <span class="network-badge bg-blue-600 text-white">ARB</span>
+                                <span>Arbitrum</span>
+                            </div>
+                            <span class="text-green-400">$0.30</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="tab-analytics" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                <!-- Spread Trend Chart -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-chart-line text-green-400"></i> Spread Trend (Last 30 updates)
+                    </h3>
+                    <div class="h-[250px]">
+                        <canvas id="spreadChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Profit Heatmap -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-th text-red-400"></i> Profit Heatmap (Coin vs Exchange)
+                    </h3>
+                    <div id="heatmapContainer" class="overflow-x-auto">
+                        <div id="profitHeatmap" class="grid gap-1" style="grid-template-columns: 60px repeat(6, 1fr);">
+                            <!-- Heatmap will be generated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <!-- Performance Stats -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-tachometer-alt text-yellow-400"></i> Performance
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400">Opportunities/Hour</span>
+                            <span class="font-bold" id="oppsPerHour">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400">Avg Profit</span>
+                            <span class="font-bold text-green-400" id="avgProfit">$0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400">Success Rate</span>
+                            <span class="font-bold text-yellow-400" id="successRate">0%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400">Total Scanned</span>
+                            <span class="font-bold" id="totalScanned">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Coins -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-star text-yellow-400"></i> Top Performing Coins
+                    </h3>
+                    <div id="topCoins" class="space-y-2">
+                        <!-- Generated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Risk Distribution -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-chart-pie text-purple-400"></i> Risk Distribution
+                    </h3>
+                    <div class="h-[150px]">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Simulation Tab -->
+        <div id="tab-simulation" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- Paper Trading -->
+                <div class="card-glass rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-lg font-bold flex items-center gap-2">
+                            <i class="fas fa-file-alt text-blue-400"></i> Paper Trading
+                        </h3>
+                        <button onclick="resetPaperTrading()" class="text-xs px-2 py-1 bg-red-600 hover:bg-red-700 rounded transition">
+                            Reset
+                        </button>
+                    </div>
+                    <div class="mb-4 p-3 bg-gray-800 rounded-lg">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-gray-400">Virtual Balance</span>
+                            <span class="font-bold text-green-400" id="virtualBalance">$100,000.00</span>
+                        </div>
+                        <div class="flex justify-between mb-2">
+                            <span class="text-gray-400">Total P&L</span>
+                            <span class="font-bold" id="totalPnL">$0.00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Trades Executed</span>
+                            <span class="font-bold" id="tradesExecuted">0</span>
+                        </div>
+                    </div>
+                    <div class="space-y-2 max-h-[200px] overflow-y-auto scrollbar-thin" id="paperTradeLog">
+                        <p class="text-gray-500 text-center py-4">No trades yet. Click "Execute" on an opportunity.</p>
+                    </div>
+                </div>
+
+                <!-- What-If Calculator -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-calculator text-yellow-400"></i> What-If Calculator
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div>
+                            <label class="text-gray-400 text-xs">Trade Amount</label>
+                            <input type="number" id="whatIfAmount" value="10000" class="w-full mt-1">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-xs">Price Spread %</label>
+                            <input type="number" id="whatIfSpread" value="0.5" step="0.1" class="w-full mt-1">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-xs">Slippage %</label>
+                            <input type="number" id="whatIfSlippage" value="0.1" step="0.05" class="w-full mt-1">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-xs">Transfer Delay (min)</label>
+                            <input type="number" id="whatIfDelay" value="15" class="w-full mt-1">
+                        </div>
+                    </div>
+                    <button onclick="calculateWhatIf()" class="w-full btn btn-primary mb-3">
+                        <i class="fas fa-calculator"></i> Calculate
+                    </button>
+                    <div id="whatIfResults" class="p-3 bg-gray-800 rounded-lg">
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div><span class="text-gray-400">Gross Profit:</span> <span id="wifGross">$0</span></div>
+                            <div><span class="text-gray-400">Trading Fees:</span> <span id="wifTradeFee">$0</span></div>
+                            <div><span class="text-gray-400">Withdrawal Fee:</span> <span id="wifWithdrawFee">$0</span></div>
+                            <div><span class="text-gray-400">Slippage Cost:</span> <span id="wifSlippage">$0</span></div>
+                            <div><span class="text-gray-400">Latency Risk:</span> <span id="wifLatency">$0</span></div>
+                            <div><span class="text-gray-400 font-bold">Net Profit:</span> <span id="wifNet" class="font-bold">$0</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monte Carlo Simulation -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-dice text-purple-400"></i> Monte Carlo Simulation
+                    </h3>
+                    <p class="text-gray-400 text-sm mb-3">Simulate 1000 trade scenarios with random market conditions</p>
+                    <button onclick="runMonteCarlo()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded-lg transition mb-3">
+                        <i class="fas fa-play"></i> Run Simulation
+                    </button>
+                    <div id="monteCarloResults" class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Best Case:</span>
+                            <span class="text-green-400" id="mcBest">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Worst Case:</span>
+                            <span class="text-red-400" id="mcWorst">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Average:</span>
+                            <span class="text-yellow-400" id="mcAvg">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">95% Confidence:</span>
+                            <span id="mcConfidence">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strategy Presets -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-sliders-h text-green-400"></i> Strategy Presets
+                    </h3>
+                    <div class="space-y-2">
+                        <button onclick="applyPreset('conservative')" class="w-full p-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-left transition">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-semibold text-green-400">Conservative</p>
+                                    <p class="text-xs text-gray-400">Min 1% ROI, low slippage, high confidence only</p>
+                                </div>
+                                <i class="fas fa-shield-alt text-green-400"></i>
+                            </div>
+                        </button>
+                        <button onclick="applyPreset('balanced')" class="w-full p-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-left transition">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-semibold text-yellow-400">Balanced</p>
+                                    <p class="text-xs text-gray-400">Min 0.5% ROI, moderate risk tolerance</p>
+                                </div>
+                                <i class="fas fa-balance-scale text-yellow-400"></i>
+                            </div>
+                        </button>
+                        <button onclick="applyPreset('aggressive')" class="w-full p-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-left transition">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-semibold text-red-400">Aggressive</p>
+                                    <p class="text-xs text-gray-400">Any profit, high risk tolerance</p>
+                                </div>
+                                <i class="fas fa-fire text-red-400"></i>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="tab-settings" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- Exchange Fees -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-percentage text-yellow-400"></i> Custom Trading Fees
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-yellow-400">Binance</span>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="feeBinance" value="0.1" step="0.01" class="w-20 text-right">
+                                <span class="text-gray-400">%</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-blue-400">Coinbase</span>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="feeCoinbase" value="0.5" step="0.01" class="w-20 text-right">
+                                <span class="text-gray-400">%</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-purple-400">Kraken</span>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="feeKraken" value="0.26" step="0.01" class="w-20 text-right">
+                                <span class="text-gray-400">%</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-orange-400">Bybit</span>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="feeBybit" value="0.1" step="0.01" class="w-20 text-right">
+                                <span class="text-gray-400">%</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-cyan-400">OKX</span>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="feeOkx" value="0.1" step="0.01" class="w-20 text-right">
+                                <span class="text-gray-400">%</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-green-400">KuCoin</span>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="feeKucoin" value="0.1" step="0.01" class="w-20 text-right">
+                                <span class="text-gray-400">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="saveSettings()" class="w-full mt-4 btn btn-success">
+                        <i class="fas fa-save"></i> Save Settings
+                    </button>
+                </div>
+
+                <!-- Withdrawal Limits -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-wallet text-purple-400"></i> Exchange Constraints
+                    </h3>
+                    <div class="space-y-3 text-sm max-h-[300px] overflow-y-auto scrollbar-thin">
+                        <div class="p-3 bg-gray-800 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-semibold text-yellow-400">Binance</span>
+                                <span class="badge badge-success">Verified</span>
+                            </div>
+                            <div class="text-gray-400 space-y-1">
+                                <p>Daily Limit: $1,000,000</p>
+                                <p>Min Order: $10</p>
+                                <p>Withdrawal Cooldown: None</p>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-gray-800 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-semibold text-blue-400">Coinbase</span>
+                                <span class="badge badge-success">Verified</span>
+                            </div>
+                            <div class="text-gray-400 space-y-1">
+                                <p>Daily Limit: $250,000</p>
+                                <p>Min Order: $2</p>
+                                <p>Withdrawal Cooldown: 48h (new funds)</p>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-gray-800 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-semibold text-purple-400">Kraken</span>
+                                <span class="badge badge-warning">Intermediate</span>
+                            </div>
+                            <div class="text-gray-400 space-y-1">
+                                <p>Daily Limit: $100,000</p>
+                                <p>Min Order: $10</p>
+                                <p>Withdrawal Cooldown: 72h</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Keys -->
+                <div class="card-glass rounded-xl p-4 advanced-feature">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-key text-red-400"></i> API Keys (Read-Only)
+                    </h3>
+                    <p class="text-gray-400 text-sm mb-3">Optional: Add API keys for real-time order book data</p>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-gray-400 text-xs">Binance API Key</label>
+                            <input type="password" placeholder="Enter API key..." class="w-full mt-1">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-xs">Coinbase API Key</label>
+                            <input type="password" placeholder="Enter API key..." class="w-full mt-1">
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-3"><i class="fas fa-lock"></i> Keys are stored locally and never sent to any server</p>
+                </div>
+
+                <!-- Display Settings -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-desktop text-cyan-400"></i> Display Settings
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span>Dark Theme</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="darkThemeToggle" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-gray-700 peer-checked:bg-yellow-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span>Compact Tables</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="compactToggle" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-700 peer-checked:bg-yellow-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span>Sound Alerts</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="soundToggle" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-gray-700 peer-checked:bg-yellow-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span>Browser Notifications</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="notifToggle" class="sr-only peer" onchange="requestNotificationPermission()">
+                                <div class="w-11 h-6 bg-gray-700 peer-checked:bg-yellow-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Tab -->
+        <div id="tab-alerts" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- Alert Configuration -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-bell text-yellow-400"></i> Alert Configuration
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-gray-400 text-sm">Profit Threshold ($)</label>
+                            <input type="number" id="alertProfitThreshold" value="50" class="w-full mt-1">
+                            <p class="text-xs text-gray-500 mt-1">Alert when net profit exceeds this amount</p>
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-sm">ROI Threshold (%)</label>
+                            <input type="number" id="alertROIThreshold" value="0.5" step="0.1" class="w-full mt-1">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-sm">Price Gap Alert (%)</label>
+                            <input type="number" id="alertGapThreshold" value="1" step="0.1" class="w-full mt-1">
+                        </div>
+                        <div class="flex items-center gap-4 flex-wrap">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="alertSound" class="accent-yellow-500" checked>
+                                <span>Sound</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="alertBrowser" class="accent-yellow-500">
+                                <span>Browser</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="alertBanner" class="accent-yellow-500" checked>
+                                <span>Banner</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Webhook Integration -->
+                <div class="card-glass rounded-xl p-4">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fab fa-discord text-indigo-400"></i> Webhook Alerts
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-gray-400 text-sm">Discord Webhook URL</label>
+                            <input type="text" id="discordWebhook" placeholder="https://discord.com/api/webhooks/..." class="w-full mt-1">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-sm">Telegram Bot Token</label>
+                            <input type="text" id="telegramToken" placeholder="123456789:ABCdef..." class="w-full mt-1">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-sm">Telegram Chat ID</label>
+                            <input type="text" id="telegramChatId" placeholder="-100123456789" class="w-full mt-1">
+                        </div>
+                        <button onclick="testWebhook()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg transition">
+                            <i class="fas fa-paper-plane"></i> Test Webhook
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Alert History -->
+                <div class="card-glass rounded-xl p-4 lg:col-span-2">
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-history text-green-400"></i> Alert History
+                    </h3>
+                    <div class="max-h-[300px] overflow-y-auto scrollbar-thin space-y-2" id="alertHistory">
+                        <p class="text-gray-500 text-center py-4">No alerts triggered yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center mt-6 text-gray-500 text-xs space-y-1">
+            <p><i class="fas fa-exclamation-triangle text-yellow-500"></i> Educational purposes only. Real arbitrage requires fast execution and carries significant risk.</p>
+            <p>Using Promise.all() for simultaneous API fetching (equivalent to Python asyncio.gather)</p>
+            <p class="text-gray-600">Keyboard: 1-6 Switch Tabs | Ctrl+R Refresh | Ctrl+P Pause</p>
+        </footer>
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="fab" onclick="scrollToBest()" title="Jump to Best Opportunity">
+        <i class="fas fa-arrow-up"></i>
+    </div>
+
+    <!-- Opportunity Detail Modal -->
+    <div id="opportunityModal" class="modal-overlay hidden" onclick="closeModal(event)">
+        <div class="modal-content w-full max-w-2xl" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold flex items-center gap-2">
+                    <i class="fas fa-chart-line text-yellow-400"></i>
+                    Opportunity Breakdown
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white transition p-2">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="modalContent">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

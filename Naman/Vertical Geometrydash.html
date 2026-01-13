@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Vertical Geometry Dash</title>
+    <style>
+        /* --- General Setup & Neon Border --- */
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(180deg, #1a0033, #0d001a);
+            font-family: 'Courier New', Courier, monospace;
+            box-shadow: inset 0 0 20px 5px #c300ff;
+            height: 100vh;
+        }
+
+        canvas { display: block; cursor: none; }
+        
+        /* --- Menu & UI Box Styling --- */
+        .ui-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        #mainMenu {
+            transition: opacity 0.5s ease-out;
+        }
+
+        #gameOverMenu {
+            display: none; /* Initially hidden */
+        }
+        
+        .menu-box {
+            background: rgba(13, 0, 26, 0.8);
+            border: 2px solid #c300ff;
+            box-shadow: 0 0 15px #c300ff;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 4rem;
+            color: #fff;
+            margin: 0 0 30px 0;
+            text-shadow: 0 0 5px #00ccff, 0 0 10px #00ccff, 0 0 20px #00ccff, 0 0 40px #00ccff;
+        }
+
+        #gameOverMenu h2 {
+            font-size: 3.5rem;
+            color: #ff4136;
+            margin: 0 0 30px 0;
+            text-shadow: 0 0 5px #ff4136, 0 0 10px #ff4136;
+        }
+
+        /* Level Selector */
+        #levelSelector { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; color: white; font-size: 1.2rem; }
+        #levelSelector input { font-family: 'Courier New', Courier, monospace; font-size: 1.5rem; width: 80px; text-align: center; background-color: transparent; color: #fff; border: 2px solid #00ccff; border-radius: 5px; margin-top: 10px; box-shadow: 0 0 5px #00ccff, inset 0 0 5px #00ccff; }
+        #difficultyDisplay { margin-top: 10px; font-weight: bold; transition: color 0.3s ease; }
+        
+        /* Button Styling */
+        .menu-button {
+            font-size: 1.5rem;
+            font-family: 'Courier New', Courier, monospace;
+            color: #fff;
+            background-color: transparent;
+            border: 3px solid #c300ff;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 0 5px #c300ff, 0 0 10px #c300ff, inset 0 0 5px #c300ff;
+            text-shadow: 0 0 5px #c300ff, 0 0 10px #c300ff;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        .menu-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px #c300ff, 0 0 20px #c300ff, 0 0 40px #c300ff, inset 0 0 10px #c300ff;
+        }
+
+        /* Decorative Geometry */
+        #mainMenu::before, #mainMenu::after { content: ''; position: absolute; border-style: solid; animation: spin 20s linear infinite; }
+        #mainMenu::before { width: 80px; height: 80px; top: 10%; left: 15%; border: 2px dashed #00ccff; opacity: 0.3; }
+        #mainMenu::after { width: 0; height: 0; bottom: 10%; right: 15%; border-width: 0 50px 86.6px 50px; border-color: transparent transparent #c300ff transparent; opacity: 0.3; animation-direction: reverse; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* Mobile Button */
+        #slow-mo-button { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 120px; padding: 15px; font-size: 18px; background-color: #00aaff; color: white; border: none; border-radius: 10px; user-select: none; }
+    </style>
+</head>
+<body>
+
+    <!-- UI Elements -->
+    <div id="mainMenu" class="ui-overlay">
+        <div class="menu-box">
+            <h1>Vertical Geometry Dash</h1>
+            <div id="levelSelector">
+                <label for="levelInput">Choose Starting Level</label>
+                <input type="number" id="levelInput" value="1" min="1" max="100">
+                <p id="difficultyDisplay">Difficulty: Easy</p>
+            </div>
+            <button id="startButton" class="menu-button">Start Game</button>
+        </div>
+    </div>
+    
+    <div id="gameOverMenu" class="ui-overlay">
+        <div class="menu-box">
+            <h2>You Lose!</h2>
+            <button id="tryAgainButton" class="menu-button">Try Again</button>
+            <button id="homeButton" class="menu-button">Go to Home</button>
+        </div>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+    <button id="slow-mo-button">Slow-Mo</button>
+
+    <script>
+    // --- Setup ---
+    const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
+    const mainMenu = document.getElementById('mainMenu'), startButton = document.getElementById('startButton');
+    const gameOverMenu = document.getElementById('gameOverMenu'), tryAgainButton = document.getElementById('tryAgainButton'), homeButton = document.getElementById('homeButton');
+    const levelInput = document.getElementById('levelInput'), difficultyDisplay = document.getElementById('difficultyDisplay');
+    const slowMoButton = document.getElementById('slow-mo-button');
+
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+
+    // --- GAME STATE ---
+    let score, level, scoreToNextLevel, currentDifficulty;
+    let isGameOver, isSlowMo, levelUpMessage = { text: '', timer: 0 };
+    let enemies, lasers, laserTimer;
+    const isMobile = 'ontouchstart' in window;
+    if (isMobile) slowMoButton.style.display = 'block';
+
+    const difficultySettings = { Easy: { color: '#5cb85c', enemySpeed: 2.5, laserFreq: 300, laserGap: 160, laserSpeed: 3 }, Medium: { color: '#f0ad4e', enemySpeed: 3.5, laserFreq: 220, laserGap: 140, laserSpeed: 4 }, Hard: { color: '#d9534f', enemySpeed: 5.0, laserFreq: 150, laserGap: 110, laserSpeed: 6 }, Impossible: { color: '#c300ff', enemySpeed: 7.0, laserFreq: 90,  laserGap: 90,  laserSpeed: 8 } };
+
+    // --- UI & STATE MANAGEMENT ---
+    function updateDifficultyDisplay() { let l = parseInt(levelInput.value); if (isNaN(l) || l < 1) l = 1; if (l > 100) l = 100; levelInput.value = l; const dN = getDifficultyName(l), d = getDifficulty(l); difficultyDisplay.textContent = `Difficulty: ${dN}`; difficultyDisplay.style.color = d.color; }
+    function calculateInitialState(startLevel) { level = startLevel; score = 0; scoreToNextLevel = 100; for (let i = 1; i < startLevel; i++) { scoreToNextLevel += (100 + i * 10); } score = scoreToNextLevel - (100 + (startLevel - 1) * 10); if (startLevel === 1) score = 0; enemies = []; lasers = []; laserTimer = 200; isGameOver = false; }
+    
+    // --- GAME LOGIC (Functions are mostly unchanged) ---
+    function getDifficulty(lvl) { if (lvl <= 40) return difficultySettings.Easy; if (lvl <= 80) return difficultySettings.Medium; if (lvl <= 90) return difficultySettings.Hard; return difficultySettings.Impossible; }
+    function getDifficultyName(lvl) { if (lvl <= 40) return 'Easy'; if (lvl <= 80) return 'Medium'; if (lvl <= 90) return 'Hard'; return 'Impossible'; }
+    function updateLevel() { if (level >= 100) return; if (score >= scoreToNextLevel) { level++; scoreToNextLevel += (100 + level * 10); levelUpMessage = { text: 'LEVEL UP!', timer: 120 }; } currentDifficulty = getDifficulty(level); }
+    const player = { x: canvas.width / 2, y: canvas.height - 80, size: 15, color: '#00ccff', targetX: canvas.width / 2 };
+    function drawPlayer() { ctx.beginPath(); ctx.moveTo(player.x, player.y - player.size); ctx.lineTo(player.x - player.size, player.y + player.size); ctx.lineTo(player.x + player.size, player.y + player.size); ctx.closePath(); ctx.fillStyle = player.color; ctx.fill(); }
+    function movePlayer() { const s = isSlowMo ? 2 : 10; const d = player.targetX - player.x; if (Math.abs(d) > 1) player.x += d / s; if (player.x + player.size > canvas.width) player.x = canvas.width - player.size; if (player.x - player.size < 0) player.x = player.size; }
+    const waveSize = Math.floor(canvas.width / 100);
+    function createEnemies() { for (let i = 0; i < waveSize + Math.floor(level / 10); i++) { enemies.push({ x: Math.random() * canvas.width, y: Math.random() * -500, size: Math.random() * 15 + 8, isSquare: Math.random() > 0.5 }); } }
+    function updateEnemies() { enemies.forEach(e => { e.y += currentDifficulty.enemySpeed; if (Math.hypot(player.x - e.x, player.y - e.y) < player.size + e.size) isGameOver = true; }); enemies = enemies.filter(e => e.y < canvas.height + 50); if (enemies.length < waveSize) createEnemies(); }
+    function drawEnemies() { ctx.fillStyle = '#c300ff'; enemies.forEach(e => { ctx.beginPath(); if (e.isSquare) { ctx.rect(e.x - e.size, e.y - e.size, e.size * 2, e.size * 2); } else { ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2); } ctx.fill(); }); }
+    function createLaser() { const gS = currentDifficulty.laserGap; const gSt = Math.random() * (canvas.width - gS); lasers.push({ y: -20, gapStart: gSt, gapSize: gS, speed: currentDifficulty.laserSpeed, isWarning: true, warningTimer: 60 }); }
+    function updateLasers() { laserTimer--; if (laserTimer <= 0) { createLaser(); laserTimer = Math.random() * 100 + currentDifficulty.laserFreq; } lasers.forEach(l => { if (l.isWarning) { if (--l.warningTimer <= 0) l.isWarning = false; } else { l.y += l.speed; if (Math.abs(player.y - l.y) < 10 && (player.x < l.gapStart || player.x > l.gapStart + l.gapSize)) isGameOver = true; } }); lasers = lasers.filter(l => l.y < canvas.height + 20); }
+    function drawLasers() { lasers.forEach(l => { const h = l.isWarning ? 2 : 10; const c = l.isWarning ? 'rgba(255, 200, 0, 0.5)' : '#ff4136'; ctx.fillStyle = c; ctx.fillRect(0, l.y - h / 2, l.gapStart, h); ctx.fillRect(l.gapStart + l.gapSize, l.y - h / 2, canvas.width - (l.gapStart + l.gapSize), h); }); }
+    function drawUI() { ctx.fillStyle = 'white'; ctx.font = '24px Courier New'; ctx.textAlign = 'left'; ctx.fillText(`Score: ${Math.floor(score)}`, 20, 40); ctx.fillText(`Level: ${level}`, 20, 70); const dN = getDifficultyName(level); ctx.fillStyle = currentDifficulty.color; ctx.textAlign = 'right'; ctx.fillText(dN, canvas.width - 20, 40); if (levelUpMessage.timer > 0) { ctx.fillStyle = `rgba(255, 255, 255, ${levelUpMessage.timer / 120})`; ctx.font = '60px Courier New'; ctx.textAlign = 'center'; ctx.fillText(levelUpMessage.text, canvas.width / 2, canvas.height / 2); levelUpMessage.timer--; } }
+
+    function gameLoop() {
+        if (isGameOver) {
+            canvas.style.cursor = 'default';
+            gameOverMenu.style.display = 'flex';
+            return;
+        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        updateLevel(); movePlayer(); drawPlayer(); updateEnemies(); drawEnemies(); updateLasers(); drawLasers(); drawUI();
+        score += 0.1 + (level / 100);
+        requestAnimationFrame(gameLoop);
+    }
+    
+    // --- START & RESTART LOGIC ---
+    function startGame() {
+        calculateInitialState(parseInt(levelInput.value));
+        mainMenu.style.opacity = '0';
+        mainMenu.style.pointerEvents = 'none'; // Prevent clicking menu when invisible
+        canvas.style.cursor = 'none';
+        gameOverMenu.style.display = 'none';
+        gameLoop();
+    }
+    
+    function restartGame() {
+        calculateInitialState(level); // Restart at the current level
+        gameOverMenu.style.display = 'none';
+        canvas.style.cursor = 'none';
+        gameLoop();
+    }
+
+    // --- Event Listeners ---
+    startButton.addEventListener('click', startGame);
+    tryAgainButton.addEventListener('click', restartGame);
+    homeButton.addEventListener('click', () => location.reload()); // Easiest way to go home
+    levelInput.addEventListener('input', updateDifficultyDisplay);
+
+    updateDifficultyDisplay(); // Initial call
+    
+    document.addEventListener('mousemove', e => player.targetX = e.clientX);
+    document.addEventListener('mousedown', () => isSlowMo = true); document.addEventListener('mouseup', () => isSlowMo = false);
+    document.addEventListener('keydown', e => { if (e.code === 'Space') isSlowMo = true; }); document.addEventListener('keyup', e => { if (e.code === 'Space') isSlowMo = false; });
+    canvas.addEventListener('touchmove', e => { e.preventDefault(); if (e.touches[0]) player.targetX = e.touches[0].clientX; });
+    slowMoButton.addEventListener('touchstart', e => { e.preventDefault(); isSlowMo = true; }); slowMoButton.addEventListener('touchend', e => { e.preventDefault(); isSlowMo = false; });
+    </script>
+</body>
+</html>

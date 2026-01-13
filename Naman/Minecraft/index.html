@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Mod Hub - Neon Edition</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* --- Root Variables & Base Styles --- */
+        :root {
+            --neon-blue: #00BFFF;
+            --neon-purple: #A020F0;
+            --neon-green: #39FF14;
+            --dark-bg: #0d0d0d;
+            --card-bg: rgba(20, 20, 20, 0.7);
+            --light-text: #e0e0e0;
+            --mid-text: #a0a0a0;
+            --font-main: 'Press Start 2P', cursive;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--light-text);
+            font-family: var(--font-main);
+            margin: 0;
+            overflow-x: hidden;
+        }
+        
+        /* --- JS-Enhanced UI Elements --- */
+        #mod-search {
+            font-family: var(--font-main);
+            width: 50%;
+            max-width: 600px;
+            padding: 15px;
+            margin: 20px auto;
+            display: block;
+            background: #1a1a1a;
+            border: 2px solid var(--neon-purple);
+            color: white;
+            font-size: 1rem;
+            text-align: center;
+            box-shadow: inset 0 0 8px var(--neon-purple), 0 0 8px var(--neon-purple);
+            z-index: 100;
+            position: sticky;
+            top: 20px;
+        }
+        #mod-search:focus {
+            outline: none;
+            border-color: var(--neon-green);
+            box-shadow: inset 0 0 10px var(--neon-green), 0 0 20px var(--neon-green);
+        }
+
+        #back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background-color: var(--neon-purple);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-family: var(--font-main);
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 0 15px var(--neon-purple), 0 0 25px var(--neon-purple);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+            transform: translateY(20px);
+        }
+        #back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        #back-to-top:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px var(--neon-purple), 0 0 35px #fff;
+        }
+
+        .trail-particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--neon-green);
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 0 10px var(--neon-green), 0 0 20px var(--neon-green);
+            animation: fade-out 0.5s linear forwards;
+            z-index: 9999;
+        }
+        @keyframes fade-out {
+            to {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+        
+        /* --- Floating Emojis --- */
+        .emoji-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; overflow: hidden; }
+        .emoji { position: absolute; animation: float 25s infinite ease-in-out; width: 40px; height: 40px; filter: drop-shadow(0 0 8px var(--neon-blue)); }
+        @keyframes float { 0% { transform: translateY(0px) rotate(0deg); opacity: 0; } 10% { opacity: 0.7; } 50% { transform: translateY(-50vh) rotate(180deg); } 90% { opacity: 0.7; } 100% { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
+        .emoji-1 { top: 100vh; left: 10%; animation-delay: 0s; width: 50px; height: 50px;}
+        .emoji-2 { top: 100vh; left: 25%; animation-delay: 5s; animation-duration: 30s; filter: drop-shadow(0 0 10px var(--neon-purple));}
+        .emoji-3 { top: 100vh; left: 40%; animation-delay: 2s; animation-duration: 22s; filter: drop-shadow(0 0 10px var(--neon-green));}
+        .emoji-4 { top: 100vh; left: 55%; animation-delay: 8s; width: 45px; height: 45px;}
+        .emoji-5 { top: 100vh; left: 70%; animation-delay: 4s; animation-duration: 28s; }
+        .emoji-6 { top: 100vh; left: 85%; animation-delay: 6s; filter: drop-shadow(0 0 10px var(--neon-purple));}
+
+        /* --- Parallax Headings with Glowing Text --- */
+        .parallax-heading { height: 40vh; background-attachment: fixed; background-position: center; background-repeat: no-repeat; background-size: cover; display: flex; align-items: center; justify-content: center; position: relative; z-index: 2; }
+        .parallax-heading h1 { font-size: clamp(2rem, 8vw, 4rem); animation: glow-text 4s ease-in-out infinite; }
+        @keyframes glow-text { 0%, 100% { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px var(--neon-blue), 0 0 20px var(--neon-blue); } 33% { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px var(--neon-green), 0 0 20px var(--neon-green); } 66% { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px var(--neon-purple), 0 0 20px var(--neon-purple); } }
+        #perf-header { background-image: url('https://i.imgur.com/kYo4gGl.jpeg'); }
+        #hud-header { background-image: url('https://i.imgur.com/gGMAm78.jpeg'); }
+        #tools-header { background-image: url('https://i.imgur.com/2s3jM4H.jpeg'); }
+        #visuals-header { background-image: url('https://i.imgur.com/y8vyr35.jpeg'); }
+        #libs-header { background-image: url('https://i.imgur.com/3Z4wA0v.jpeg'); }
+
+        /* --- Mod Grid & Card Styles --- */
+        .mod-category { padding: 3rem 2rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 2rem; position: relative; z-index: 5; }
+        .mod-card { background: var(--card-bg); border: 2px solid rgba(160, 32, 240, 0.3); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; text-align: left; transition: transform 0.3s ease; position: relative; overflow: hidden; }
+        .mod-card::before { content: ''; position: absolute; top: 50%; left: 50%; width: 250%; height: 250%; z-index: -1; background-image: conic-gradient( transparent, var(--neon-green), var(--neon-purple), var(--neon-blue), transparent 30% ); animation: rotate-border 4s linear infinite; opacity: 0; transition: opacity 0.3s ease; }
+        .mod-card:hover { transform: translateY(-10px); }
+        .mod-card:hover::before { opacity: 1; }
+        @keyframes rotate-border { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+        .mod-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+        .mod-icon { width: 48px; height: 48px; border-radius: 8px; flex-shrink: 0; image-rendering: pixelated; }
+        .mod-title { font-size: 1.2rem; line-height: 1.4; color: var(--light-text); }
+        .mod-description { font-size: 0.85rem; color: var(--mid-text); flex-grow: 1; margin: 1rem 0 1.5rem 0; line-height: 1.5; }
+        .platforms-divider { border: 1px solid rgba(160, 32, 240, 0.3); margin: 1rem 0; }
+        .platforms-section h3 { color: var(--neon-purple); font-size: 1rem; margin-top: 1rem; margin-bottom: 0.75rem; text-transform: uppercase; }
+        .platform-unavailable { color: var(--mid-text); font-style: italic; font-size: 0.8rem; }
+        .version-list { list-style: none; padding: 0; margin: 0; }
+        .version-item { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; color: var(--mid-text); font-size: 0.9rem;}
+        .download-btn { display: inline-block; padding: 6px 12px; font-size: 0.8rem; color: white; background-color: transparent; border: 2px solid var(--neon-green); text-decoration: none; cursor: pointer; text-shadow: 0 0 8px var(--neon-green); box-shadow: inset 0 0 8px var(--neon-green), 0 0 8px var(--neon-green); transition: all 0.3s ease; }
+        .download-btn:hover { color: var(--dark-bg); background-color: var(--neon-green); box-shadow: inset 0 0 10px var(--neon-green), 0 0 20px var(--neon-green), 0 0 30px #fff; transform: scale(1.05); }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) { .parallax-heading h1 { font-size: 2.5rem; } .mod-category { padding: 2rem 1rem; grid-template-columns: 1fr; } #mod-search { width: 80%; } }
+    </style>
+</head>
+<body>
+
+    <div class="emoji-container">
+        <img src="https://cdn3.emoji.gg/emojis/26915-minecraft-zombie.png" alt="zombie" class="emoji emoji-1">
+        <img src="https://cdn3.emoji.gg/emojis/801978-minecraftnetheritesword.gif" alt="sword" class="emoji emoji-2">
+        <img src="https://cdn3.emoji.gg/emojis/1852-notchapple.gif" alt="apple" class="emoji emoji-3">
+        <img src="https://cdn3.emoji.gg/emojis/5521-totemofundying.png" alt="totem" class="emoji emoji-4">
+        <img src="https://cdn3.emoji.gg/emojis/16469-diamond.png" alt="diamond" class="emoji emoji-5">
+        <img src="https://cdn3.emoji.gg/emojis/7993-enderpearl.png" alt="pearl" class="emoji emoji-6">
+    </div>
+
+    <input type="text" id="mod-search" placeholder="Search for a mod...">
+
+    <main id="main-content">
+        <!-- MOD CATEGORIES WILL BE POPULATED HERE BY JS -->
+    </main>
+    
+    <button id="back-to-top">^</button>
+
+    <script>
+        const modData = {
+            "🚀 PERFORMANCE": [
+                { title: "Sodium", desc: "A modern rendering engine for greatly improved frame rates." },
+                { title: "Starlight", desc: "Rewrites the light engine to fix lighting performance issues." },
+                { title: "ModernFix", desc: "A variety of performance and bug fixes for modern Minecraft." },
+                { title: "Iris Shaders", desc: "A modern shaders mod compatible with OptiFine shader packs." },
+                { title: "ImmediatelyFast", desc: "Improves immediate mode rendering performance." },
+                { title: "Krypton", desc: "A Minecraft mod that optimizes the networking stack." },
+                { title: "FerriteCore", desc: "Reduces memory usage by tweaking certain game features." },
+                { title: "MoreCulling", desc: "Changes how blockstate culling is handled to improve performance." },
+                { title: "Bobby", desc: "Allows for viewing render distances greater than the server's." },
+                { title: "Dynamic FPS", desc: "Reduces resource usage when the game is in the background." },
+                { title: "Cull Leaves", desc: "Adds culling to leaf blocks, similar to Better Foliage." },
+                { title: "Clumps", desc: "Groups XP orbs together into a single entity to reduce lag." },
+                { title: "Fast Chest", desc: "Improves rendering performance of chests and other block entities." },
+                { title: "Smooth GUI", desc: "Improves GUI scale performance." },
+                { title: "VanillaIcecreamFix", desc: "A collection of performance-related bug fixes." },
+                { title: "Mob AI Tweaks", desc: "Provides options to optimize mob AI behavior." },
+                { title: "Smoke Suppression", desc: "Reduces or removes smoke particles from fires." },
+                { title: "Very Many Players", desc: "A mod designed to improve server performance with many players." },
+                { title: "Nvidium/Nodium", desc: "A rendering engine replacement for NVIDIA GPUs." },
+                { title: "Alternate Current", desc: "An efficient and non-locational redstone dust implementation." },
+            ],
+            "🖥️ HUD & UI": [
+                { title: "Roughly Enough Items", desc: "A clean and customizable recipe viewer and item spawner." },
+                { title: "EMI", desc: "A feature-rich recipe and item viewer with a powerful tag system." },
+                { title: "Inventory HUD+", desc: "Displays your inventory, armor, and potion effects on the HUD." },
+                { title: "Xaero's Minimap", desc: "Adds a highly customizable minimap to your screen." },
+                { title: "Jade", desc: "A UI improvement mod that shows information about what you are looking at." },
+                { title: "AppleSkin", desc: "Provides information about food and hunger mechanics." },
+                { title: "ShulkerBoxTooltip", desc: "Allows you to see the contents of a shulker box in its tooltip." },
+                { title: "BetterF3", desc: "Replaces the debug screen with a highly customizable, more readable one." },
+                { title: "Controlling", desc: "Adds the ability to search for keybinds in the controls menu." },
+                { title: "Mouse Tweaks", desc: "Brings powerful inventory sorting and management enhancements." },
+                { title: "Immersive Hotbar", desc: "A configurable hotbar that fades out when not in use." },
+                { title: "Better Saved Hotbar", desc: "Adds new features to the creative mode saved hotbars." },
+                { title: "Totem Counter", desc: "Displays the number of totems of undying in your inventory." },
+            ],
+            "🛠️ TOOLS & AUTOMATION": [
+                { title: "Create", desc: "A mod offering tools and blocks for building and aesthetic automation." },
+                { title: "WorldEdit", desc: "An in-game map editor with a massive selection of tools." },
+                { title: "Baritone", desc: "An automated pathfinding system for Minecraft." },
+                { title: "Itematica", desc: "A schematic mod for survival mode, for building complex structures." },
+                { title: "Tweakeroo", desc: "A client-side mod with a bunch of various 'tweaks' for the game." },
+                { title: "Lighty", desc: "A utility that visualizes light levels to help prevent mob spawning." },
+                { title: "Client Sort", desc: "A client-side mod that allows for automatic inventory sorting." },
+                { title: "Easy Shulker", desc: "Adds quality-of-life features for shulker box management." },
+                { title: "Nature's Compass", desc: "A utility item that allows you to search for and locate biomes." },
+                { title: "Seed Cracker X", desc: "A client-side mod that helps in cracking Minecraft world seeds." },
+                { title: "Ctrl-Q", desc: "A simple mod that allows you to drop a full stack of items." },
+                { title: "Elytra Swapper", desc: "Automatically swaps between your chestplate and elytra." },
+            ],
+            "🌍 WORLD & VISUALS": [
+                { title: "Continuity", desc: "A mod that allows for connected textures, like OptiFine." },
+                { title: "Show Me Your Skin!", desc: "Allows for advanced skin customization and visibility features." },
+                { title: "Distant Horizons", desc: "Adds simplified terrain rendering at a distance, like LODs." },
+                { title: "Dynamic Lights", desc: "Makes light-emitting items actually emit light when held." },
+                { title: "3D Skin Layers", desc: "Renders the second layer of player skins in 3D." },
+                { title: "Terralith", desc: "A world generation datapack/mod for breathtaking new biomes." },
+                { title: "TrimEffects", desc: "Adds particle effects to armor trims." },
+                { title: "Particle Effects", desc: "A mod that enhances and adds new particle effects." },
+                { title: "Boat Item View", desc: "Shows the held item of players in boats." },
+                { title: "Toggle Item Frames", desc: "Makes item frames invisible until you look at them." },
+                { title: "BetterPvP", desc: "A suite of mods for PvP, including a minimap and status effects." },
+                { title: "Locator Heads", desc: "Player heads drop on death and can be used to track players." },
+                { title: "vtdownloader", desc: "A client-side mod for downloading video files from URLs." },
+            ],
+            "⚙️ LIBRARIES & APIS": [
+                { title: "Fabric API", desc: "The core library for any Fabric mod, providing essential hooks." },
+                { title: "Architectury API", desc: "An intermediary API to help develop mods for multiple loaders." },
+                { title: "MaLiLib", desc: "A library mod required by many of masa's client-side mods." },
+                { title: "Cloth Config API", desc: "A config screen API for Fabric and Forge mods." },
+                { title: "Yet Another Config Lib", desc: "A library that provides a configuration system for mods." },
+                { title: "Geckolib", desc: "An animation engine for entities, blocks, and items." },
+                { title: "Bookshelf", desc: "A library mod used by Darkhax and other developers." },
+                { title: "Collective", desc: "A shared library mod with common code for Serilum's mods." },
+                { title: "Fabric Language Kotlin", desc: "Allows for developing Fabric mods in the Kotlin language." },
+                { title: "Indium", desc: "An addon for Sodium that provides support for the Fabric Rendering API." },
+                { title: "Sodium Extra", desc: "Provides extra options and features for the Sodium mod." },
+                { title: "CIT Resewn", desc: "Re-implements OptiFine's Custom Item Textures feature." },
+            ]
+        };
+
+        const mainContent = document.getElementById('main-content');
+
+        // Dynamically create all the HTML from the JS object
+        for (const category in modData) {
+            const [emoji, ...categoryName] = category.split(' ');
+            const headerId = categoryName.join('-').toLowerCase() + '-header';
+
+            mainContent.innerHTML += `
+                <div id="${headerId}" class="parallax-heading">
+                    <h1>${category}</h1>
+                </div>
+                <div class="mod-category">
+                    ${modData[category].map(mod => `
+                        <div class="mod-card">
+                            <div class="mod-header">
+                                <img src="https://placehold.co/48x48/39FF14/0d0d0d?text=${mod.title.charAt(0)}" alt="${mod.title} Icon" class="mod-icon">
+                                <h2 class="mod-title">${mod.title}</h2>
+                            </div>
+                            <p class="mod-description">${mod.desc}</p>
+                            <hr class="platforms-divider">
+                            <div class="platforms-section">
+                                <h3>Fabric / Forge</h3>
+                                <ul class="version-list">
+                                    <li class="version-item"><span>1.20.X</span><a href="#" class="download-btn">Download</a></li>
+                                    <li class="version-item"><span>1.19.X</span><a href="#" class="download-btn">Download</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        // --- JS for Live Search ---
+        const searchBar = document.getElementById('mod-search');
+        searchBar.addEventListener('keyup', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const modCards = document.querySelectorAll('.mod-card');
+
+            modCards.forEach(card => {
+                const title = card.querySelector('.mod-title').textContent.toLowerCase();
+                const description = card.querySelector('.mod-description').textContent.toLowerCase();
+                const categoryContainer = card.parentElement;
+
+                if (title.includes(searchTerm) || description.includes(searchTerm)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // --- JS for Back to Top Button ---
+        const toTopButton = document.getElementById('back-to-top');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 600) {
+                toTopButton.classList.add('visible');
+            } else {
+                toTopButton.classList.remove('visible');
+            }
+        });
+        toTopButton.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // --- JS for Neon Cursor Trail ---
+        document.body.addEventListener('mousemove', e => {
+            const particle = document.createElement('span');
+            particle.classList.add('trail-particle');
+            particle.style.left = e.pageX + 'px';
+            particle.style.top = e.pageY + 'px';
+            document.body.appendChild(particle);
+            setTimeout(() => { particle.remove(); }, 500);
+        });
+
+        // --- JS for Parallax Scroll Effect ---
+        document.addEventListener('scroll', function() {
+            const parallaxHeadings = document.querySelectorAll('.parallax-heading');
+            const scrollPosition = window.pageYOffset;
+            parallaxHeadings.forEach(heading => {
+                const rect = heading.getBoundingClientRect();
+                if (rect.top < window.innerHeight && rect.bottom >= 0) {
+                    const speed = 0.4;
+                    const yPos = -((scrollPosition - heading.offsetTop) * speed);
+                    heading.style.backgroundPosition = `center ${yPos}px`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

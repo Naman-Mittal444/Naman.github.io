@@ -1,0 +1,1063 @@
+/* ============================================
+   META-PORTFOLIO: Cyberpunk Neon Theme
+   Author: Naman Mittal
+   ============================================ */
+
+/* CSS Variables - Neon Color System */
+:root {
+    --neon-blue: #00f2ff;
+    --neon-purple: #bd00ff;
+    --neon-pink: #ff00ff;
+    --bg-dark: #0f0f0f;
+    --bg-card: #1a1a1a;
+    --bg-hover: #252525;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --border-color: #333333;
+}
+
+/* Global Reset & Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    line-height: 1.6;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+/* Smooth Scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* ============================================
+   TYPOGRAPHY & TEXT EFFECTS
+   ============================================ */
+
+h1, h2, h3 {
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+h1 {
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    text-shadow: 
+        0 0 10px var(--neon-blue),
+        0 0 20px var(--neon-blue),
+        0 0 30px var(--neon-blue);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+h2 {
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    text-shadow: 
+        0 0 5px var(--neon-purple),
+        0 0 10px var(--neon-purple);
+}
+
+h3 {
+    font-size: clamp(1.2rem, 3vw, 1.8rem);
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        text-shadow: 
+            0 0 10px var(--neon-blue),
+            0 0 20px var(--neon-blue),
+            0 0 30px var(--neon-blue);
+    }
+    50% {
+        text-shadow: 
+            0 0 15px var(--neon-blue),
+            0 0 30px var(--neon-blue),
+            0 0 45px var(--neon-blue);
+    }
+}
+
+/* ============================================
+   LANDING PAGE (index.html)
+   ============================================ */
+
+.hero-section {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 2rem;
+    position: relative;
+}
+
+.hero-title {
+    margin-bottom: 1rem;
+}
+
+.hero-subtitle {
+    font-size: clamp(1rem, 3vw, 1.5rem);
+    color: var(--text-secondary);
+    margin-bottom: 3rem;
+    text-shadow: 0 0 5px var(--neon-purple);
+}
+
+/* Primary CTA Button */
+.cta-button {
+    display: inline-block;
+    padding: 1rem 3rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--text-primary);
+    background: transparent;
+    border: 2px solid var(--neon-blue);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+        0 0 10px var(--neon-blue),
+        inset 0 0 10px rgba(0, 242, 255, 0.1);
+    animation: button-pulse 2s ease-in-out infinite;
+}
+
+.cta-button:hover {
+    background: var(--neon-blue);
+    color: var(--bg-dark);
+    box-shadow: 
+        0 0 20px var(--neon-blue),
+        0 0 40px var(--neon-blue),
+        inset 0 0 20px rgba(0, 242, 255, 0.3);
+    transform: scale(1.05);
+}
+
+@keyframes button-pulse {
+    0%, 100% {
+        box-shadow: 
+            0 0 10px var(--neon-blue),
+            inset 0 0 10px rgba(0, 242, 255, 0.1);
+    }
+    50% {
+        box-shadow: 
+            0 0 20px var(--neon-blue),
+            0 0 30px var(--neon-blue),
+            inset 0 0 15px rgba(0, 242, 255, 0.2);
+    }
+}
+
+/* Skills Section */
+.skills-section {
+    max-width: 800px;
+    margin: 4rem auto;
+    padding: 2rem;
+}
+
+.skills-title {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.skill-item {
+    margin-bottom: 1.5rem;
+}
+
+.skill-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.skill-bar-container {
+    width: 100%;
+    height: 25px;
+    background-color: var(--bg-card);
+    border-radius: 15px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    position: relative;
+}
+
+.skill-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+    border-radius: 15px;
+    transition: width 1.5s ease-out;
+    box-shadow: 
+        0 0 10px var(--neon-blue),
+        inset 0 0 10px rgba(0, 242, 255, 0.3);
+    animation: skill-glow 2s ease-in-out infinite;
+}
+
+@keyframes skill-glow {
+    0%, 100% {
+        box-shadow: 
+            0 0 10px var(--neon-blue),
+            inset 0 0 10px rgba(0, 242, 255, 0.3);
+    }
+    50% {
+        box-shadow: 
+            0 0 15px var(--neon-blue),
+            0 0 25px var(--neon-blue),
+            inset 0 0 15px rgba(0, 242, 255, 0.4);
+    }
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 4rem;
+}
+
+.ai-badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--neon-purple);
+    border-radius: 3px;
+    color: var(--neon-purple);
+    font-size: 0.8rem;
+    box-shadow: 0 0 5px var(--neon-purple);
+}
+
+/* ============================================
+   WORKS PAGE (works.html)
+   ============================================ */
+
+.works-header {
+    padding: 2rem;
+    text-align: center;
+    position: relative;
+}
+
+.works-title {
+    text-shadow: 
+        0 0 10px var(--neon-blue),
+        0 0 20px var(--neon-blue);
+}
+
+.back-button {
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: 1px solid var(--neon-purple);
+    color: var(--neon-purple);
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.back-button:hover {
+    background: var(--neon-purple);
+    color: var(--bg-dark);
+    box-shadow: 0 0 10px var(--neon-purple);
+}
+
+/* Tools Grid */
+.tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Tool Card */
+.tool-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.tool-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 242, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.tool-card:hover::before {
+    left: 100%;
+}
+
+.tool-card:hover {
+    border-color: var(--neon-blue);
+    box-shadow: 
+        0 0 15px var(--neon-blue),
+        0 0 30px rgba(0, 242, 255, 0.3);
+    transform: translateY(-5px);
+}
+
+.tool-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.tool-title {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    color: var(--neon-blue);
+}
+
+.launch-button {
+    width: 100%;
+    padding: 0.8rem;
+    background: transparent;
+    border: 2px solid var(--neon-purple);
+    color: var(--neon-purple);
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.launch-button:hover {
+    background: var(--neon-purple);
+    color: var(--bg-dark);
+    box-shadow: 0 0 15px var(--neon-purple);
+}
+
+/* ============================================
+   MODAL SYSTEM
+   ============================================ */
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 15, 15, 0.95);
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.modal-overlay.active {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    background: var(--bg-card);
+    border: 2px solid var(--neon-blue);
+    border-radius: 10px;
+    padding: 2rem;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 
+        0 0 30px var(--neon-blue),
+        0 0 60px rgba(0, 242, 255, 0.3);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: transparent;
+    border: 2px solid var(--neon-purple);
+    color: var(--neon-purple);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background: var(--neon-purple);
+    color: var(--bg-dark);
+    box-shadow: 0 0 15px var(--neon-purple);
+    transform: rotate(90deg);
+}
+
+.modal-title {
+    margin-bottom: 1.5rem;
+    text-align: center;
+    color: var(--neon-blue);
+}
+
+/* ============================================
+   TOOL-SPECIFIC STYLES
+   ============================================ */
+
+/* Calculator */
+.calculator {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.calc-display {
+    width: 100%;
+    padding: 1rem;
+    font-size: 2rem;
+    background: var(--bg-dark);
+    border: 2px solid var(--neon-blue);
+    border-radius: 5px;
+    color: var(--neon-blue);
+    text-align: right;
+    margin-bottom: 1rem;
+    box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.2);
+}
+
+.calc-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+}
+
+.calc-btn {
+    padding: 1rem;
+    font-size: 1.2rem;
+    background: var(--bg-dark);
+    border: 1px solid var(--neon-purple);
+    color: var(--neon-purple);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.calc-btn:hover {
+    background: var(--neon-purple);
+    color: var(--bg-dark);
+    box-shadow: 0 0 10px var(--neon-purple);
+    transform: scale(1.05);
+}
+
+.calc-btn.operator {
+    border-color: var(--neon-blue);
+    color: var(--neon-blue);
+}
+
+.calc-btn.operator:hover {
+    background: var(--neon-blue);
+    color: var(--bg-dark);
+    box-shadow: 0 0 10px var(--neon-blue);
+}
+
+/* Speed Test */
+.speed-test {
+    text-align: center;
+    padding: 2rem;
+}
+
+.speed-display {
+    font-size: 4rem;
+    color: var(--neon-blue);
+    margin: 2rem 0;
+    text-shadow: 0 0 20px var(--neon-blue);
+}
+
+.speed-unit {
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+}
+
+.test-button {
+    padding: 1rem 2rem;
+    background: transparent;
+    border: 2px solid var(--neon-blue);
+    color: var(--neon-blue);
+    border-radius: 5px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 1rem;
+}
+
+.test-button:hover {
+    background: var(--neon-blue);
+    color: var(--bg-dark);
+    box-shadow: 0 0 20px var(--neon-blue);
+}
+
+.loader {
+    border: 4px solid var(--border-color);
+    border-top: 4px solid var(--neon-blue);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 2rem auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Tic Tac Toe */
+.tic-tac-toe {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.game-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin: 2rem 0;
+}
+
+.game-cell {
+    aspect-ratio: 1;
+    background: var(--bg-dark);
+    border: 2px solid var(--neon-blue);
+    border-radius: 5px;
+    font-size: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--neon-blue);
+}
+
+.game-cell:hover {
+    background: rgba(0, 242, 255, 0.1);
+    box-shadow: 0 0 15px var(--neon-blue);
+}
+
+.game-cell.x {
+    color: var(--neon-blue);
+}
+
+.game-cell.o {
+    color: var(--neon-purple);
+}
+
+.game-status {
+    text-align: center;
+    font-size: 1.2rem;
+    margin: 1rem 0;
+    color: var(--neon-purple);
+}
+
+.reset-button {
+    width: 100%;
+    padding: 0.8rem;
+    background: transparent;
+    border: 2px solid var(--neon-purple);
+    color: var(--neon-purple);
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.reset-button:hover {
+    background: var(--neon-purple);
+    color: var(--bg-dark);
+    box-shadow: 0 0 15px var(--neon-purple);
+}
+
+/* Water Sort Puzzle */
+.water-sort {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.tubes-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin: 2rem 0;
+}
+
+.tube {
+    width: 60px;
+    height: 200px;
+    background: var(--bg-dark);
+    border: 2px solid var(--neon-blue);
+    border-radius: 5px 5px 0 0;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tube:hover {
+    border-color: var(--neon-purple);
+    box-shadow: 0 0 15px var(--neon-purple);
+}
+
+.tube.selected {
+    border-color: var(--neon-purple);
+    box-shadow: 0 0 20px var(--neon-purple);
+    transform: translateY(-5px);
+}
+
+.water-layer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    border-radius: 3px 3px 0 0;
+    transition: all 0.3s ease;
+}
+
+/* Pomodoro Timer */
+.pomodoro {
+    text-align: center;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.timer-display {
+    font-size: 5rem;
+    color: var(--neon-blue);
+    margin: 2rem 0;
+    text-shadow: 0 0 20px var(--neon-blue);
+}
+
+.timer-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.timer-btn {
+    padding: 0.8rem 1.5rem;
+    background: transparent;
+    border: 2px solid var(--neon-purple);
+    color: var(--neon-purple);
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.timer-btn:hover {
+    background: var(--neon-purple);
+    color: var(--bg-dark);
+    box-shadow: 0 0 15px var(--neon-purple);
+}
+
+.progress-ring {
+    width: 200px;
+    height: 200px;
+    margin: 2rem auto;
+}
+
+/* Password Generator */
+.password-gen {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.password-display {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.2rem;
+    background: var(--bg-dark);
+    border: 2px solid var(--neon-blue);
+    border-radius: 5px;
+    color: var(--neon-blue);
+    text-align: center;
+    margin-bottom: 1.5rem;
+    word-break: break-all;
+    box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.2);
+}
+
+.gen-options {
+    margin: 1.5rem 0;
+}
+
+.option-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 1rem 0;
+    padding: 0.8rem;
+    background: var(--bg-dark);
+    border-radius: 5px;
+}
+
+.option-group label {
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.option-group input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--neon-blue);
+}
+
+.length-input {
+    width: 100%;
+    padding: 0.8rem;
+    background: var(--bg-dark);
+    border: 2px solid var(--neon-blue);
+    border-radius: 5px;
+    color: var(--neon-blue);
+    font-size: 1rem;
+    margin: 1rem 0;
+}
+
+.gen-button {
+    width: 100%;
+    padding: 1rem;
+    background: transparent;
+    border: 2px solid var(--neon-purple);
+    color: var(--neon-purple);
+    border-radius: 5px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.gen-button:hover {
+    background: var(--neon-purple);
+    color: var(--bg-dark);
+    box-shadow: 0 0 20px var(--neon-purple);
+}
+
+/* Snake Game */
+.snake-game {
+    text-align: center;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.game-canvas {
+    border: 2px solid var(--neon-blue);
+    border-radius: 5px;
+    background: var(--bg-dark);
+    display: block;
+    margin: 1rem auto;
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
+}
+
+.game-score {
+    font-size: 1.5rem;
+    color: var(--neon-purple);
+    margin: 1rem 0;
+}
+
+.game-instructions {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin: 1rem 0;
+}
+
+/* Memory Game */
+.memory-game {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.memory-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin: 2rem 0;
+}
+
+.memory-card {
+    aspect-ratio: 1;
+    background: var(--bg-dark);
+    border: 2px solid var(--neon-blue);
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    transition: transform 0.3s ease;
+    transform-style: preserve-3d;
+    position: relative;
+}
+
+.memory-card.flipped {
+    transform: rotateY(180deg);
+}
+
+.memory-card .card-front,
+.memory-card .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+}
+
+.memory-card .card-front {
+    background: var(--bg-dark);
+    border: 2px solid var(--neon-blue);
+}
+
+.memory-card .card-back {
+    background: var(--bg-card);
+    border: 2px solid var(--neon-purple);
+    transform: rotateY(180deg);
+}
+
+.memory-card.matched {
+    border-color: var(--neon-purple);
+    box-shadow: 0 0 15px var(--neon-purple);
+    cursor: default;
+}
+
+.memory-score {
+    text-align: center;
+    font-size: 1.2rem;
+    color: var(--neon-blue);
+    margin: 1rem 0;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+    .tools-grid {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+    }
+    
+    .back-button {
+        position: relative;
+        top: 0;
+        left: 0;
+        margin-bottom: 1rem;
+    }
+    
+    .modal-content {
+        padding: 1rem;
+        max-width: 95vw;
+    }
+    
+    .calc-buttons {
+        gap: 0.3rem;
+    }
+    
+    .calc-btn {
+        padding: 0.8rem;
+        font-size: 1rem;
+    }
+}
+
+/* Infinite Craft - Shake Animation */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+    20%, 40%, 60%, 80% { transform: translateX(10px); }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 0.9rem;
+    }
+    
+    .cta-button {
+        padding: 0.8rem 2rem;
+        font-size: 1rem;
+    }
+    
+    .speed-display {
+        font-size: 2.5rem;
+    }
+    
+    .timer-display {
+        font-size: 3rem;
+    }
+}
+/* ============================================
+   BILLIONAIRE TOOL CUSTOM STYLES
+   ============================================ */
+
+/* New Neon Red Variable for Error States */
+:root {
+    /* Existing variables... */
+    --neon-red: #ff0077; /* Adding a high-contrast red for errors */
+}
+
+/* Redefining the billionaire items container for the grid layout */
+#billionaireItems {
+    /* This overrides the inline style used in the JS render for the card layout */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+    gap: 1.5rem;
+}
+
+/* Item Card Style */
+.item-card {
+    /* Base styles are mostly handled by the inline JS, but ensure square/vertical layout is prioritized */
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    border: 2px solid var(--border-color) !important; /* Make sure border is visible */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    padding: 1rem;
+}
+
+.item-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
+}
+
+/* Image Styling for Square/Responsive Fit */
+.item-card img {
+    width: 100%;
+    height: 150px; /* Fixed height for a distinct square/card look */
+    object-fit: cover;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+/* Quantity Input Styling */
+#billionaireItems input[type="number"] {
+    -moz-appearance: textfield; /* Remove spinner on Firefox */
+    appearance: none;
+    padding: 8px;
+    background: var(--bg-dark);
+    border: 1px solid var(--neon-purple);
+    color: var(--neon-blue);
+    border-radius: 4px;
+    text-align: center;
+    font-size: 1rem;
+    max-width: 70px; /* Control input size */
+}
+
+#billionaireItems input[type="number"]::-webkit-outer-spin-button,
+#billionaireItems input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none; /* Remove spinner on Chrome/Safari */
+    margin: 0;
+}
+
+/* Buy Button Styling (Enhanced for Neon-Green) */
+.buy-button {
+    padding: 0.8rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--bg-dark); /* Dark text on bright background */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Neon Green base for the active button */
+.buy-button:not(:disabled) {
+    background: #00ffaa; /* Brighter neon green */
+    box-shadow: 0 0 10px #00ffaa;
+}
+
+.buy-button:not(:disabled):hover {
+    background: #00ffcc;
+    box-shadow: 0 0 20px #00ffcc, 0 0 40px rgba(0, 255, 170, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Disabled/Out-of-Money Button */
+.buy-button:disabled {
+    background: var(--border-color);
+    color: var(--text-secondary);
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+
+/* Out-of-Money Warning/Effect */
+/* This defines the actual shake/vibrate effect when buy fails */
+@keyframes shake-error {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+/* Apply the shake to the main balance display on error */
+.out-of-money-shake {
+    animation: shake-error 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* Inventory Styling */
+#billionaireInventory {
+    border: 1px solid var(--neon-red);
+    padding: 1rem;
+    border-radius: 8px;
+    background: rgba(255, 0, 119, 0.05); /* Light red tint for inventory */
+}
+.tool-description {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin: 8px 0 12px;
+    text-align: center;
+    line-height: 1.4;
+}

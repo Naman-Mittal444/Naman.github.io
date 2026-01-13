@@ -1,0 +1,2964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Opening Trainer</title>
+    <style>
+        /* ============================================
+           CSS VARIABLES & THEME SYSTEM
+           Using CSS custom properties for easy theming
+           ============================================ */
+        :root {
+            /* Light theme (default) */
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #e8eaed;
+            --text-primary: #1a1a2e;
+            --text-secondary: #4a4a6a;
+            --text-muted: #8888a8;
+            --border-color: #d1d5db;
+            --accent-color: #5d9948;
+            --accent-hover: #4a7a3a;
+            
+            /* Board colors */
+            --square-light: #eeeed2;
+            --square-dark: #769656;
+            --square-selected: rgba(255, 255, 0, 0.5);
+            --square-valid: rgba(0, 255, 0, 0.3);
+            --square-last-move: rgba(255, 255, 0, 0.4);
+            --square-correct: rgba(0, 200, 0, 0.5);
+            --square-wrong: rgba(255, 0, 0, 0.5);
+            --square-hint: rgba(100, 149, 237, 0.5);
+            
+            /* Feedback colors */
+            --success-bg: #d4edda;
+            --success-border: #28a745;
+            --success-text: #155724;
+            --error-bg: #f8d7da;
+            --error-border: #dc3545;
+            --error-text: #721c24;
+            --info-bg: #cce5ff;
+            --info-border: #004085;
+            --info-text: #004085;
+        }
+
+        /* Dark theme */
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #0f3460;
+            --text-primary: #eaeaea;
+            --text-secondary: #b8b8d1;
+            --text-muted: #6b6b8d;
+            --border-color: #3a3a5c;
+            --accent-color: #6ab04c;
+            --accent-hover: #5a9a3c;
+            
+            --square-light: #b58863;
+            --square-dark: #6d4c3d;
+            
+            --success-bg: #1e3a2f;
+            --success-border: #28a745;
+            --success-text: #98d9a8;
+            --error-bg: #3a1e2f;
+            --error-border: #dc3545;
+            --error-text: #f5a8b8;
+            --info-bg: #1e2a3a;
+            --info-border: #4a8fe7;
+            --info-text: #a8c8f5;
+        }
+
+        /* ============================================
+           BASE STYLES & RESET
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* ============================================
+           LAYOUT STRUCTURE
+           Main container with board and sidebar
+           ============================================ */
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header h1::before {
+            content: '♞';
+            font-size: 2rem;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* Theme toggle button */
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        /* ============================================
+           MAIN LAYOUT - FLEXBOX FOR RESPONSIVENESS
+           ============================================ */
+        .main-content {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* ============================================
+           CHESSBOARD STYLES
+           CSS Grid for perfect 8x8 layout
+           ============================================ */
+        .board-section {
+            flex: 0 0 auto;
+        }
+
+        .board-container {
+            position: relative;
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .chessboard {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            width: min(500px, 85vw);
+            height: min(500px, 85vw);
+            border: 3px solid var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .square {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: min(3.5rem, 9vw);
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+            transition: background-color 0.15s;
+        }
+
+        .square.light {
+            background-color: var(--square-light);
+        }
+
+        .square.dark {
+            background-color: var(--square-dark);
+        }
+
+        .square.selected {
+            background-color: var(--square-selected) !important;
+        }
+
+        .square.valid-move::after {
+            content: '';
+            position: absolute;
+            width: 30%;
+            height: 30%;
+            background-color: var(--square-valid);
+            border-radius: 50%;
+        }
+
+        .square.valid-move.has-piece::after {
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            border: 4px solid var(--square-valid);
+            border-radius: 0;
+        }
+
+        .square.last-move {
+            background-color: var(--square-last-move) !important;
+        }
+
+        .square.correct-move {
+            animation: correctPulse 0.5s ease-out;
+        }
+
+        .square.wrong-move {
+            animation: wrongPulse 0.5s ease-out;
+        }
+
+        .square.hint-square {
+            background-color: var(--square-hint) !important;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { box-shadow: inset 0 0 0 0 var(--square-correct); }
+            50% { box-shadow: inset 0 0 0 8px var(--square-correct); }
+        }
+
+        @keyframes wrongPulse {
+            0%, 100% { box-shadow: inset 0 0 0 0 var(--square-wrong); }
+            50% { box-shadow: inset 0 0 0 8px var(--square-wrong); }
+        }
+
+        /* Piece styling */
+        .piece {
+            font-size: inherit;
+            line-height: 1;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            transition: transform 0.15s;
+            cursor: grab;
+        }
+
+        .piece:active {
+            cursor: grabbing;
+        }
+
+        .square:hover .piece {
+            transform: scale(1.05);
+        }
+
+        /* Board coordinates */
+        .coordinates {
+            position: absolute;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .file-coords {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            padding: 0 20px;
+        }
+
+        .file-coords.bottom {
+            bottom: 2px;
+        }
+
+        .rank-coords {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            height: 100%;
+            position: absolute;
+            top: 20px;
+            bottom: 20px;
+        }
+
+        .rank-coords.left {
+            left: 5px;
+        }
+
+        /* ============================================
+           CONTROL PANEL - OPENING SELECTION & BUTTONS
+           ============================================ */
+        .controls-bar {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .opening-select {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            min-width: 200px;
+            cursor: pointer;
+        }
+
+        .opening-select:focus {
+            outline: 2px solid var(--accent-color);
+            outline-offset: 2px;
+        }
+
+        /* ============================================
+           SIDEBAR - INFORMATION PANEL
+           ============================================ */
+        .sidebar {
+            flex: 1;
+            min-width: 300px;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .eco-badge {
+            background: var(--accent-color);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* ============================================
+           OPENING INFO PANEL
+           ============================================ */
+        .opening-info {
+            line-height: 1.6;
+        }
+
+        .opening-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .opening-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+        }
+
+        /* ============================================
+           PROGRESS INDICATOR
+           ============================================ */
+        .progress-container {
+            margin-bottom: 15px;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-color), #8BC34A);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* ============================================
+           MOVE EXPLANATION PANEL
+           ============================================ */
+        .explanation-panel {
+            min-height: 200px;
+        }
+
+        .current-move {
+            background: var(--bg-tertiary);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .move-number {
+            font-weight: 700;
+            color: var(--accent-color);
+            font-size: 1.1rem;
+        }
+
+        .move-notation {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .explanation-content {
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .explanation-content h4 {
+            color: var(--text-primary);
+            margin: 12px 0 6px 0;
+            font-size: 0.95rem;
+        }
+
+        .explanation-content p {
+            margin-bottom: 8px;
+        }
+
+        .explanation-content ul {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+
+        .explanation-content li {
+            margin-bottom: 4px;
+        }
+
+        /* Strategic tags */
+        .strategy-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .strategy-tag {
+            background: var(--bg-tertiary);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .strategy-tag.development { border-left: 3px solid #4CAF50; }
+        .strategy-tag.center { border-left: 3px solid #2196F3; }
+        .strategy-tag.king-safety { border-left: 3px solid #FF9800; }
+        .strategy-tag.attack { border-left: 3px solid #f44336; }
+        .strategy-tag.defense { border-left: 3px solid #9C27B0; }
+
+        /* ============================================
+           FEEDBACK MESSAGES
+           ============================================ */
+        .feedback {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.success {
+            background: var(--success-bg);
+            border-left: 4px solid var(--success-border);
+            color: var(--success-text);
+        }
+
+        .feedback.error {
+            background: var(--error-bg);
+            border-left: 4px solid var(--error-border);
+            color: var(--error-text);
+        }
+
+        .feedback.info {
+            background: var(--info-bg);
+            border-left: 4px solid var(--info-border);
+            color: var(--info-text);
+        }
+
+        .feedback-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============================================
+           MOVE HISTORY PANEL
+           ============================================ */
+        .move-history {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .move-list {
+            display: grid;
+            grid-template-columns: auto 1fr 1fr;
+            gap: 4px 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .move-number-col {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .move-white, .move-black {
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .move-white:hover, .move-black:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .move-white.current, .move-black.current {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        /* ============================================
+           INSTRUCTIONS PANEL
+           ============================================ */
+        .instructions {
+            background: var(--info-bg);
+            border: 1px solid var(--info-border);
+            color: var(--info-text);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .instructions h4 {
+            margin-bottom: 8px;
+        }
+
+        .instructions ul {
+            margin-left: 20px;
+        }
+
+        /* ============================================
+           RESPONSIVE DESIGN
+           ============================================ */
+        @media (max-width: 900px) {
+            .main-content {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .sidebar {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .app-container {
+                padding: 10px;
+            }
+
+            .board-container {
+                padding: 10px;
+            }
+
+            .controls-bar {
+                flex-direction: column;
+            }
+
+            .opening-select {
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* ============================================
+           PIECE ANIMATION
+           ============================================ */
+        .piece-animating {
+            position: absolute;
+            z-index: 1000;
+            pointer-events: none;
+            transition: transform 0.2s ease-out;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Completion celebration */
+        .completion-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .completion-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .completion-modal {
+            background: var(--bg-secondary);
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            transform: scale(0.8);
+            transition: transform 0.3s;
+        }
+
+        .completion-overlay.show .completion-modal {
+            transform: scale(1);
+        }
+
+        .completion-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .completion-title {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: var(--accent-color);
+        }
+
+        .completion-text {
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+        }
+
+        /* ============================================
+           ARROW OVERLAY FOR SHOWING CORRECT MOVES
+           SVG-based arrow that appears on wrong moves
+           ============================================ */
+        .arrow-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .arrow-overlay svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .move-arrow {
+            stroke: #3b82f6;
+            stroke-width: 8;
+            stroke-linecap: round;
+            fill: none;
+            opacity: 0.85;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            animation: arrowPulse 1.5s ease-in-out infinite;
+        }
+
+        .arrow-head {
+            fill: #3b82f6;
+            opacity: 0.85;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            animation: arrowPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes arrowPulse {
+            0%, 100% { opacity: 0.85; }
+            50% { opacity: 1; }
+        }
+
+        /* Correct move highlighting (green glow) */
+        .square.correct-source {
+            box-shadow: inset 0 0 0 4px #22c55e !important;
+            background-color: rgba(34, 197, 94, 0.4) !important;
+        }
+
+        .square.correct-destination {
+            box-shadow: inset 0 0 0 4px #22c55e !important;
+            background-color: rgba(34, 197, 94, 0.5) !important;
+            animation: destinationPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes destinationPulse {
+            0%, 100% { 
+                box-shadow: inset 0 0 0 4px #22c55e;
+                background-color: rgba(34, 197, 94, 0.5);
+            }
+            50% { 
+                box-shadow: inset 0 0 0 6px #16a34a;
+                background-color: rgba(34, 197, 94, 0.7);
+            }
+        }
+
+        /* Wrong move highlighting (red flash) */
+        .square.wrong-source {
+            box-shadow: inset 0 0 0 4px #ef4444 !important;
+            background-color: rgba(239, 68, 68, 0.4) !important;
+            animation: wrongFlash 0.5s ease-out;
+        }
+
+        .square.wrong-destination {
+            box-shadow: inset 0 0 0 4px #ef4444 !important;
+            background-color: rgba(239, 68, 68, 0.5) !important;
+            animation: wrongFlash 0.5s ease-out;
+        }
+
+        @keyframes wrongFlash {
+            0% { transform: scale(1); }
+            25% { transform: scale(0.95); }
+            50% { transform: scale(1.02); }
+            75% { transform: scale(0.98); }
+            100% { transform: scale(1); }
+        }
+
+        /* Label showing the correct move notation */
+        .correct-move-label {
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            z-index: 101;
+            animation: labelBounce 0.5s ease-out;
+        }
+
+        .correct-move-label::before {
+            content: '➜ ';
+        }
+
+        @keyframes labelBounce {
+            0% { 
+                opacity: 0;
+                transform: translateX(-50%) translateY(10px);
+            }
+            100% { 
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        /* Chessboard needs relative positioning for arrow overlay */
+        .chessboard {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- ============================================
+             HEADER SECTION
+             Contains title and theme toggle
+             ============================================ -->
+        <header class="header">
+            <h1>Chess Opening Trainer</h1>
+            <div class="header-controls">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <span id="themeIcon">🌙</span>
+                    <span id="themeText">Dark Mode</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- ============================================
+             MAIN CONTENT AREA
+             Board on left, information panels on right
+             ============================================ -->
+        <main class="main-content">
+            <!-- Board Section -->
+            <section class="board-section">
+                <div class="board-container">
+                    <!-- Rank coordinates (1-8) on the left -->
+                    <div class="rank-coords left" id="rankCoords"></div>
+                    
+                    <!-- The actual chessboard -->
+                    <div class="chessboard" id="chessboard"></div>
+                    
+                    <!-- File coordinates (a-h) at the bottom -->
+                    <div class="file-coords bottom" id="fileCoords"></div>
+                </div>
+
+                <!-- Control buttons below the board -->
+                <div class="controls-bar">
+                    <select class="opening-select" id="openingSelect" aria-label="Select opening">
+                        <option value="">-- Select an Opening --</option>
+                    </select>
+                    <button class="btn btn-primary" id="startBtn" disabled>
+                        ▶ Start Training
+                    </button>
+                    <button class="btn btn-secondary" id="resetBtn" disabled>
+                        ↺ Reset
+                    </button>
+                    <button class="btn btn-secondary" id="hintBtn" disabled>
+                        💡 Hint
+                    </button>
+                </div>
+            </section>
+
+            <!-- Information Sidebar -->
+            <aside class="sidebar">
+                <!-- Opening Information Panel -->
+                <div class="panel" id="openingInfoPanel">
+                    <div class="panel-header">
+                        <span class="panel-title">Opening Information</span>
+                        <span class="eco-badge" id="ecoBadge">ECO</span>
+                    </div>
+                    <div class="opening-info">
+                        <div class="opening-name" id="openingName">Select an Opening</div>
+                        <p class="opening-description" id="openingDescription">
+                            Choose an opening from the dropdown menu to begin learning. 
+                            Each opening includes detailed move-by-move explanations.
+                        </p>
+                    </div>
+                    
+                    <!-- Progress indicator -->
+                    <div class="progress-container" id="progressContainer" style="display: none;">
+                        <div class="progress-text">
+                            <span id="progressText">Move 0 of 0</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feedback Panel -->
+                <div class="feedback" id="feedbackPanel">
+                    <div class="feedback-title" id="feedbackTitle"></div>
+                    <div class="feedback-content" id="feedbackContent"></div>
+                </div>
+
+                <!-- Move Explanation Panel -->
+                <div class="panel explanation-panel" id="explanationPanel">
+                    <div class="panel-header">
+                        <span class="panel-title">Move Explanation</span>
+                    </div>
+                    
+                    <div class="current-move" id="currentMoveDisplay" style="display: none;">
+                        <span class="move-number" id="displayMoveNumber"></span>
+                        <span class="move-notation" id="displayMoveNotation"></span>
+                    </div>
+                    
+                    <div class="explanation-content" id="explanationContent">
+                        <div class="instructions">
+                            <h4>How to Use:</h4>
+                            <ul>
+                                <li>Select an opening from the dropdown</li>
+                                <li>Click "Start Training" to begin</li>
+                                <li>Play the correct moves for your color</li>
+                                <li>The trainer will play opponent moves automatically</li>
+                                <li>Use "Hint" if you're stuck</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="strategy-tags" id="strategyTags"></div>
+                </div>
+
+                <!-- Move History Panel -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Move History</span>
+                    </div>
+                    <div class="move-history">
+                        <div class="move-list" id="moveList">
+                            <em style="color: var(--text-muted); grid-column: 1 / -1;">
+                                No moves yet
+                            </em>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Completion Modal -->
+    <div class="completion-overlay" id="completionOverlay">
+        <div class="completion-modal">
+            <div class="completion-icon">🎉</div>
+            <h2 class="completion-title">Opening Complete!</h2>
+            <p class="completion-text" id="completionText">
+                You've successfully learned the Ruy Lopez opening!
+            </p>
+            <button class="btn btn-primary" id="closeCompletionBtn">
+                Continue Learning
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* ============================================================
+           CHESS OPENING TRAINER - MAIN JAVASCRIPT
+           
+           Architecture Overview:
+           1. CONSTANTS - Piece symbols, initial positions
+           2. OPENING DATABASE - Structured opening data with explanations
+           3. GAME STATE - Central state management object
+           4. BOARD LOGIC - Position and move validation
+           5. RENDERING - UI update functions
+           6. TRAINING ENGINE - Opening trainer logic
+           7. EVENT HANDLERS - User interaction handling
+           8. INITIALIZATION - App startup
+           ============================================================ */
+
+        // ============================================================
+        // SECTION 1: CONSTANTS AND CONFIGURATION
+        // ============================================================
+
+        /**
+         * Unicode chess piece symbols
+         * Using object for easy lookup by piece code
+         */
+        const PIECES = {
+            'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙', // White pieces
+            'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟'  // Black pieces
+        };
+
+        /**
+         * Starting position in FEN-like array format
+         * Uppercase = White, Lowercase = Black, null = empty
+         * Board is stored with rank 8 at index 0 (top of display)
+         */
+        const INITIAL_POSITION = [
+            ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'], // Rank 8
+            ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'], // Rank 7
+            [null, null, null, null, null, null, null, null], // Rank 6
+            [null, null, null, null, null, null, null, null], // Rank 5
+            [null, null, null, null, null, null, null, null], // Rank 4
+            [null, null, null, null, null, null, null, null], // Rank 3
+            ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'], // Rank 2
+            ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']  // Rank 1
+        ];
+
+        // File and rank labels for coordinates
+        const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'];
+
+        // ============================================================
+        // SECTION 2: OPENING DATABASE
+        // Each opening contains: name, ECO code, description, and moves
+        // Each move has: from, to, san notation, explanation, and strategy tags
+        // ============================================================
+
+        const OPENINGS = {
+            'ruy-lopez': {
+                name: 'Ruy Lopez (Spanish Game)',
+                eco: 'C60-C99',
+                description: 'One of the oldest and most classic openings, named after 16th-century Spanish priest Ruy López de Segura. It leads to rich strategic positions and has been a favorite of world champions.',
+                playerColor: 'white',
+                moves: [
+                    {
+                        from: 'e2', to: 'e4', san: 'e4',
+                        explanation: 'The King\'s Pawn opening - the most popular first move in chess.',
+                        whyThisMove: 'Controls the center squares d5 and f5, opens lines for the queen and bishop.',
+                        controlledSquares: ['d5', 'f5'],
+                        strategicIdea: 'Central control and rapid development.',
+                        tags: ['center', 'development']
+                    },
+                    {
+                        from: 'e7', to: 'e5', san: 'e5',
+                        explanation: 'Black mirrors White\'s central strategy.',
+                        whyThisMove: 'Contests the center, opens lines for Black\'s pieces.',
+                        controlledSquares: ['d4', 'f4'],
+                        strategicIdea: 'Symmetric central control.',
+                        tags: ['center', 'development'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'g1', to: 'f3', san: 'Nf3',
+                        explanation: 'The knight develops to its most natural square.',
+                        whyThisMove: 'Attacks the e5 pawn, controls d4 and e5, prepares kingside castling.',
+                        controlledSquares: ['d4', 'e5', 'g5', 'h4'],
+                        strategicIdea: 'Development with tempo (threatening the e5 pawn).',
+                        tags: ['development', 'attack']
+                    },
+                    {
+                        from: 'b8', to: 'c6', san: 'Nc6',
+                        explanation: 'Black defends the e5 pawn while developing.',
+                        whyThisMove: 'Protects e5, develops toward the center, prepares for further development.',
+                        controlledSquares: ['d4', 'e5', 'b4', 'a5'],
+                        strategicIdea: 'Defense and development combined.',
+                        tags: ['development', 'defense'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'f1', to: 'b5', san: 'Bb5',
+                        explanation: 'The defining move of the Ruy Lopez! The bishop pins the knight to the king.',
+                        whyThisMove: 'Puts pressure on the knight defending e5, prepares castling, doesn\'t commit to a central pawn structure yet.',
+                        controlledSquares: ['a6', 'c6', 'a4', 'c4'],
+                        strategicIdea: 'Apply pressure while maintaining flexibility. The threat is not to take the knight immediately (as Black can recapture with the d-pawn), but to create long-term pressure.',
+                        tags: ['development', 'attack']
+                    },
+                    {
+                        from: 'a7', to: 'a6', san: 'a6',
+                        explanation: 'The Morphy Defense - Black asks the bishop its intentions.',
+                        whyThisMove: 'Forces White to decide: retreat, exchange, or maintain tension.',
+                        controlledSquares: ['b5'],
+                        strategicIdea: 'Gaining space and tempo on the queenside.',
+                        tags: ['defense'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'b5', to: 'a4', san: 'Ba4',
+                        explanation: 'White maintains the pin while staying on the dangerous diagonal.',
+                        whyThisMove: 'Keeps pressure on c6, maintains flexibility, prepares O-O.',
+                        controlledSquares: ['b5', 'c6', 'b3'],
+                        strategicIdea: 'Preserve the bishop pair and maintain tension.',
+                        tags: ['development']
+                    },
+                    {
+                        from: 'g8', to: 'f6', san: 'Nf6',
+                        explanation: 'Black develops the knight to its ideal square.',
+                        whyThisMove: 'Attacks e4, develops naturally, prepares castling.',
+                        controlledSquares: ['e4', 'd5', 'g4', 'h5'],
+                        strategicIdea: 'Counter-attack on the e4 pawn while developing.',
+                        tags: ['development', 'attack'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'e1', to: 'g1', san: 'O-O',
+                        explanation: 'Castling kingside - bringing the king to safety.',
+                        whyThisMove: 'Secures the king, connects the rooks, brings the h1 rook into play.',
+                        controlledSquares: [],
+                        strategicIdea: 'King safety is paramount! Always try to castle early.',
+                        tags: ['king-safety', 'development']
+                    },
+                    {
+                        from: 'f8', to: 'e7', san: 'Be7',
+                        explanation: 'Black prepares to castle kingside as well.',
+                        whyThisMove: 'Opens the path for castling, develops the bishop to a solid square.',
+                        controlledSquares: ['d6', 'f6', 'd8', 'f8'],
+                        strategicIdea: 'Solid development prioritizing king safety.',
+                        tags: ['development', 'king-safety'],
+                        isOpponentMove: true
+                    }
+                ]
+            },
+
+            'italian-game': {
+                name: 'Italian Game (Giuoco Piano)',
+                eco: 'C50-C59',
+                description: 'One of the oldest recorded openings, dating back to the 16th century. "Giuoco Piano" means "quiet game" in Italian, but it can lead to sharp tactical battles.',
+                playerColor: 'white',
+                moves: [
+                    {
+                        from: 'e2', to: 'e4', san: 'e4',
+                        explanation: 'King\'s pawn - the classical start.',
+                        whyThisMove: 'Controls center, frees pieces.',
+                        controlledSquares: ['d5', 'f5'],
+                        strategicIdea: 'Central control and development.',
+                        tags: ['center', 'development']
+                    },
+                    {
+                        from: 'e7', to: 'e5', san: 'e5',
+                        explanation: 'Black responds symmetrically.',
+                        whyThisMove: 'Equal central presence.',
+                        controlledSquares: ['d4', 'f4'],
+                        strategicIdea: 'Matching White\'s central ambitions.',
+                        tags: ['center'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'g1', to: 'f3', san: 'Nf3',
+                        explanation: 'Knight to its best square, attacking e5.',
+                        whyThisMove: 'Development with threat.',
+                        controlledSquares: ['d4', 'e5', 'g5'],
+                        strategicIdea: 'Pressure on the center.',
+                        tags: ['development', 'attack']
+                    },
+                    {
+                        from: 'b8', to: 'c6', san: 'Nc6',
+                        explanation: 'Defending e5 naturally.',
+                        whyThisMove: 'Defense and development.',
+                        controlledSquares: ['d4', 'e5', 'b4'],
+                        strategicIdea: 'Protecting while developing.',
+                        tags: ['development', 'defense'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'f1', to: 'c4', san: 'Bc4',
+                        explanation: 'The Italian Bishop! Aims at the weak f7 pawn.',
+                        whyThisMove: 'Targets the f7 square (weakest point in Black\'s camp), prepares castling.',
+                        controlledSquares: ['d5', 'e6', 'f7', 'b3'],
+                        strategicIdea: 'Active development targeting Black\'s weakness.',
+                        tags: ['development', 'attack']
+                    },
+                    {
+                        from: 'f8', to: 'c5', san: 'Bc5',
+                        explanation: 'Black mirrors with an active bishop placement.',
+                        whyThisMove: 'Targets f2, controls the a7-g1 diagonal.',
+                        controlledSquares: ['d4', 'e3', 'f2', 'b6'],
+                        strategicIdea: 'Counter-attacking the f2 weakness.',
+                        tags: ['development', 'attack'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'c2', to: 'c3', san: 'c3',
+                        explanation: 'Preparing the central push d4.',
+                        whyThisMove: 'Supports d4 advance, controls b4 and d4.',
+                        controlledSquares: ['b4', 'd4'],
+                        strategicIdea: 'Preparing a powerful central expansion.',
+                        tags: ['center']
+                    },
+                    {
+                        from: 'g8', to: 'f6', san: 'Nf6',
+                        explanation: 'Black develops and attacks e4.',
+                        whyThisMove: 'Development with tempo.',
+                        controlledSquares: ['e4', 'd5', 'g4'],
+                        strategicIdea: 'Active development with threats.',
+                        tags: ['development', 'attack'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'd2', to: 'd4', san: 'd4',
+                        explanation: 'The central break! White seizes the initiative.',
+                        whyThisMove: 'Opens the center, challenges Black\'s setup, activates the dark-squared bishop.',
+                        controlledSquares: ['c5', 'e5'],
+                        strategicIdea: 'Central breakthrough for active play.',
+                        tags: ['center', 'attack']
+                    },
+                    {
+                        from: 'e5', to: 'd4', san: 'exd4',
+                        explanation: 'Black captures, opening the position.',
+                        whyThisMove: 'Accepting the central tension.',
+                        controlledSquares: ['c3', 'e3'],
+                        strategicIdea: 'Trading center pawns.',
+                        tags: ['center'],
+                        isOpponentMove: true
+                    }
+                ]
+            },
+
+            'sicilian-najdorf': {
+                name: 'Sicilian Defense - Najdorf Variation',
+                eco: 'B90-B99',
+                description: 'Named after Polish-Argentine GM Miguel Najdorf. The most popular and deeply analyzed chess opening, favored by Fischer, Kasparov, and many world champions. Known for its fighting character.',
+                playerColor: 'black',
+                moves: [
+                    {
+                        from: 'e2', to: 'e4', san: 'e4',
+                        explanation: 'White opens with the king\'s pawn.',
+                        whyThisMove: 'Standard central control.',
+                        controlledSquares: ['d5', 'f5'],
+                        strategicIdea: 'Classical opening move.',
+                        tags: ['center'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'c7', to: 'c5', san: 'c5',
+                        explanation: 'The Sicilian Defense! Black fights for d4 instead of e5.',
+                        whyThisMove: 'Fights for the d4 square, creates asymmetry, avoids symmetric positions.',
+                        controlledSquares: ['b4', 'd4'],
+                        strategicIdea: 'Asymmetric fight for the center. Black aims for counterplay rather than equality.',
+                        tags: ['center', 'attack']
+                    },
+                    {
+                        from: 'g1', to: 'f3', san: 'Nf3',
+                        explanation: 'Natural development, preparing d4.',
+                        whyThisMove: 'Controls d4, prepares the central break.',
+                        controlledSquares: ['d4', 'e5', 'g5'],
+                        strategicIdea: 'Standard development.',
+                        tags: ['development'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'd7', to: 'd6', san: 'd6',
+                        explanation: 'Controlling e5 and preparing ...Nf6.',
+                        whyThisMove: 'Prevents e5, supports a future ...e5 break.',
+                        controlledSquares: ['e5', 'c5'],
+                        strategicIdea: 'Solid structure allowing flexible development.',
+                        tags: ['center', 'development']
+                    },
+                    {
+                        from: 'd2', to: 'd4', san: 'd4',
+                        explanation: 'White stakes claim to the center.',
+                        whyThisMove: 'Opens lines, challenges Black\'s c5 pawn.',
+                        controlledSquares: ['c5', 'e5'],
+                        strategicIdea: 'Central expansion.',
+                        tags: ['center'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'c5', to: 'd4', san: 'cxd4',
+                        explanation: 'Trading to open the c-file for Black\'s rook.',
+                        whyThisMove: 'Opens the c-file, eliminates White\'s center, creates an outpost on d4.',
+                        controlledSquares: ['c3', 'e3'],
+                        strategicIdea: 'The c-file becomes a key attacking avenue for Black.',
+                        tags: ['attack']
+                    },
+                    {
+                        from: 'f3', to: 'd4', san: 'Nxd4',
+                        explanation: 'White recaptures with the knight.',
+                        whyThisMove: 'Centralizes the knight on a strong square.',
+                        controlledSquares: ['b5', 'c6', 'e6', 'f5'],
+                        strategicIdea: 'Strong centralized knight.',
+                        tags: ['development'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'g8', to: 'f6', san: 'Nf6',
+                        explanation: 'Attacking the e4 pawn!',
+                        whyThisMove: 'Development with tempo, pressures e4.',
+                        controlledSquares: ['e4', 'd5', 'g4'],
+                        strategicIdea: 'Active development, forcing White to react.',
+                        tags: ['development', 'attack']
+                    },
+                    {
+                        from: 'b1', to: 'c3', san: 'Nc3',
+                        explanation: 'White defends e4 and develops.',
+                        whyThisMove: 'Natural defense and development.',
+                        controlledSquares: ['d5', 'e4', 'b5'],
+                        strategicIdea: 'Solid development.',
+                        tags: ['development', 'defense'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'a7', to: 'a6', san: 'a6',
+                        explanation: 'The Najdorf move! A flexible pawn move with multiple purposes.',
+                        whyThisMove: 'Prevents Bb5, prepares ...b5 expansion, controls b5 square.',
+                        controlledSquares: ['b5'],
+                        strategicIdea: 'This prophylactic move is the hallmark of the Najdorf. It prepares queenside expansion with ...b5 while preventing piece intrusions on b5.',
+                        tags: ['defense', 'attack']
+                    }
+                ]
+            },
+
+            'queens-gambit': {
+                name: 'Queen\'s Gambit',
+                eco: 'D06-D69',
+                description: 'Not a true gambit since Black cannot safely keep the pawn. One of the oldest openings, leading to strategic battles focused on the center and pawn structure.',
+                playerColor: 'white',
+                moves: [
+                    {
+                        from: 'd2', to: 'd4', san: 'd4',
+                        explanation: 'The Queen\'s Pawn opening - solid and strategic.',
+                        whyThisMove: 'Controls c5 and e5, more solid than e4 as the pawn is defended by the queen.',
+                        controlledSquares: ['c5', 'e5'],
+                        strategicIdea: 'Solid central control with a protected pawn.',
+                        tags: ['center']
+                    },
+                    {
+                        from: 'd7', to: 'd5', san: 'd5',
+                        explanation: 'Black matches in the center.',
+                        whyThisMove: 'Equal central presence.',
+                        controlledSquares: ['c4', 'e4'],
+                        strategicIdea: 'Classical symmetrical response.',
+                        tags: ['center'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'c2', to: 'c4', san: 'c4',
+                        explanation: 'The Queen\'s Gambit! White offers a pawn to dominate the center.',
+                        whyThisMove: 'Challenges Black\'s d5 pawn, aims to control e4 and d5 with pawns.',
+                        controlledSquares: ['b5', 'd5'],
+                        strategicIdea: 'If Black takes (Queen\'s Gambit Accepted), White gets a strong center. If Black declines, White maintains central pressure.',
+                        tags: ['center', 'attack']
+                    },
+                    {
+                        from: 'e7', to: 'e6', san: 'e6',
+                        explanation: 'Queen\'s Gambit Declined - Black solidly defends d5.',
+                        whyThisMove: 'Supports d5, prepares ...Nf6 and ...Be7.',
+                        controlledSquares: ['d5', 'f5'],
+                        strategicIdea: 'Solid defense, though slightly passive.',
+                        tags: ['defense'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'b1', to: 'c3', san: 'Nc3',
+                        explanation: 'Knight develops to its best square, adding pressure to d5.',
+                        whyThisMove: 'Develops, attacks d5, prepares e4.',
+                        controlledSquares: ['d5', 'e4', 'b5'],
+                        strategicIdea: 'Building central pressure.',
+                        tags: ['development', 'attack']
+                    },
+                    {
+                        from: 'g8', to: 'f6', san: 'Nf6',
+                        explanation: 'Natural development, also defending d5.',
+                        whyThisMove: 'Develops, defends d5, controls e4.',
+                        controlledSquares: ['d5', 'e4', 'g4'],
+                        strategicIdea: 'Active defense.',
+                        tags: ['development', 'defense'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'c1', to: 'g5', san: 'Bg5',
+                        explanation: 'Pinning the knight to the queen!',
+                        whyThisMove: 'Pins Nf6, threatens to trade and double Black\'s pawns.',
+                        controlledSquares: ['f6', 'e7', 'h4'],
+                        strategicIdea: 'Creating pins and threats. If Black plays ...Be7, the bishop on g5 remains active.',
+                        tags: ['development', 'attack']
+                    },
+                    {
+                        from: 'f8', to: 'e7', san: 'Be7',
+                        explanation: 'Breaking the pin and preparing castling.',
+                        whyThisMove: 'Unpins the knight, prepares castling.',
+                        controlledSquares: ['d6', 'f6', 'g5'],
+                        strategicIdea: 'Defensive development.',
+                        tags: ['development', 'king-safety'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'e2', to: 'e3', san: 'e3',
+                        explanation: 'Solid pawn move supporting the center.',
+                        whyThisMove: 'Supports d4, prepares Bd3 and eventual castling.',
+                        controlledSquares: ['d4', 'f4'],
+                        strategicIdea: 'Consolidating the center before continuing development.',
+                        tags: ['center', 'development']
+                    },
+                    {
+                        from: 'e8', to: 'g8', san: 'O-O',
+                        explanation: 'Black castles to safety.',
+                        whyThisMove: 'King safety, rook activation.',
+                        controlledSquares: [],
+                        strategicIdea: 'Securing the king.',
+                        tags: ['king-safety'],
+                        isOpponentMove: true
+                    }
+                ]
+            },
+
+            'london-system': {
+                name: 'London System',
+                eco: 'D02',
+                description: 'A solid, systematic opening where White develops pieces to ideal squares regardless of Black\'s response. Popular at club level due to its simplicity and reliability.',
+                playerColor: 'white',
+                moves: [
+                    {
+                        from: 'd2', to: 'd4', san: 'd4',
+                        explanation: 'Starting with the Queen\'s Pawn.',
+                        whyThisMove: 'Central control, solid foundation.',
+                        controlledSquares: ['c5', 'e5'],
+                        strategicIdea: 'The London always starts with d4.',
+                        tags: ['center']
+                    },
+                    {
+                        from: 'd7', to: 'd5', san: 'd5',
+                        explanation: 'Black responds with symmetry.',
+                        whyThisMove: 'Matching central control.',
+                        controlledSquares: ['c4', 'e4'],
+                        strategicIdea: 'Symmetric central presence.',
+                        tags: ['center'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'c1', to: 'f4', san: 'Bf4',
+                        explanation: 'The London bishop! Developed before e3 traps it.',
+                        whyThisMove: 'Active development to the key diagonal, avoids being blocked by e3.',
+                        controlledSquares: ['e5', 'd6', 'c7', 'g5', 'h6'],
+                        strategicIdea: 'This is the signature move of the London System. The bishop must come out before e3!',
+                        tags: ['development']
+                    },
+                    {
+                        from: 'g8', to: 'f6', san: 'Nf6',
+                        explanation: 'Black develops naturally.',
+                        whyThisMove: 'Standard development.',
+                        controlledSquares: ['d5', 'e4', 'g4'],
+                        strategicIdea: 'Preparing for further development.',
+                        tags: ['development'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'e2', to: 'e3', san: 'e3',
+                        explanation: 'Now e3 is fine - the bishop is already out!',
+                        whyThisMove: 'Supports d4, prepares Bd3 and Nf3.',
+                        controlledSquares: ['d4', 'f4'],
+                        strategicIdea: 'Solid pawn chain from d4-e3.',
+                        tags: ['center', 'development']
+                    },
+                    {
+                        from: 'c7', to: 'c5', san: 'c5',
+                        explanation: 'Black challenges the center.',
+                        whyThisMove: 'Attacking d4, seeking counterplay.',
+                        controlledSquares: ['b4', 'd4'],
+                        strategicIdea: 'Standard break against d4 setups.',
+                        tags: ['center', 'attack'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'c2', to: 'c3', san: 'c3',
+                        explanation: 'Reinforcing d4 and preparing Nd2.',
+                        whyThisMove: 'Solid support for the center.',
+                        controlledSquares: ['b4', 'd4'],
+                        strategicIdea: 'The London\'s pawn structure is very solid.',
+                        tags: ['center', 'defense']
+                    },
+                    {
+                        from: 'b8', to: 'c6', san: 'Nc6',
+                        explanation: 'Developing and adding pressure to d4.',
+                        whyThisMove: 'Natural development.',
+                        controlledSquares: ['d4', 'e5', 'b4'],
+                        strategicIdea: 'Targeting the d4 point.',
+                        tags: ['development', 'attack'],
+                        isOpponentMove: true
+                    },
+                    {
+                        from: 'g1', to: 'f3', san: 'Nf3',
+                        explanation: 'Natural development, controlling e5.',
+                        whyThisMove: 'Key defender of d4, prepares castling.',
+                        controlledSquares: ['d4', 'e5', 'g5', 'h4'],
+                        strategicIdea: 'Standard development maintaining the solid structure.',
+                        tags: ['development']
+                    },
+                    {
+                        from: 'e7', to: 'e6', san: 'e6',
+                        explanation: 'Black prepares to develop the bishop.',
+                        whyThisMove: 'Opens diagonal for Bf8, supports d5.',
+                        controlledSquares: ['d5', 'f5'],
+                        strategicIdea: 'Preparing ...Bd6 or ...Be7.',
+                        tags: ['development'],
+                        isOpponentMove: true
+                    }
+                ]
+            }
+        };
+
+        // ============================================================
+        // SECTION 3: GAME STATE OBJECT
+        // Central state management - all game data in one place
+        // ============================================================
+
+        const gameState = {
+            // Board representation - 8x8 array
+            board: [],
+            
+            // Current turn: 'white' or 'black'
+            currentTurn: 'white',
+            
+            // Selected square for move input: { row, col } or null
+            selectedSquare: null,
+            
+            // Valid moves for selected piece: array of { row, col }
+            validMoves: [],
+            
+            // Move history for display
+            moveHistory: [],
+            
+            // Last move for highlighting: { from: {row, col}, to: {row, col} }
+            lastMove: null,
+            
+            // Training mode state
+            training: {
+                active: false,
+                opening: null,
+                currentMoveIndex: 0,
+                playerColor: 'white',
+                awaitingPlayerMove: false,
+                hintShown: false
+            },
+            
+            // Castling rights tracking
+            castling: {
+                whiteKingMoved: false,
+                whiteRookAMoved: false, // a1 rook
+                whiteRookHMoved: false, // h1 rook
+                blackKingMoved: false,
+                blackRookAMoved: false, // a8 rook
+                blackRookHMoved: false  // h8 rook
+            },
+            
+            // En passant target square (if any)
+            enPassantTarget: null,
+            
+            // UI theme
+            theme: 'light'
+        };
+
+        // ============================================================
+        // SECTION 4: UTILITY FUNCTIONS
+        // Helper functions for coordinate conversion and checks
+        // ============================================================
+
+        /**
+         * Convert algebraic notation (e.g., 'e4') to board indices
+         * @param {string} algebraic - Square in algebraic notation
+         * @returns {object} - { row, col } indices
+         */
+        function algebraicToIndex(algebraic) {
+            const file = algebraic.charAt(0);
+            const rank = algebraic.charAt(1);
+            const col = FILES.indexOf(file);
+            const row = 8 - parseInt(rank);
+            return { row, col };
+        }
+
+        /**
+         * Convert board indices to algebraic notation
+         * @param {number} row - Row index (0-7)
+         * @param {number} col - Column index (0-7)
+         * @returns {string} - Square in algebraic notation
+         */
+        function indexToAlgebraic(row, col) {
+            return FILES[col] + RANKS[row];
+        }
+
+        /**
+         * Check if a piece belongs to the current player
+         * @param {string} piece - Piece code (e.g., 'P', 'n')
+         * @returns {boolean}
+         */
+        function isPieceCurrentPlayer(piece) {
+            if (!piece) return false;
+            const isWhitePiece = piece === piece.toUpperCase();
+            return (gameState.currentTurn === 'white' && isWhitePiece) ||
+                   (gameState.currentTurn === 'black' && !isWhitePiece);
+        }
+
+        /**
+         * Check if a piece belongs to the opponent
+         * @param {string} piece - Piece code
+         * @returns {boolean}
+         */
+        function isOpponentPiece(piece) {
+            if (!piece) return false;
+            const isWhitePiece = piece === piece.toUpperCase();
+            return (gameState.currentTurn === 'white' && !isWhitePiece) ||
+                   (gameState.currentTurn === 'black' && isWhitePiece);
+        }
+
+        /**
+         * Check if coordinates are within the board
+         * @param {number} row 
+         * @param {number} col 
+         * @returns {boolean}
+         */
+        function isValidSquare(row, col) {
+            return row >= 0 && row < 8 && col >= 0 && col < 8;
+        }
+
+        /**
+         * Deep clone the board for simulation
+         * @param {Array} board 
+         * @returns {Array}
+         */
+        function cloneBoard(board) {
+            return board.map(row => [...row]);
+        }
+
+        // ============================================================
+        // SECTION 5: MOVE VALIDATION ENGINE
+        // Implements all chess rules for legal move detection
+        // ============================================================
+
+        /**
+         * Get all valid moves for a piece at the given position
+         * This is the main entry point for move validation
+         * @param {number} row 
+         * @param {number} col 
+         * @returns {Array} - Array of { row, col } for valid destination squares
+         */
+        function getValidMoves(row, col) {
+            const piece = gameState.board[row][col];
+            if (!piece) return [];
+            
+            const pieceType = piece.toUpperCase();
+            let moves = [];
+            
+            // Get pseudo-legal moves based on piece type
+            switch (pieceType) {
+                case 'P': moves = getPawnMoves(row, col, piece); break;
+                case 'N': moves = getKnightMoves(row, col); break;
+                case 'B': moves = getBishopMoves(row, col); break;
+                case 'R': moves = getRookMoves(row, col); break;
+                case 'Q': moves = getQueenMoves(row, col); break;
+                case 'K': moves = getKingMoves(row, col); break;
+            }
+            
+            // Filter out moves that would leave the king in check
+            moves = moves.filter(move => !wouldBeInCheck(row, col, move.row, move.col));
+            
+            return moves;
+        }
+
+        /**
+         * Get pawn moves including captures, en passant, and double move
+         */
+        function getPawnMoves(row, col, piece) {
+            const moves = [];
+            const isWhite = piece === piece.toUpperCase();
+            const direction = isWhite ? -1 : 1; // White moves up (decreasing row), Black moves down
+            const startRow = isWhite ? 6 : 1;
+            
+            // Single push
+            const oneAhead = row + direction;
+            if (isValidSquare(oneAhead, col) && !gameState.board[oneAhead][col]) {
+                moves.push({ row: oneAhead, col });
+                
+                // Double push from starting position
+                const twoAhead = row + 2 * direction;
+                if (row === startRow && !gameState.board[twoAhead][col]) {
+                    moves.push({ row: twoAhead, col });
+                }
+            }
+            
+            // Captures (diagonal)
+            for (const dc of [-1, 1]) {
+                const captureCol = col + dc;
+                if (isValidSquare(oneAhead, captureCol)) {
+                    const targetPiece = gameState.board[oneAhead][captureCol];
+                    // Normal capture
+                    if (targetPiece && isOpponentPiece(targetPiece)) {
+                        moves.push({ row: oneAhead, col: captureCol });
+                    }
+                    // En passant capture
+                    if (gameState.enPassantTarget && 
+                        gameState.enPassantTarget.row === oneAhead && 
+                        gameState.enPassantTarget.col === captureCol) {
+                        moves.push({ row: oneAhead, col: captureCol, isEnPassant: true });
+                    }
+                }
+            }
+            
+            return moves;
+        }
+
+        /**
+         * Get knight moves - L-shaped jumps
+         */
+        function getKnightMoves(row, col) {
+            const moves = [];
+            const offsets = [
+                [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+                [1, -2], [1, 2], [2, -1], [2, 1]
+            ];
+            
+            for (const [dr, dc] of offsets) {
+                const newRow = row + dr;
+                const newCol = col + dc;
+                if (isValidSquare(newRow, newCol)) {
+                    const targetPiece = gameState.board[newRow][newCol];
+                    if (!targetPiece || isOpponentPiece(targetPiece)) {
+                        moves.push({ row: newRow, col: newCol });
+                    }
+                }
+            }
+            
+            return moves;
+        }
+
+        /**
+         * Get sliding moves for bishop (diagonals)
+         */
+        function getBishopMoves(row, col) {
+            return getSlidingMoves(row, col, [[-1, -1], [-1, 1], [1, -1], [1, 1]]);
+        }
+
+        /**
+         * Get sliding moves for rook (files and ranks)
+         */
+        function getRookMoves(row, col) {
+            return getSlidingMoves(row, col, [[-1, 0], [1, 0], [0, -1], [0, 1]]);
+        }
+
+        /**
+         * Get queen moves (combination of bishop and rook)
+         */
+        function getQueenMoves(row, col) {
+            return [
+                ...getBishopMoves(row, col),
+                ...getRookMoves(row, col)
+            ];
+        }
+
+        /**
+         * Helper function for sliding pieces (bishop, rook, queen)
+         * Moves along directions until hitting a piece or board edge
+         */
+        function getSlidingMoves(row, col, directions) {
+            const moves = [];
+            
+            for (const [dr, dc] of directions) {
+                let newRow = row + dr;
+                let newCol = col + dc;
+                
+                while (isValidSquare(newRow, newCol)) {
+                    const targetPiece = gameState.board[newRow][newCol];
+                    
+                    if (!targetPiece) {
+                        // Empty square - can move here
+                        moves.push({ row: newRow, col: newCol });
+                    } else if (isOpponentPiece(targetPiece)) {
+                        // Opponent piece - can capture, but stop
+                        moves.push({ row: newRow, col: newCol });
+                        break;
+                    } else {
+                        // Own piece - blocked, stop
+                        break;
+                    }
+                    
+                    newRow += dr;
+                    newCol += dc;
+                }
+            }
+            
+            return moves;
+        }
+
+        /**
+         * Get king moves including castling
+         */
+        function getKingMoves(row, col) {
+            const moves = [];
+            const piece = gameState.board[row][col];
+            const isWhite = piece === piece.toUpperCase();
+            
+            // Normal king moves (one square in any direction)
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    
+                    const newRow = row + dr;
+                    const newCol = col + dc;
+                    
+                    if (isValidSquare(newRow, newCol)) {
+                        const targetPiece = gameState.board[newRow][newCol];
+                        if (!targetPiece || isOpponentPiece(targetPiece)) {
+                            moves.push({ row: newRow, col: newCol });
+                        }
+                    }
+                }
+            }
+            
+            // Castling
+            if (canCastleKingside(isWhite)) {
+                moves.push({ row, col: col + 2, isCastling: 'kingside' });
+            }
+            if (canCastleQueenside(isWhite)) {
+                moves.push({ row, col: col - 2, isCastling: 'queenside' });
+            }
+            
+            return moves;
+        }
+
+        /**
+         * Check if kingside castling is legal
+         */
+        function canCastleKingside(isWhite) {
+            const row = isWhite ? 7 : 0;
+            const kingMoved = isWhite ? gameState.castling.whiteKingMoved : gameState.castling.blackKingMoved;
+            const rookMoved = isWhite ? gameState.castling.whiteRookHMoved : gameState.castling.blackRookHMoved;
+            
+            if (kingMoved || rookMoved) return false;
+            
+            // Check if squares between king and rook are empty
+            if (gameState.board[row][5] || gameState.board[row][6]) return false;
+            
+            // Check if king passes through or ends up in check
+            if (isSquareAttacked(row, 4, !isWhite)) return false; // King's current square
+            if (isSquareAttacked(row, 5, !isWhite)) return false; // Square king passes through
+            if (isSquareAttacked(row, 6, !isWhite)) return false; // King's destination
+            
+            return true;
+        }
+
+        /**
+         * Check if queenside castling is legal
+         */
+        function canCastleQueenside(isWhite) {
+            const row = isWhite ? 7 : 0;
+            const kingMoved = isWhite ? gameState.castling.whiteKingMoved : gameState.castling.blackKingMoved;
+            const rookMoved = isWhite ? gameState.castling.whiteRookAMoved : gameState.castling.blackRookAMoved;
+            
+            if (kingMoved || rookMoved) return false;
+            
+            // Check if squares between king and rook are empty
+            if (gameState.board[row][1] || gameState.board[row][2] || gameState.board[row][3]) return false;
+            
+            // Check if king passes through or ends up in check
+            if (isSquareAttacked(row, 4, !isWhite)) return false;
+            if (isSquareAttacked(row, 3, !isWhite)) return false;
+            if (isSquareAttacked(row, 2, !isWhite)) return false;
+            
+            return true;
+        }
+
+        /**
+         * Check if a square is attacked by the opponent
+         * Used for check detection and castling validation
+         */
+        function isSquareAttacked(row, col, byWhite) {
+            // Check pawn attacks
+            const pawnDir = byWhite ? 1 : -1;
+            const pawnRow = row + pawnDir;
+            if (isValidSquare(pawnRow, col - 1)) {
+                const piece = gameState.board[pawnRow][col - 1];
+                if (piece && ((byWhite && piece === 'P') || (!byWhite && piece === 'p'))) {
+                    return true;
+                }
+            }
+            if (isValidSquare(pawnRow, col + 1)) {
+                const piece = gameState.board[pawnRow][col + 1];
+                if (piece && ((byWhite && piece === 'P') || (!byWhite && piece === 'p'))) {
+                    return true;
+                }
+            }
+            
+            // Check knight attacks
+            const knightOffsets = [
+                [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+                [1, -2], [1, 2], [2, -1], [2, 1]
+            ];
+            for (const [dr, dc] of knightOffsets) {
+                const r = row + dr, c = col + dc;
+                if (isValidSquare(r, c)) {
+                    const piece = gameState.board[r][c];
+                    if (piece && ((byWhite && piece === 'N') || (!byWhite && piece === 'n'))) {
+                        return true;
+                    }
+                }
+            }
+            
+            // Check sliding attacks (bishop, rook, queen)
+            const diagonals = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+            const straights = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+            
+            // Diagonals (bishop, queen)
+            for (const [dr, dc] of diagonals) {
+                let r = row + dr, c = col + dc;
+                while (isValidSquare(r, c)) {
+                    const piece = gameState.board[r][c];
+                    if (piece) {
+                        if ((byWhite && (piece === 'B' || piece === 'Q')) ||
+                            (!byWhite && (piece === 'b' || piece === 'q'))) {
+                            return true;
+                        }
+                        break;
+                    }
+                    r += dr;
+                    c += dc;
+                }
+            }
+            
+            // Straights (rook, queen)
+            for (const [dr, dc] of straights) {
+                let r = row + dr, c = col + dc;
+                while (isValidSquare(r, c)) {
+                    const piece = gameState.board[r][c];
+                    if (piece) {
+                        if ((byWhite && (piece === 'R' || piece === 'Q')) ||
+                            (!byWhite && (piece === 'r' || piece === 'q'))) {
+                            return true;
+                        }
+                        break;
+                    }
+                    r += dr;
+                    c += dc;
+                }
+            }
+            
+            // Check king attacks (for adjacent squares)
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    const r = row + dr, c = col + dc;
+                    if (isValidSquare(r, c)) {
+                        const piece = gameState.board[r][c];
+                        if (piece && ((byWhite && piece === 'K') || (!byWhite && piece === 'k'))) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            
+            return false;
+        }
+
+        /**
+         * Check if making a move would leave the king in check
+         * Used to filter out illegal moves
+         */
+        function wouldBeInCheck(fromRow, fromCol, toRow, toCol) {
+            const piece = gameState.board[fromRow][fromCol];
+            const isWhite = piece === piece.toUpperCase();
+            
+            // Simulate the move
+            const tempBoard = cloneBoard(gameState.board);
+            tempBoard[toRow][toCol] = piece;
+            tempBoard[fromRow][fromCol] = null;
+            
+            // Handle en passant capture
+            if (piece.toUpperCase() === 'P' && 
+                gameState.enPassantTarget && 
+                toRow === gameState.enPassantTarget.row && 
+                toCol === gameState.enPassantTarget.col) {
+                const capturedPawnRow = fromRow;
+                tempBoard[capturedPawnRow][toCol] = null;
+            }
+            
+            // Find the king
+            let kingRow, kingCol;
+            const kingPiece = isWhite ? 'K' : 'k';
+            
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (tempBoard[r][c] === kingPiece) {
+                        kingRow = r;
+                        kingCol = c;
+                        break;
+                    }
+                }
+            }
+            
+            // If the piece being moved is the king, update its position
+            if (piece.toUpperCase() === 'K') {
+                kingRow = toRow;
+                kingCol = toCol;
+            }
+            
+            // Temporarily swap the board and check
+            const realBoard = gameState.board;
+            gameState.board = tempBoard;
+            const inCheck = isSquareAttacked(kingRow, kingCol, !isWhite);
+            gameState.board = realBoard;
+            
+            return inCheck;
+        }
+
+        /**
+         * Execute a move on the board
+         * Handles special moves: castling, en passant, promotion
+         */
+        function makeMove(fromRow, fromCol, toRow, toCol, moveData = {}) {
+            const piece = gameState.board[fromRow][fromCol];
+            const isWhite = piece === piece.toUpperCase();
+            const capturedPiece = gameState.board[toRow][toCol];
+            
+            // Handle en passant capture
+            if (moveData.isEnPassant || (piece.toUpperCase() === 'P' && 
+                gameState.enPassantTarget && 
+                toRow === gameState.enPassantTarget.row && 
+                toCol === gameState.enPassantTarget.col)) {
+                const capturedPawnRow = fromRow;
+                gameState.board[capturedPawnRow][toCol] = null;
+            }
+            
+            // Handle castling
+            if (moveData.isCastling) {
+                if (moveData.isCastling === 'kingside') {
+                    // Move rook from h-file to f-file
+                    gameState.board[fromRow][5] = gameState.board[fromRow][7];
+                    gameState.board[fromRow][7] = null;
+                } else {
+                    // Move rook from a-file to d-file
+                    gameState.board[fromRow][3] = gameState.board[fromRow][0];
+                    gameState.board[fromRow][0] = null;
+                }
+            }
+            
+            // Move the piece
+            gameState.board[toRow][toCol] = piece;
+            gameState.board[fromRow][fromCol] = null;
+            
+            // Handle pawn promotion (auto-promote to queen for simplicity)
+            if (piece.toUpperCase() === 'P' && (toRow === 0 || toRow === 7)) {
+                gameState.board[toRow][toCol] = isWhite ? 'Q' : 'q';
+            }
+            
+            // Update castling rights
+            if (piece === 'K') gameState.castling.whiteKingMoved = true;
+            if (piece === 'k') gameState.castling.blackKingMoved = true;
+            if (piece === 'R') {
+                if (fromCol === 0) gameState.castling.whiteRookAMoved = true;
+                if (fromCol === 7) gameState.castling.whiteRookHMoved = true;
+            }
+            if (piece === 'r') {
+                if (fromCol === 0) gameState.castling.blackRookAMoved = true;
+                if (fromCol === 7) gameState.castling.blackRookHMoved = true;
+            }
+            
+            // Update en passant target
+            if (piece.toUpperCase() === 'P' && Math.abs(toRow - fromRow) === 2) {
+                gameState.enPassantTarget = { 
+                    row: (fromRow + toRow) / 2, 
+                    col: fromCol 
+                };
+            } else {
+                gameState.enPassantTarget = null;
+            }
+            
+            // Update last move
+            gameState.lastMove = { 
+                from: { row: fromRow, col: fromCol }, 
+                to: { row: toRow, col: toCol } 
+            };
+            
+            // Record move in history
+            const san = moveData.san || generateSAN(piece, fromRow, fromCol, toRow, toCol, capturedPiece, moveData);
+            gameState.moveHistory.push({
+                san,
+                from: indexToAlgebraic(fromRow, fromCol),
+                to: indexToAlgebraic(toRow, toCol),
+                piece,
+                captured: capturedPiece
+            });
+            
+            // Switch turn
+            gameState.currentTurn = gameState.currentTurn === 'white' ? 'black' : 'white';
+            
+            return { san, captured: capturedPiece };
+        }
+
+        /**
+         * Generate Standard Algebraic Notation for a move
+         */
+        function generateSAN(piece, fromRow, fromCol, toRow, toCol, captured, moveData) {
+            if (moveData.isCastling === 'kingside') return 'O-O';
+            if (moveData.isCastling === 'queenside') return 'O-O-O';
+            
+            const pieceType = piece.toUpperCase();
+            let san = '';
+            
+            if (pieceType === 'P') {
+                if (captured || moveData.isEnPassant) {
+                    san = FILES[fromCol] + 'x';
+                }
+                san += indexToAlgebraic(toRow, toCol);
+                // Promotion
+                if (toRow === 0 || toRow === 7) {
+                    san += '=Q';
+                }
+            } else {
+                san = pieceType;
+                if (captured) san += 'x';
+                san += indexToAlgebraic(toRow, toCol);
+            }
+            
+            return san;
+        }
+
+        // ============================================================
+        // SECTION 6: RENDERING FUNCTIONS
+        // Handle all visual updates to the DOM
+        // ============================================================
+
+        /**
+         * Initialize and render the chessboard
+         */
+        function renderBoard() {
+            const boardElement = document.getElementById('chessboard');
+            boardElement.innerHTML = '';
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.className = 'square ' + ((row + col) % 2 === 0 ? 'light' : 'dark');
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+                    
+                    // Add piece if present
+                    const piece = gameState.board[row][col];
+                    if (piece) {
+                        const pieceSpan = document.createElement('span');
+                        pieceSpan.className = 'piece';
+                        pieceSpan.textContent = PIECES[piece];
+                        square.appendChild(pieceSpan);
+                    }
+                    
+                    // Add square highlighting
+                    if (gameState.selectedSquare && 
+                        gameState.selectedSquare.row === row && 
+                        gameState.selectedSquare.col === col) {
+                        square.classList.add('selected');
+                    }
+                    
+                    // Highlight valid moves
+                    if (gameState.validMoves.some(m => m.row === row && m.col === col)) {
+                        square.classList.add('valid-move');
+                        if (gameState.board[row][col]) {
+                            square.classList.add('has-piece');
+                        }
+                    }
+                    
+                    // Highlight last move
+                    if (gameState.lastMove) {
+                        if ((gameState.lastMove.from.row === row && gameState.lastMove.from.col === col) ||
+                            (gameState.lastMove.to.row === row && gameState.lastMove.to.col === col)) {
+                            square.classList.add('last-move');
+                        }
+                    }
+                    
+                    // Add click handler
+                    square.addEventListener('click', () => handleSquareClick(row, col));
+                    
+                    boardElement.appendChild(square);
+                }
+            }
+        }
+
+        /**
+         * Render board coordinates
+         */
+        function renderCoordinates() {
+            const fileCoords = document.getElementById('fileCoords');
+            const rankCoords = document.getElementById('rankCoords');
+            
+            fileCoords.innerHTML = FILES.map(f => `<span>${f}</span>`).join('');
+            rankCoords.innerHTML = RANKS.map(r => `<span>${r}</span>`).join('');
+        }
+
+        /**
+         * Update the move history display
+         */
+        function renderMoveHistory() {
+            const moveList = document.getElementById('moveList');
+            
+            if (gameState.moveHistory.length === 0) {
+                moveList.innerHTML = '<em style="color: var(--text-muted); grid-column: 1 / -1;">No moves yet</em>';
+                return;
+            }
+            
+            let html = '';
+            for (let i = 0; i < gameState.moveHistory.length; i += 2) {
+                const moveNumber = Math.floor(i / 2) + 1;
+                const whiteMove = gameState.moveHistory[i];
+                const blackMove = gameState.moveHistory[i + 1];
+                
+                const isCurrentWhite = i === gameState.moveHistory.length - 1 || 
+                                       (i === gameState.moveHistory.length - 2 && !blackMove);
+                const isCurrentBlack = i + 1 === gameState.moveHistory.length - 1;
+                
+                html += `<span class="move-number-col">${moveNumber}.</span>`;
+                html += `<span class="move-white ${isCurrentWhite ? 'current' : ''}">${whiteMove.san}</span>`;
+                html += `<span class="move-black ${isCurrentBlack ? 'current' : ''}">${blackMove ? blackMove.san : ''}</span>`;
+            }
+            
+            moveList.innerHTML = html;
+        }
+
+        /**
+         * Update progress indicator
+         */
+        function updateProgress() {
+            if (!gameState.training.active || !gameState.training.opening) return;
+            
+            const totalMoves = gameState.training.opening.moves.length;
+            const currentMove = gameState.training.currentMoveIndex;
+            const percent = Math.round((currentMove / totalMoves) * 100);
+            
+            document.getElementById('progressText').textContent = `Move ${currentMove} of ${totalMoves}`;
+            document.getElementById('progressPercent').textContent = `${percent}%`;
+            document.getElementById('progressFill').style.width = `${percent}%`;
+        }
+
+        /**
+         * Show feedback message to the user
+         */
+        function showFeedback(type, title, message) {
+            const panel = document.getElementById('feedbackPanel');
+            panel.className = `feedback ${type} show`;
+            document.getElementById('feedbackTitle').textContent = title;
+            document.getElementById('feedbackContent').textContent = message;
+            
+            // Auto-hide after 5 seconds for success/info
+            if (type !== 'error') {
+                setTimeout(() => {
+                    panel.classList.remove('show');
+                }, 5000);
+            }
+        }
+
+        /**
+         * Hide feedback panel
+         */
+        function hideFeedback() {
+            document.getElementById('feedbackPanel').classList.remove('show');
+        }
+
+        /**
+         * Show move explanation in the sidebar
+         */
+        function showExplanation(moveData) {
+            document.getElementById('currentMoveDisplay').style.display = 'flex';
+            
+            const moveNum = Math.ceil((gameState.training.currentMoveIndex) / 2);
+            const isWhiteMove = (gameState.training.currentMoveIndex % 2 === 1);
+            document.getElementById('displayMoveNumber').textContent = 
+                `${moveNum}${isWhiteMove ? '.' : '...'}`;
+            document.getElementById('displayMoveNotation').textContent = moveData.san;
+            
+            let html = `
+                <h4>Why this move?</h4>
+                <p>${moveData.whyThisMove || moveData.explanation}</p>
+            `;
+            
+            if (moveData.controlledSquares && moveData.controlledSquares.length > 0) {
+                html += `
+                    <h4>Key squares controlled:</h4>
+                    <p>${moveData.controlledSquares.join(', ')}</p>
+                `;
+            }
+            
+            if (moveData.strategicIdea) {
+                html += `
+                    <h4>Strategic idea:</h4>
+                    <p>${moveData.strategicIdea}</p>
+                `;
+            }
+            
+            document.getElementById('explanationContent').innerHTML = html;
+            
+            // Update strategy tags
+            const tagsContainer = document.getElementById('strategyTags');
+            if (moveData.tags && moveData.tags.length > 0) {
+                tagsContainer.innerHTML = moveData.tags.map(tag => 
+                    `<span class="strategy-tag ${tag}">${formatTag(tag)}</span>`
+                ).join('');
+            } else {
+                tagsContainer.innerHTML = '';
+            }
+        }
+
+        /**
+         * Format strategy tag for display
+         */
+        function formatTag(tag) {
+            const tagNames = {
+                'center': '⬛ Central Control',
+                'development': '♘ Development',
+                'king-safety': '♔ King Safety',
+                'attack': '⚔️ Attack',
+                'defense': '🛡️ Defense'
+            };
+            return tagNames[tag] || tag;
+        }
+
+        /**
+         * Highlight correct square with animation
+         */
+        function highlightSquare(row, col, type) {
+            const squares = document.querySelectorAll('.square');
+            const index = row * 8 + col;
+            const square = squares[index];
+            
+            square.classList.add(`${type}-move`);
+            setTimeout(() => {
+                square.classList.remove(`${type}-move`);
+            }, 500);
+        }
+
+        /**
+         * Show hint - highlight the expected square
+         */
+        function showHint() {
+            if (!gameState.training.active || !gameState.training.awaitingPlayerMove) return;
+            
+            const currentMove = gameState.training.opening.moves[gameState.training.currentMoveIndex];
+            const { row, col } = algebraicToIndex(currentMove.from);
+            const destPos = algebraicToIndex(currentMove.to);
+            
+            // Clear previous hints
+            document.querySelectorAll('.hint-square').forEach(el => el.classList.remove('hint-square'));
+            
+            // Highlight source and destination
+            const squares = document.querySelectorAll('.square');
+            squares[row * 8 + col].classList.add('hint-square');
+            squares[destPos.row * 8 + destPos.col].classList.add('hint-square');
+            
+            gameState.training.hintShown = true;
+            
+            showFeedback('info', '💡 Hint', `Try moving from ${currentMove.from} to ${currentMove.to}`);
+        }
+
+        /**
+         * Draw an arrow on the board showing the correct move
+         * @param {string} fromSquare - Starting square in algebraic notation (e.g., 'e2')
+         * @param {string} toSquare - Ending square in algebraic notation (e.g., 'e4')
+         * @param {string} san - Move notation to display
+         */
+        function drawCorrectMoveArrow(fromSquare, toSquare, san) {
+            // Remove any existing arrow
+            clearMoveArrow();
+            
+            const boardElement = document.getElementById('chessboard');
+            const boardRect = boardElement.getBoundingClientRect();
+            const squareSize = boardRect.width / 8;
+            
+            // Convert algebraic notation to pixel positions
+            const from = algebraicToIndex(fromSquare);
+            const to = algebraicToIndex(toSquare);
+            
+            // Calculate center of each square
+            const fromX = (from.col + 0.5) * squareSize;
+            const fromY = (from.row + 0.5) * squareSize;
+            const toX = (to.col + 0.5) * squareSize;
+            const toY = (to.row + 0.5) * squareSize;
+            
+            // Calculate arrow properties
+            const dx = toX - fromX;
+            const dy = toY - fromY;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx);
+            
+            // Shorten the arrow slightly so it doesn't cover the piece
+            const shortenAmount = squareSize * 0.35;
+            const arrowEndX = toX - Math.cos(angle) * shortenAmount;
+            const arrowEndY = toY - Math.sin(angle) * shortenAmount;
+            const arrowStartX = fromX + Math.cos(angle) * (squareSize * 0.2);
+            const arrowStartY = fromY + Math.sin(angle) * (squareSize * 0.2);
+            
+            // Arrowhead dimensions
+            const headLength = squareSize * 0.35;
+            const headWidth = squareSize * 0.25;
+            
+            // Calculate arrowhead points
+            const headAngle1 = angle + Math.PI * 0.85;
+            const headAngle2 = angle - Math.PI * 0.85;
+            const headX1 = arrowEndX + Math.cos(headAngle1) * headLength;
+            const headY1 = arrowEndY + Math.sin(headAngle1) * headLength;
+            const headX2 = arrowEndX + Math.cos(headAngle2) * headLength;
+            const headY2 = arrowEndY + Math.sin(headAngle2) * headLength;
+            
+            // Create SVG overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'arrow-overlay';
+            overlay.id = 'moveArrowOverlay';
+            
+            overlay.innerHTML = `
+                <svg viewBox="0 0 ${boardRect.width} ${boardRect.height}">
+                    <defs>
+                        <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.7" />
+                            <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <line 
+                        class="move-arrow" 
+                        x1="${arrowStartX}" 
+                        y1="${arrowStartY}" 
+                        x2="${arrowEndX}" 
+                        y2="${arrowEndY}"
+                        stroke="url(#arrowGradient)"
+                    />
+                    <polygon 
+                        class="arrow-head" 
+                        points="${arrowEndX},${arrowEndY} ${headX1},${headY1} ${headX2},${headY2}"
+                    />
+                </svg>
+            `;
+            
+            boardElement.appendChild(overlay);
+            
+            // Highlight the source and destination squares
+            const squares = document.querySelectorAll('.square');
+            const fromIndex = from.row * 8 + from.col;
+            const toIndex = to.row * 8 + to.col;
+            
+            squares[fromIndex].classList.add('correct-source');
+            squares[toIndex].classList.add('correct-destination');
+            
+            // Add the move label
+            const label = document.createElement('div');
+            label.className = 'correct-move-label';
+            label.id = 'correctMoveLabel';
+            label.textContent = `Correct: ${san} (${fromSquare} → ${toSquare})`;
+            document.querySelector('.board-container').appendChild(label);
+        }
+
+        /**
+         * Clear the arrow and highlighting from the board
+         */
+        function clearMoveArrow() {
+            // Remove SVG overlay
+            const overlay = document.getElementById('moveArrowOverlay');
+            if (overlay) overlay.remove();
+            
+            // Remove move label
+            const label = document.getElementById('correctMoveLabel');
+            if (label) label.remove();
+            
+            // Clear square highlighting
+            document.querySelectorAll('.correct-source, .correct-destination, .wrong-source, .wrong-destination')
+                .forEach(el => {
+                    el.classList.remove('correct-source', 'correct-destination', 'wrong-source', 'wrong-destination');
+                });
+        }
+
+        /**
+         * Show wrong move with arrow pointing to correct move
+         * @param {number} wrongFromRow - Row where user moved from
+         * @param {number} wrongFromCol - Column where user moved from
+         * @param {number} wrongToRow - Row where user moved to
+         * @param {number} wrongToCol - Column where user moved to
+         * @param {object} expectedMove - The expected correct move data
+         */
+        function showWrongMoveWithArrow(wrongFromRow, wrongFromCol, wrongToRow, wrongToCol, expectedMove) {
+            // First, briefly highlight the wrong move in red
+            const squares = document.querySelectorAll('.square');
+            const wrongFromIndex = wrongFromRow * 8 + wrongFromCol;
+            const wrongToIndex = wrongToRow * 8 + wrongToCol;
+            
+            squares[wrongFromIndex].classList.add('wrong-source');
+            squares[wrongToIndex].classList.add('wrong-destination');
+            
+            // After a short delay, show the correct move with arrow
+            setTimeout(() => {
+                // Clear wrong move highlighting
+                squares[wrongFromIndex].classList.remove('wrong-source', 'wrong-destination');
+                squares[wrongToIndex].classList.remove('wrong-source', 'wrong-destination');
+                
+                // Draw arrow showing correct move
+                drawCorrectMoveArrow(expectedMove.from, expectedMove.to, expectedMove.san);
+            }, 600);
+        }
+
+        // ============================================================
+        // SECTION 7: TRAINING ENGINE
+        // Core logic for the opening trainer functionality
+        // ============================================================
+
+        /**
+         * Initialize board to starting position
+         */
+        function initializeBoard() {
+            gameState.board = INITIAL_POSITION.map(row => [...row]);
+            gameState.currentTurn = 'white';
+            gameState.selectedSquare = null;
+            gameState.validMoves = [];
+            gameState.moveHistory = [];
+            gameState.lastMove = null;
+            gameState.enPassantTarget = null;
+            gameState.castling = {
+                whiteKingMoved: false,
+                whiteRookAMoved: false,
+                whiteRookHMoved: false,
+                blackKingMoved: false,
+                blackRookAMoved: false,
+                blackRookHMoved: false
+            };
+            
+            renderBoard();
+            renderMoveHistory();
+        }
+
+        /**
+         * Start training a specific opening
+         */
+        function startTraining(openingKey) {
+            const opening = OPENINGS[openingKey];
+            if (!opening) return;
+            
+            // Reset the board
+            initializeBoard();
+            
+            // Set up training state
+            gameState.training = {
+                active: true,
+                opening: opening,
+                currentMoveIndex: 0,
+                playerColor: opening.playerColor,
+                awaitingPlayerMove: false,
+                hintShown: false
+            };
+            
+            // Update UI
+            document.getElementById('openingName').textContent = opening.name;
+            document.getElementById('openingDescription').textContent = opening.description;
+            document.getElementById('ecoBadge').textContent = opening.eco;
+            document.getElementById('progressContainer').style.display = 'block';
+            
+            // Clear previous explanation
+            document.getElementById('currentMoveDisplay').style.display = 'none';
+            document.getElementById('explanationContent').innerHTML = `
+                <div class="instructions">
+                    <h4>Training Started!</h4>
+                    <p>You are playing as <strong>${opening.playerColor}</strong>.</p>
+                    <p>${opening.playerColor === 'white' ? 'Make the first move!' : 'Wait for White\'s move...'}</p>
+                </div>
+            `;
+            document.getElementById('strategyTags').innerHTML = '';
+            
+            // Enable buttons
+            document.getElementById('resetBtn').disabled = false;
+            document.getElementById('hintBtn').disabled = false;
+            
+            updateProgress();
+            hideFeedback();
+            
+            // If player is black, play white's first move
+            if (opening.playerColor === 'black') {
+                setTimeout(() => playOpponentMove(), 800);
+            } else {
+                gameState.training.awaitingPlayerMove = true;
+            }
+            
+            renderBoard();
+        }
+
+        /**
+         * Play the opponent's (computer's) move automatically
+         */
+        function playOpponentMove() {
+            if (!gameState.training.active) return;
+            
+            const opening = gameState.training.opening;
+            const currentIndex = gameState.training.currentMoveIndex;
+            
+            if (currentIndex >= opening.moves.length) {
+                completeOpening();
+                return;
+            }
+            
+            const moveData = opening.moves[currentIndex];
+            
+            // Execute the move
+            const from = algebraicToIndex(moveData.from);
+            const to = algebraicToIndex(moveData.to);
+            
+            // Animate and make the move
+            makeMove(from.row, from.col, to.row, to.col, { san: moveData.san });
+            
+            gameState.training.currentMoveIndex++;
+            updateProgress();
+            
+            // Show explanation for opponent's move
+            showExplanation(moveData);
+            
+            renderBoard();
+            renderMoveHistory();
+            
+            // Check if there are more moves
+            if (gameState.training.currentMoveIndex >= opening.moves.length) {
+                setTimeout(() => completeOpening(), 1000);
+            } else {
+                // Wait for player's move
+                gameState.training.awaitingPlayerMove = true;
+                gameState.training.hintShown = false;
+            }
+        }
+
+        /**
+         * Handle player's move during training
+         */
+        function handleTrainingMove(fromRow, fromCol, toRow, toCol) {
+            if (!gameState.training.active || !gameState.training.awaitingPlayerMove) return false;
+            
+            const opening = gameState.training.opening;
+            const expectedMove = opening.moves[gameState.training.currentMoveIndex];
+            
+            const expectedFrom = algebraicToIndex(expectedMove.from);
+            const expectedTo = algebraicToIndex(expectedMove.to);
+            
+            // Clear any existing arrow before checking move
+            clearMoveArrow();
+            
+            // Check if the move matches
+            if (fromRow === expectedFrom.row && fromCol === expectedFrom.col &&
+                toRow === expectedTo.row && toCol === expectedTo.col) {
+                
+                // Correct move!
+                makeMove(fromRow, fromCol, toRow, toCol, { san: expectedMove.san });
+                
+                gameState.training.currentMoveIndex++;
+                gameState.training.awaitingPlayerMove = false;
+                
+                // Show success feedback
+                highlightSquare(toRow, toCol, 'correct');
+                showFeedback('success', '✓ Correct!', expectedMove.explanation);
+                showExplanation(expectedMove);
+                
+                updateProgress();
+                renderBoard();
+                renderMoveHistory();
+                
+                // Clear hints and arrows
+                document.querySelectorAll('.hint-square').forEach(el => el.classList.remove('hint-square'));
+                clearMoveArrow();
+                
+                // Check if opening is complete
+                if (gameState.training.currentMoveIndex >= opening.moves.length) {
+                    setTimeout(() => completeOpening(), 1000);
+                } else {
+                    // Play opponent's next move after a delay
+                    setTimeout(() => playOpponentMove(), 1200);
+                }
+                
+                return true;
+            } else {
+                // Wrong move! Show the arrow pointing to correct move
+                showWrongMoveWithArrow(fromRow, fromCol, toRow, toCol, expectedMove);
+                
+                const wrongMoveExplanation = generateWrongMoveExplanation(expectedMove, fromRow, fromCol, toRow, toCol);
+                showFeedback('error', '✗ Not quite right!', wrongMoveExplanation);
+                
+                return false;
+            }
+        }
+
+        /**
+         * Generate explanation for why a move was wrong
+         */
+        function generateWrongMoveExplanation(expectedMove, fromRow, fromCol, toRow, toCol) {
+            const userMove = `${indexToAlgebraic(fromRow, fromCol)} to ${indexToAlgebraic(toRow, toCol)}`;
+            const expectedMoveStr = `${expectedMove.from} to ${expectedMove.to}`;
+            
+            let explanation = `You played ${userMove}, but the correct move is ${expectedMoveStr} (${expectedMove.san}). `;
+            explanation += expectedMove.explanation;
+            
+            return explanation;
+        }
+
+        /**
+         * Complete the opening - show celebration
+         */
+        function completeOpening() {
+            gameState.training.active = false;
+            gameState.training.awaitingPlayerMove = false;
+            
+            const overlay = document.getElementById('completionOverlay');
+            document.getElementById('completionText').textContent = 
+                `You've successfully completed the ${gameState.training.opening.name} opening!`;
+            overlay.classList.add('show');
+            
+            showFeedback('success', '🎉 Opening Complete!', 
+                'Congratulations! You have learned this opening. Try another one or practice again!');
+        }
+
+        // ============================================================
+        // SECTION 8: EVENT HANDLERS
+        // Handle user interactions
+        // ============================================================
+
+        /**
+         * Handle click on a board square
+         */
+        function handleSquareClick(row, col) {
+            // If training and not player's turn, ignore
+            if (gameState.training.active && !gameState.training.awaitingPlayerMove) {
+                return;
+            }
+            
+            // If training and not player's color, ignore
+            if (gameState.training.active) {
+                const isPlayerWhite = gameState.training.playerColor === 'white';
+                const isWhiteTurn = gameState.currentTurn === 'white';
+                if (isPlayerWhite !== isWhiteTurn) return;
+            }
+            
+            // Clear any existing arrow when user clicks (they're trying again)
+            clearMoveArrow();
+            
+            const clickedPiece = gameState.board[row][col];
+            
+            // If a piece is already selected
+            if (gameState.selectedSquare) {
+                const { row: fromRow, col: fromCol } = gameState.selectedSquare;
+                
+                // Check if clicking on a valid move destination
+                const validMove = gameState.validMoves.find(m => m.row === row && m.col === col);
+                
+                if (validMove) {
+                    // Execute the move
+                    if (gameState.training.active) {
+                        const success = handleTrainingMove(fromRow, fromCol, row, col);
+                        if (!success) {
+                            // Wrong move - clear selection
+                            gameState.selectedSquare = null;
+                            gameState.validMoves = [];
+                            renderBoard();
+                        }
+                    } else {
+                        // Free play mode
+                        makeMove(fromRow, fromCol, row, col, validMove);
+                        gameState.selectedSquare = null;
+                        gameState.validMoves = [];
+                        renderBoard();
+                        renderMoveHistory();
+                    }
+                    return;
+                }
+                
+                // Clicking on same square - deselect
+                if (fromRow === row && fromCol === col) {
+                    gameState.selectedSquare = null;
+                    gameState.validMoves = [];
+                    renderBoard();
+                    return;
+                }
+                
+                // Clicking on another own piece - select that instead
+                if (clickedPiece && isPieceCurrentPlayer(clickedPiece)) {
+                    gameState.selectedSquare = { row, col };
+                    gameState.validMoves = getValidMoves(row, col);
+                    renderBoard();
+                    return;
+                }
+                
+                // Invalid destination - deselect
+                gameState.selectedSquare = null;
+                gameState.validMoves = [];
+                renderBoard();
+                return;
+            }
+            
+            // No piece selected - select this piece if it's current player's
+            if (clickedPiece && isPieceCurrentPlayer(clickedPiece)) {
+                gameState.selectedSquare = { row, col };
+                gameState.validMoves = getValidMoves(row, col);
+                renderBoard();
+            }
+        }
+
+        /**
+         * Populate the opening selector dropdown
+         */
+        function populateOpeningSelector() {
+            const select = document.getElementById('openingSelect');
+            
+            for (const [key, opening] of Object.entries(OPENINGS)) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = `${opening.name} (${opening.eco})`;
+                select.appendChild(option);
+            }
+        }
+
+        /**
+         * Handle opening selection change
+         */
+        function handleOpeningChange(event) {
+            const selectedKey = event.target.value;
+            document.getElementById('startBtn').disabled = !selectedKey;
+            
+            if (selectedKey) {
+                const opening = OPENINGS[selectedKey];
+                document.getElementById('openingName').textContent = opening.name;
+                document.getElementById('openingDescription').textContent = opening.description;
+                document.getElementById('ecoBadge').textContent = opening.eco;
+            }
+        }
+
+        /**
+         * Handle start button click
+         */
+        function handleStartClick() {
+            const selectedKey = document.getElementById('openingSelect').value;
+            if (selectedKey) {
+                startTraining(selectedKey);
+            }
+        }
+
+        /**
+         * Handle reset button click
+         */
+        function handleResetClick() {
+            clearMoveArrow();
+            const selectedKey = document.getElementById('openingSelect').value;
+            if (selectedKey) {
+                startTraining(selectedKey);
+            } else {
+                initializeBoard();
+            }
+        }
+
+        /**
+         * Handle hint button click
+         */
+        function handleHintClick() {
+            clearMoveArrow();
+            showHint();
+        }
+
+        /**
+         * Toggle theme between light and dark
+         */
+        function toggleTheme() {
+            const body = document.body;
+            const isDark = body.getAttribute('data-theme') === 'dark';
+            
+            if (isDark) {
+                body.removeAttribute('data-theme');
+                document.getElementById('themeIcon').textContent = '🌙';
+                document.getElementById('themeText').textContent = 'Dark Mode';
+                gameState.theme = 'light';
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                document.getElementById('themeIcon').textContent = '☀️';
+                document.getElementById('themeText').textContent = 'Light Mode';
+                gameState.theme = 'dark';
+            }
+        }
+
+        /**
+         * Close completion modal
+         */
+        function closeCompletionModal() {
+            document.getElementById('completionOverlay').classList.remove('show');
+        }
+
+        // ============================================================
+        // SECTION 9: INITIALIZATION
+        // Set up the application when the page loads
+        // ============================================================
+
+        /**
+         * Initialize the application
+         */
+        function init() {
+            // Set up the board
+            initializeBoard();
+            renderCoordinates();
+            
+            // Populate opening selector
+            populateOpeningSelector();
+            
+            // Add event listeners
+            document.getElementById('openingSelect').addEventListener('change', handleOpeningChange);
+            document.getElementById('startBtn').addEventListener('click', handleStartClick);
+            document.getElementById('resetBtn').addEventListener('click', handleResetClick);
+            document.getElementById('hintBtn').addEventListener('click', handleHintClick);
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            document.getElementById('closeCompletionBtn').addEventListener('click', closeCompletionModal);
+            
+            // Close modal when clicking overlay
+            document.getElementById('completionOverlay').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) {
+                    closeCompletionModal();
+                }
+            });
+            
+            console.log('Chess Opening Trainer initialized successfully!');
+        }
+
+        // Start the application when DOM is ready
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

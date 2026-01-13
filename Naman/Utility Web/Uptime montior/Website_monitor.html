@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Uptime Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .pulse-green { animation: pulseGreen 2s infinite; }
+        .pulse-red { animation: pulseRed 1s infinite; }
+        @keyframes pulseGreen {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+        }
+        @keyframes pulseRed {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+        }
+        .uptime-bar { transition: all 0.3s ease; }
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        .keyword { color: #569cd6; }
+        .string { color: #ce9178; }
+        .function { color: #dcdcaa; }
+        .comment { color: #6a9955; }
+        .number { color: #b5cea8; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-heartbeat text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold">Uptime Monitor</h1>
+                        <p class="text-xs text-gray-400">Real-time website monitoring</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div id="lastUpdate" class="text-sm text-gray-400">
+                        <i class="fas fa-sync-alt mr-1"></i> Last check: --
+                    </div>
+                    <button onclick="runAllChecks()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                        <i class="fas fa-play"></i> Run Check
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-gray-800 rounded-xl p-5 border border-gray-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Monitored Sites</p>
+                        <p id="totalSites" class="text-3xl font-bold mt-1">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-globe text-blue-400 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-800 rounded-xl p-5 border border-gray-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Sites Up</p>
+                        <p id="sitesUp" class="text-3xl font-bold mt-1 text-green-400">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-check-circle text-green-400 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-800 rounded-xl p-5 border border-gray-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Sites Down</p>
+                        <p id="sitesDown" class="text-3xl font-bold mt-1 text-red-400">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-times-circle text-red-400 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-800 rounded-xl p-5 border border-gray-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Avg Uptime (24h)</p>
+                        <p id="avgUptime" class="text-3xl font-bold mt-1 text-emerald-400">0%</p>
+                    </div>
+                    <div class="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-chart-line text-emerald-400 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Main Monitor Panel -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Add URL Form -->
+                <div class="bg-gray-800 rounded-xl p-5 border border-gray-700">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-plus-circle text-green-400"></i> Add Website to Monitor
+                    </h2>
+                    <div class="flex gap-3">
+                        <input type="text" id="urlInput" placeholder="https://example.com" 
+                            class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 focus:outline-none focus:border-green-500 transition">
+                        <input type="text" id="nameInput" placeholder="Site Name" 
+                            class="w-40 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 focus:outline-none focus:border-green-500 transition">
+                        <button onclick="addSite()" class="bg-green-600 hover:bg-green-700 px-6 py-2.5 rounded-lg font-medium transition">
+                            <i class="fas fa-plus mr-2"></i>Add
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sites List -->
+                <div class="bg-gray-800 rounded-xl border border-gray-700">
+                    <div class="p-5 border-b border-gray-700">
+                        <h2 class="text-lg font-semibold flex items-center gap-2">
+                            <i class="fas fa-server text-blue-400"></i> Monitored Websites
+                        </h2>
+                    </div>
+                    <div id="sitesList" class="divide-y divide-gray-700">
+                        <!-- Sites will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Uptime Chart -->
+                <div class="bg-gray-800 rounded-xl p-5 border border-gray-700">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-chart-bar text-purple-400"></i> Uptime History (Last 24 Hours)
+                    </h2>
+                    <div class="h-64">
+                        <canvas id="uptimeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Alert Log -->
+                <div class="bg-gray-800 rounded-xl border border-gray-700">
+                    <div class="p-5 border-b border-gray-700">
+                        <h2 class="text-lg font-semibold flex items-center gap-2">
+                            <i class="fas fa-bell text-yellow-400"></i> Alert Log
+                        </h2>
+                    </div>
+                    <div id="alertLog" class="p-4 space-y-3 max-h-64 overflow-y-auto">
+                        <p class="text-gray-500 text-sm text-center py-4">No alerts yet</p>
+                    </div>
+                </div>
+
+                <!-- Python Backend Code -->
+               
+                <!-- Email Settings -->
+                <div class="bg-gray-800 rounded-xl p-5 border border-gray-700">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-envelope text-pink-400"></i> Email Alerts
+                    </h2>
+                    <div class="space-y-3">
+                        <input type="email" id="alertEmail" placeholder="alert@example.com" 
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-pink-500">
+                        <label class="flex items-center gap-2 text-sm text-gray-400">
+                            <input type="checkbox" id="emailEnabled" checked class="w-4 h-4 accent-pink-500">
+                            Enable email notifications
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <div class="bg-gray-800 border border-gray-600 rounded-lg shadow-xl px-5 py-3 flex items-center gap-3">
+            <i id="toastIcon" class="fas fa-check-circle text-green-400"></i>
+            <span id="toastMessage">Notification</span>
+        </div>
+    </div>
+
+    <script>
+        // Database simulation using localStorage
+        const DB = {
+            getSites: () => JSON.parse(localStorage.getItem('uptimeSites') || '[]'),
+            saveSites: (sites) => localStorage.setItem('uptimeSites', JSON.stringify(sites)),
+            getPings: () => JSON.parse(localStorage.getItem('uptimePings') || '[]'),
+            savePings: (pings) => localStorage.setItem('uptimePings', JSON.stringify(pings)),
+            getAlerts: () => JSON.parse(localStorage.getItem('uptimeAlerts') || '[]'),
+            saveAlerts: (alerts) => localStorage.setItem('uptimeAlerts', JSON.stringify(alerts))
+        };
+
+        // Chart instance
+        let uptimeChart;
+
+        // Initialize with sample data
+        function initializeSampleData() {
+            const sites = DB.getSites();
+            if (sites.length === 0) {
+                const sampleSites = [
+                    { id: 1, name: 'Google', url: 'https://google.com', status: 'up', lastCheck: null },
+                    { id: 2, name: 'GitHub', url: 'https://github.com', status: 'up', lastCheck: null },
+                    { id: 3, name: 'Twitter/X', url: 'https://x.com', status: 'up', lastCheck: null },
+                    { id: 4, name: 'Example Down', url: 'https://thissite-doesnotexist-xyz.com', status: 'unknown', lastCheck: null }
+                ];
+                DB.saveSites(sampleSites);
+
+                // Generate sample ping history
+                const pings = [];
+                const now = Date.now();
+                sampleSites.forEach(site => {
+                    for (let i = 0; i < 24; i++) {
+                        pings.push({
+                            siteId: site.id,
+                            timestamp: now - (i * 3600000),
+                            status: site.id === 4 ? (Math.random() > 0.3 ? 'down' : 'up') : (Math.random() > 0.02 ? 'up' : 'down'),
+                            responseTime: Math.floor(Math.random() * 500) + 50
+                        });
+                    }
+                });
+                DB.savePings(pings);
+            }
+        }
+
+        // Add new site
+        function addSite() {
+            const urlInput = document.getElementById('urlInput');
+            const nameInput = document.getElementById('nameInput');
+            let url = urlInput.value.trim();
+            const name = nameInput.value.trim() || new URL(url).hostname;
+
+            if (!url) {
+                showToast('Please enter a URL', 'error');
+                return;
+            }
+
+            if (!url.startsWith('http')) {
+                url = 'https://' + url;
+            }
+
+            const sites = DB.getSites();
+            const newSite = {
+                id: Date.now(),
+                name: name,
+                url: url,
+                status: 'unknown',
+                lastCheck: null
+            };
+            sites.push(newSite);
+            DB.saveSites(sites);
+
+            urlInput.value = '';
+            nameInput.value = '';
+            renderSites();
+            updateStats();
+            showToast(`Added ${name} to monitoring`);
+        }
+
+        // Remove site
+        function removeSite(id) {
+            let sites = DB.getSites();
+            sites = sites.filter(s => s.id !== id);
+            DB.saveSites(sites);
+            renderSites();
+            updateStats();
+            showToast('Site removed');
+        }
+
+        // Simulate checking a website
+        async function checkSite(siteId) {
+            const sites = DB.getSites();
+            const site = sites.find(s => s.id === siteId);
+            if (!site) return;
+
+            // Simulate network request with random success/failure
+            const button = document.querySelector(`[data-site-id="${siteId}"] .check-btn`);
+            if (button) {
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            }
+
+            await new Promise(r => setTimeout(r, 500 + Math.random() * 1000));
+
+            // Simulate: most sites work, some fail randomly
+            const isUp = site.url.includes('doesnotexist') ? Math.random() > 0.7 : Math.random() > 0.05;
+            const responseTime = isUp ? Math.floor(Math.random() * 400) + 50 : null;
+
+            // Update site status
+            site.status = isUp ? 'up' : 'down';
+            site.lastCheck = Date.now();
+            site.responseTime = responseTime;
+            DB.saveSites(sites);
+
+            // Log ping
+            const pings = DB.getPings();
+            pings.unshift({
+                siteId: site.id,
+                timestamp: Date.now(),
+                status: site.status,
+                responseTime: responseTime
+            });
+            // Keep only last 1000 pings
+            if (pings.length > 1000) pings.pop();
+            DB.savePings(pings);
+
+            // Send alert if down
+            if (!isUp) {
+                sendAlert(site);
+            }
+
+            renderSites();
+            updateStats();
+            updateChart();
+            document.getElementById('lastUpdate').innerHTML = 
+                `<i class="fas fa-sync-alt mr-1"></i> Last check: ${new Date().toLocaleTimeString()}`;
+        }
+
+        // Check all sites
+        async function runAllChecks() {
+            const sites = DB.getSites();
+            for (const site of sites) {
+                await checkSite(site.id);
+            }
+            showToast('All sites checked');
+        }
+
+        // Send alert (simulated)
+        function sendAlert(site) {
+            const alerts = DB.getAlerts();
+            const alert = {
+                id: Date.now(),
+                siteId: site.id,
+                siteName: site.name,
+                url: site.url,
+                timestamp: Date.now(),
+                message: `${site.name} is DOWN!`
+            };
+            alerts.unshift(alert);
+            if (alerts.length > 50) alerts.pop();
+            DB.saveAlerts(alerts);
+            renderAlerts();
+
+            const emailEnabled = document.getElementById('emailEnabled').checked;
+            if (emailEnabled) {
+                showToast(`⚠️ Alert sent: ${site.name} is DOWN!`, 'error');
+            }
+        }
+
+        // Render sites list
+        function renderSites() {
+            const sites = DB.getSites();
+            const container = document.getElementById('sitesList');
+
+            if (sites.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-gray-500">
+                        <i class="fas fa-server text-4xl mb-3 opacity-50"></i>
+                        <p>No sites being monitored</p>
+                        <p class="text-sm">Add a website above to get started</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = sites.map(site => {
+                const pings = DB.getPings().filter(p => p.siteId === site.id).slice(0, 24);
+                const uptime = pings.length > 0 
+                    ? ((pings.filter(p => p.status === 'up').length / pings.length) * 100).toFixed(1)
+                    : '--';
+
+                const statusClass = site.status === 'up' ? 'bg-green-500 pulse-green' : 
+                                   site.status === 'down' ? 'bg-red-500 pulse-red' : 'bg-gray-500';
+                const statusText = site.status === 'up' ? 'Online' : 
+                                  site.status === 'down' ? 'Offline' : 'Unknown';
+
+                return `
+                    <div class="p-4 hover:bg-gray-750" data-site-id="${site.id}">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-3 h-3 rounded-full ${statusClass}"></div>
+                                <div>
+                                    <h3 class="font-semibold">${site.name}</h3>
+                                    <a href="${site.url}" target="_blank" class="text-sm text-gray-400 hover:text-blue-400 transition">
+                                        ${site.url}
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-sm ${site.status === 'up' ? 'text-green-400' : site.status === 'down' ? 'text-red-400' : 'text-gray-400'}">
+                                    ${statusText}
+                                </span>
+                                <button onclick="checkSite(${site.id})" class="check-btn bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded text-sm transition">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                                <button onclick="removeSite(${site.id})" class="bg-gray-700 hover:bg-red-600 px-3 py-1.5 rounded text-sm transition">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Uptime Bar -->
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1 flex gap-0.5 h-6">
+                                ${pings.reverse().map(p => `
+                                    <div class="flex-1 rounded-sm uptime-bar ${p.status === 'up' ? 'bg-green-500' : 'bg-red-500'}" 
+                                         title="${new Date(p.timestamp).toLocaleString()} - ${p.status === 'up' ? 'Up' : 'Down'}${p.responseTime ? ` (${p.responseTime}ms)` : ''}">
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <span class="text-sm font-medium w-16 text-right ${parseFloat(uptime) >= 99 ? 'text-green-400' : parseFloat(uptime) >= 95 ? 'text-yellow-400' : 'text-red-400'}">
+                                ${uptime}%
+                            </span>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>24h ago</span>
+                            <span>Now</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Render alerts
+        function renderAlerts() {
+            const alerts = DB.getAlerts().slice(0, 10);
+            const container = document.getElementById('alertLog');
+
+            if (alerts.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No alerts yet</p>';
+                return;
+            }
+
+            container.innerHTML = alerts.map(alert => `
+                <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-exclamation-triangle text-red-400 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-red-400">${alert.siteName} is DOWN</p>
+                            <p class="text-xs text-gray-400 mt-1">${new Date(alert.timestamp).toLocaleString()}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update statistics
+        function updateStats() {
+            const sites = DB.getSites();
+            const pings = DB.getPings();
+            const now = Date.now();
+            const last24h = pings.filter(p => p.timestamp > now - 86400000);
+
+            document.getElementById('totalSites').textContent = sites.length;
+            document.getElementById('sitesUp').textContent = sites.filter(s => s.status === 'up').length;
+            document.getElementById('sitesDown').textContent = sites.filter(s => s.status === 'down').length;
+
+            const avgUptime = last24h.length > 0
+                ? ((last24h.filter(p => p.status === 'up').length / last24h.length) * 100).toFixed(1)
+                : '--';
+            document.getElementById('avgUptime').textContent = avgUptime + (avgUptime !== '--' ? '%' : '');
+        }
+
+        // Initialize Chart
+        function initChart() {
+            const ctx = document.getElementById('uptimeChart').getContext('2d');
+            uptimeChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Uptime %',
+                        data: [],
+                        backgroundColor: [],
+                        borderRadius: 4,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#9ca3af', callback: v => v + '%' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#9ca3af' }
+                        }
+                    }
+                }
+            });
+            updateChart();
+        }
+
+        // Update Chart
+        function updateChart() {
+            const sites = DB.getSites();
+            const pings = DB.getPings();
+            const now = Date.now();
+
+            const labels = sites.map(s => s.name);
+            const data = sites.map(site => {
+                const sitePings = pings.filter(p => p.siteId === site.id && p.timestamp > now - 86400000);
+                return sitePings.length > 0
+                    ? ((sitePings.filter(p => p.status === 'up').length / sitePings.length) * 100).toFixed(1)
+                    : 0;
+            });
+
+            const colors = data.map(v => 
+                v >= 99 ? '#22c55e' : v >= 95 ? '#eab308' : '#ef4444'
+            );
+
+            uptimeChart.data.labels = labels;
+            uptimeChart.data.datasets[0].data = data;
+            uptimeChart.data.datasets[0].backgroundColor = colors;
+            uptimeChart.update();
+        }
+
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const msg = document.getElementById('toastMessage');
+
+            icon.className = type === 'error' 
+                ? 'fas fa-exclamation-circle text-red-400'
+                : 'fas fa-check-circle text-green-400';
+            msg.textContent = message;
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeSampleData();
+            renderSites();
+            renderAlerts();
+            updateStats();
+            initChart();
+
+            // Auto-check every 60 seconds
+            setInterval(() => {
+                runAllChecks();
+            }, 60000);
+        });
+
+        // Enter key to add site
+        document.getElementById('urlInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addSite();
+        });
+        document.getElementById('nameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addSite();
+        });
+    </script>
+</body>
+</html>

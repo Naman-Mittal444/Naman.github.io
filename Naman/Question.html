@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Guess the Liar 🤖</title>
+
+<style>
+:root {
+  --neon-blue: #00e5ff;
+  --neon-purple: #9b5cff;
+  --bg-dark: #05050a;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #0b0f2a, #05050a);
+  color: white;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.container {
+  width: 90%;
+  max-width: 420px;
+  padding: 20px;
+  border-radius: 20px;
+  background: rgba(10, 10, 30, 0.85);
+  box-shadow: 0 0 30px var(--neon-purple);
+  text-align: center;
+}
+
+h1 {
+  color: var(--neon-blue);
+  text-shadow: 0 0 10px var(--neon-blue);
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 12px;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+  color: black;
+}
+
+button.secondary {
+  background: transparent;
+  border: 1px solid var(--neon-purple);
+  color: var(--neon-purple);
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  background: #0f1230;
+  color: white;
+}
+
+.hidden {
+  display: none;
+}
+
+.card {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 16px;
+  background: rgba(0,0,0,0.6);
+  box-shadow: inset 0 0 15px var(--neon-blue);
+}
+
+.role {
+  font-size: 24px;
+  margin-top: 10px;
+}
+
+.liar {
+  color: #ff4d4d;
+  text-shadow: 0 0 10px red;
+}
+
+.truth {
+  color: var(--neon-blue);
+}
+
+.hint {
+  margin-top: 10px;
+  color: #ffd966;
+  font-style: italic;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- SETUP SCREEN -->
+  <div id="setup">
+    <h1>Guess the Liar 🤖</h1>
+    <p>Enter player names (once)</p>
+    <div id="inputs"></div>
+    <button onclick="addPlayer()">➕ Add Player</button>
+    <button onclick="startGame()">Start Game</button>
+  </div>
+
+  <!-- ROLE SCREEN -->
+  <div id="roleScreen" class="hidden">
+    <h1 id="playerName"></h1>
+    <button onclick="revealRole()">Reveal Role</button>
+
+    <div id="card" class="card hidden">
+      <div id="roleText" class="role"></div>
+      <div id="promptText"></div>
+      <div id="liarHint" class="hint hidden"></div>
+      <button onclick="nextPlayer()">Next Player</button>
+    </div>
+  </div>
+
+  <!-- END SCREEN -->
+  <div id="endScreen" class="hidden">
+    <h1>Round Ready</h1>
+    <p>Discuss & find the liar 👀</p>
+    <button onclick="restartRound()">Restart Round</button>
+    <button class="secondary" onclick="newGame()">New Game</button>
+  </div>
+
+</div>
+
+<script>
+/* ---------- DATA ---------- */
+
+const promptPairs = [
+  { truth: "Laser Tag", liar: "Arcade", hint: "Indoor games with lights" },
+  { truth: "Cyberpunk City", liar: "Futuristic Mall", hint: "Neon, tech, crowds" },
+  { truth: "Hacker", liar: "Programmer", hint: "Computers and code" },
+  { truth: "Space Station", liar: "Spaceship", hint: "Sci-fi, metal, tech" },
+  { truth: "AI Assistant", liar: "Search Engine", hint: "Helps with information" },
+
+  { truth: "Virtual Reality", liar: "Video Game", hint: "Digital immersive experiences" },
+  { truth: "Neural Network", liar: "Algorithm", hint: "AI logic systems" },
+  { truth: "Drone", liar: "RC Helicopter", hint: "Remote flying machines" },
+  { truth: "Smartwatch", liar: "Fitness Band", hint: "Wearable tech" },
+  { truth: "Electric Car", liar: "Hybrid Car", hint: "Modern vehicles" },
+
+  { truth: "Metaverse", liar: "Online Game World", hint: "Virtual social spaces" },
+  { truth: "Dark Web", liar: "Private Browser", hint: "Hidden internet" },
+  { truth: "Firewall", liar: "Antivirus", hint: "Cyber protection" },
+  { truth: "Cryptocurrency", liar: "Digital Wallet", hint: "Online money" },
+  { truth: "NFT", liar: "Digital Art", hint: "Blockchain assets" },
+
+  { truth: "Neon Sign", liar: "LED Billboard", hint: "Bright city lights" },
+  { truth: "Night City", liar: "Downtown", hint: "Urban vibes" },
+  { truth: "Cyber Cafe", liar: "Gaming Zone", hint: "Computer hangout" },
+  { truth: "Server Room", liar: "Data Center", hint: "Computing hardware" },
+  { truth: "Quantum Computer", liar: "Supercomputer", hint: "Extreme computing" },
+
+  { truth: "Robot Assistant", liar: "Smart Speaker", hint: "AI helpers" },
+  { truth: "Face ID", liar: "Fingerprint Scanner", hint: "Biometric security" },
+  { truth: "Hologram", liar: "3D Projection", hint: "Floating visuals" },
+  { truth: "Augmented Reality", liar: "Camera Filter", hint: "Overlay graphics" },
+  { truth: "Digital Avatar", liar: "Profile Picture", hint: "Online identity" },
+
+  { truth: "Spacesuit", liar: "Diving Suit", hint: "Protective suits" },
+  { truth: "Mars Colony", liar: "Moon Base", hint: "Human space living" },
+  { truth: "Asteroid Mining", liar: "Space Exploration", hint: "Space resources" },
+  { truth: "Alien Signal", liar: "Radio Transmission", hint: "Unknown messages" },
+  { truth: "Warp Drive", liar: "Rocket Engine", hint: "Fast space travel" },
+
+  { truth: "Synthwave Music", liar: "Electronic Music", hint: "Digital sound" },
+  { truth: "Neon Helmet", liar: "VR Headset", hint: "Futuristic gear" },
+  { truth: "Laser Sword", liar: "Energy Blade", hint: "Sci-fi weapons" },
+  { truth: "Cyborg", liar: "Android", hint: "Human-machine mix" },
+  { truth: "Mech Suit", liar: "Power Armor", hint: "Heavy tech armor" },
+
+  { truth: "Smart City", liar: "Modern City", hint: "Technology driven" },
+  { truth: "Facial Recognition", liar: "Image Scanner", hint: "AI vision" },
+  { truth: "Voice Assistant", liar: "Chatbot", hint: "Talking AI" },
+  { truth: "Cloud Computing", liar: "Online Storage", hint: "Internet servers" },
+  { truth: "Data Stream", liar: "Signal Feed", hint: "Live information" },
+
+  { truth: "Neon Alley", liar: "Backstreet", hint: "City night scenes" },
+  { truth: "Cyber Detective", liar: "Private Investigator", hint: "Solving cases" },
+  { truth: "Digital Lock", liar: "Keypad Lock", hint: "Security systems" },
+  { truth: "Smart Glasses", liar: "AR Goggles", hint: "Vision tech" },
+  { truth: "Robot Pet", liar: "Toy Robot", hint: "Artificial companions" },
+
+  { truth: "AI Judge", liar: "Online Moderator", hint: "Rule enforcement" },
+  { truth: "Virtual Classroom", liar: "Online Course", hint: "Digital learning" },
+  { truth: "Cyber Arena", liar: "Esports Stadium", hint: "Competitive gaming" },
+  { truth: "Digital Wallet", liar: "UPI App", hint: "Cashless payment" },
+  { truth: "Smart Home", liar: "Home Automation", hint: "Connected devices" },
+  { truth: "Quantum Internet", liar: "High-Speed Internet", hint: "Next-gen networking" },
+  { truth: "Neon Skyline", liar: "City Horizon", hint: "Urban night view" },
+  { truth: "Cyber Police", liar: "Security Agency", hint: "Law enforcement" },
+  { truth: "Digital ID", liar: "Online Profile", hint: "Identity verification" },
+  { truth: "Brain-Computer Interface", liar: "Neural Sensor", hint: "Mind and machines" },
+
+  { truth: "AI Therapist", liar: "Mental Health App", hint: "Emotional support tech" },
+  { truth: "Virtual Concert", liar: "Live Stream Show", hint: "Online performances" },
+  { truth: "Smart Traffic System", liar: "Traffic Signal Network", hint: "Road automation" },
+  { truth: "Robot Surgeon", liar: "Medical Robot", hint: "Healthcare technology" },
+  { truth: "Digital Twin", liar: "3D Simulation", hint: "Virtual replicas" },
+
+  { truth: "Neon Marketplace", liar: "Online Store", hint: "Buying and selling" },
+  { truth: "Cyber Heist", liar: "Data Breach", hint: "Illegal digital access" },
+  { truth: "AI Composer", liar: "Music Generator", hint: "Computer-made music" },
+  { truth: "Virtual Influencer", liar: "Online Celebrity", hint: "Digital fame" },
+  { truth: "Smart Fabric", liar: "Wearable Tech", hint: "Tech clothing" },
+
+  { truth: "Holographic Display", liar: "Transparent Screen", hint: "Advanced visuals" },
+  { truth: "Digital Currency Exchange", liar: "Crypto App", hint: "Trading money" },
+  { truth: "Neon Subway", liar: "Underground Metro", hint: "City transport" },
+  { truth: "Cyber Security Analyst", liar: "IT Engineer", hint: "Protecting systems" },
+  { truth: "AI Translator", liar: "Language App", hint: "Communication tools" },
+
+  { truth: "Virtual Office", liar: "Remote Workplace", hint: "Online workspaces" },
+  { truth: "Smart Mirror", liar: "Digital Screen Mirror", hint: "Interactive reflections" },
+  { truth: "Robot Waiter", liar: "Automated Service Machine", hint: "Hospitality tech" },
+  { truth: "Neon Tunnel", liar: "Underground Passage", hint: "Glowing pathways" },
+  { truth: "Cyber Lawyer", liar: "Legal Consultant", hint: "Law and tech" },
+
+  { truth: "AI Storyteller", liar: "Writing Software", hint: "Creative tools" },
+  { truth: "Digital Classroom Board", liar: "Online Whiteboard", hint: "Teaching tools" },
+  { truth: "Smart Refrigerator", liar: "Connected Appliance", hint: "IoT devices" },
+  { truth: "Neon Festival", liar: "Night Carnival", hint: "Lights and music" },
+  { truth: "Cyber Vault", liar: "Secure Database", hint: "Protected storage" },
+
+  { truth: "AI Recruiter", liar: "Job Portal", hint: "Hiring systems" },
+  { truth: "Virtual Museum", liar: "Online Gallery", hint: "Digital exhibits" },
+  { truth: "Smart Parking System", liar: "Automated Parking", hint: "Vehicle management" },
+  { truth: "Neon Control Room", liar: "Operations Center", hint: "Monitoring hub" },
+  { truth: "Cyber Spy", liar: "Intelligence Agent", hint: "Information gathering" },
+
+  { truth: "AI Personal Trainer", liar: "Fitness App", hint: "Health coaching" },
+  { truth: "Digital Billboard", liar: "LED Advertisement", hint: "Public displays" },
+  { truth: "Smart Energy Grid", liar: "Power Network", hint: "Electric systems" },
+  { truth: "Neon Racing League", liar: "Street Racing", hint: "High-speed competition" },
+  { truth: "Cyber Archive", liar: "Digital Library", hint: "Stored knowledge" },
+
+  { truth: "AI News Anchor", liar: "Automated News Reader", hint: "Media automation" },
+  { truth: "Virtual Theme Park", liar: "Online Adventure World", hint: "Digital entertainment" },
+  { truth: "Smart Drone Delivery", liar: "Automated Courier", hint: "Fast delivery tech" },
+  { truth: "Neon Control Panel", liar: "Digital Dashboard", hint: "System controls" },
+  { truth: "Cyber Medic", liar: "Emergency Responder", hint: "Life-saving roles" }
+
+];
+
+
+let players = JSON.parse(localStorage.getItem("players")) || [];
+let roles = [];
+let currentIndex = 0;
+let currentPair;
+
+/* ---------- SETUP ---------- */
+
+function addPlayer() {
+  const div = document.createElement("div");
+  div.innerHTML = `<input placeholder="Player name">`;
+  document.getElementById("inputs").appendChild(div);
+}
+
+function startGame() {
+  const inputs = document.querySelectorAll("#inputs input");
+  players = [];
+
+  inputs.forEach(i => {
+    if (i.value.trim()) players.push(i.value.trim());
+  });
+
+  if (players.length < 3) {
+    alert("Minimum 3 players required");
+    return;
+  }
+
+  localStorage.setItem("players", JSON.stringify(players));
+  startRound();
+}
+
+/* ---------- ROUND LOGIC ---------- */
+
+function startRound() {
+  currentPair = promptPairs[Math.floor(Math.random() * promptPairs.length)];
+  roles = Array(players.length).fill("truth");
+  roles[Math.floor(Math.random() * players.length)] = "liar";
+
+  currentIndex = 0;
+
+  document.getElementById("setup").classList.add("hidden");
+  document.getElementById("endScreen").classList.add("hidden");
+  document.getElementById("roleScreen").classList.remove("hidden");
+
+  showPlayer();
+}
+
+function showPlayer() {
+  document.getElementById("playerName").textContent = players[currentIndex];
+  document.getElementById("card").classList.add("hidden");
+  document.getElementById("liarHint").classList.add("hidden");
+}
+
+/* ---------- ROLE REVEAL ---------- */
+
+function revealRole() {
+  const role = roles[currentIndex];
+  const roleText = document.getElementById("roleText");
+  const promptText = document.getElementById("promptText");
+  const hint = document.getElementById("liarHint");
+
+  if (role === "liar") {
+    roleText.textContent = "YOU ARE THE LIAR";
+    roleText.className = "role liar";
+    promptText.textContent = "Your word: " + currentPair.liar;
+    hint.textContent = "AI Hint: " + currentPair.hint;
+    hint.classList.remove("hidden");
+  } else {
+    roleText.textContent = "TRUTH-TELLER";
+    roleText.className = "role truth";
+    promptText.textContent = "Your word: " + currentPair.truth;
+  }
+
+  document.getElementById("card").classList.remove("hidden");
+}
+
+function nextPlayer() {
+  currentIndex++;
+  if (currentIndex >= players.length) {
+    document.getElementById("roleScreen").classList.add("hidden");
+    document.getElementById("endScreen").classList.remove("hidden");
+  } else {
+    showPlayer();
+  }
+}
+
+/* ---------- CONTROLS ---------- */
+
+function restartRound() {
+  startRound();
+}
+
+function newGame() {
+  localStorage.removeItem("players");
+  location.reload();
+}
+
+/* ---------- AUTO INPUTS ---------- */
+window.onload = () => {
+  if (players.length) {
+    players.forEach(name => {
+      const div = document.createElement("div");
+      div.innerHTML = `<input value="${name}">`;
+      document.getElementById("inputs").appendChild(div);
+    });
+  } else {
+    addPlayer(); addPlayer(); addPlayer();
+  }
+};
+</script>
+
+</body>
+</html>
