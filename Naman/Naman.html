@@ -792,6 +792,41 @@
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-10px); }
         }
+        /* CloudOS Floating Launcher */
+#cloudOsLauncher {
+    position: fixed;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 82px;
+    height: 82px;
+    background: var(--gradient-1);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--glow), 0 0 50px rgba(99, 102, 241, 0.5);
+    z-index: 1600;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: white;
+    font-family: 'Fira Code', monospace;
+    font-weight: 800;
+    font-size: 0.85rem;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    border: 3px solid rgba(255,255,255,0.25);
+    backdrop-filter: blur(10px);
+    user-select: none;
+}
+#cloudOsLauncher:hover {
+    transform: translateY(-50%) scale(1.18);
+    box-shadow: 0 0 80px rgba(99, 102, 241, 0.8);
+}
+#cloudOsLauncher span {
+    font-size: 2.6rem;
+    margin-bottom: 3px;
+}
     </style>
 </head>
 <body>
@@ -966,14 +1001,18 @@
                     <button class="launch-button" onclick="openTool('calculator')">Launch Tool</button>
                 </div>
 
-                <!-- Internet Speed Test -->
-                <div class="tool-card" data-category="utility" data-tool="speedtest">
+            
+                 <!-- Internet Speed Test -->
+                <div class="tool-card" data-category="utility">
                     <span class="category-tag">Utility</span>
-                    <div class="tool-icon">⚡</div>
+                    <div class="tool-icon">⚡️</div>
                     <h3 class="tool-title">Internet Speed Test</h3>
                     <p class="tool-desc">Test your connection speed</p>
-                    <button class="launch-button" onclick="openTool('speedtest')">Launch Tool</button>
+                    <a href="speed.html" class="launch-button-link">
+                        <button class="launch-button">Launch Tool</button>
+                    </a>
                 </div>
+
 
                 <!-- Tic Tac Toe -->
                 <div class="tool-card" data-category="game" data-tool="tictactoe">
@@ -1408,8 +1447,7 @@
                     </a>
                 </div>
 
-                
-                 <div class="tool-card" data-category="Anime">
+ <div class="tool-card" data-category="Anime">
                     <span class="category-tag">Anime</span>
                     <div class="tool-icon" data-category="goku"><img src="https://s6.imgcdn.dev/Y1fk6T.png" alt="Y1fk6T.png" ></div>
                     <h3 class="tool-title">Pokemon Data</h3>
@@ -1418,7 +1456,7 @@
                         <button class="launch-button">Launch Tool</button>
                     </a>
                 </div>
-                
+       
                 <div class="tool-card" data-category="Anime">
                     <span class="category-tag">Anime</span>
                     <div class="tool-icon" data-category="goku"><img src="https://cdn3.emoji.gg/emojis/94567-ssrtier.png" width="64px" height="64px" alt="SSRTier"></div>
@@ -1429,9 +1467,16 @@
                     </a>
                 </div>
 
+                <a href="windows.html"><div id="cloudOsLauncher">
+             <img src="https://cdn3.emoji.gg/emojis/2460-windows.png" width="32px" height="32px" alt="Windows">
+             cloudOS
+             </div></a>
+
+
             </div>
         </div>
-       
+
+        
       
     </section>
 
@@ -1768,85 +1813,6 @@ function updateCalcDisplay() {
     const display = document.getElementById('calcDisplay');
     if (display) {
         display.value = calcState.display;
-    }
-}
-
-// ============================================
-// TOOL 2: INTERNET SPEED TEST
-// ============================================
-
-function generateSpeedTest() {
-    return `
-        <h2 class="modal-title">Internet Speed Test</h2>
-        <div class="speed-test">
-            <div class="speed-display" id="speedDisplay">--</div>
-            <div class="speed-unit">Mbps</div>
-            <div id="speedLoader" class="loader" style="display: none;"></div>
-            <p id="speedStatus" style="color: var(--text-secondary); margin: 1rem 0;">Click the button below to test your connection speed</p>
-            <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 1rem 0; font-style: italic;">
-                <strong>Simulated Speed Test (Browser Limitation)</strong><br>
-                This is a simulated test for demonstration purposes. For accurate results, use dedicated speed test services.
-            </p>
-            <button class="test-button" onclick="runSpeedTest()">Start Test</button>
-        </div>
-    `;
-}
-
-function initSpeedTest() {
-    // Reset display
-    const display = document.getElementById('speedDisplay');
-    const loader = document.getElementById('speedLoader');
-    const status = document.getElementById('speedStatus');
-    if (display) display.textContent = '--';
-    if (loader) loader.style.display = 'none';
-    if (status) status.textContent = 'Click the button below to test your connection speed';
-}
-
-async function runSpeedTest() {
-    const display = document.getElementById('speedDisplay');
-    const loader = document.getElementById('speedLoader');
-    const status = document.getElementById('speedStatus');
-    
-    if (!display || !loader || !status) return;
-    
-    display.textContent = '--';
-    loader.style.display = 'block';
-    status.textContent = 'Simulating download speed test...';
-    
-    try {
-        // Simulated speed test - safe and reliable
-        // Simulate a realistic download scenario
-        const simulatedFileSizeMB = 5; // Simulate downloading 5 MB
-        const startTime = Date.now();
-        
-        // Simulate download time with realistic variation
-        // Base time + random variation to simulate network conditions
-        const baseTimeMs = 2000; // Base 2 seconds
-        const variationMs = Math.random() * 3000; // 0-3 seconds variation
-        const simulatedDurationMs = baseTimeMs + variationMs;
-        
-        // Wait for simulated download
-        await new Promise(resolve => setTimeout(resolve, Math.min(simulatedDurationMs, 3000)));
-        
-        const endTime = Date.now();
-        const durationSeconds = (endTime - startTime) / 1000;
-        
-        // Calculate Mbps: (fileSizeMB * 8 bits) / durationSeconds
-        const speedMbps = (simulatedFileSizeMB * 8) / durationSeconds;
-        
-        // Add some realistic variation to the result (±10%)
-        const variation = 1 + (Math.random() * 0.2 - 0.1); // ±10%
-        const finalSpeed = speedMbps * variation;
-        
-        loader.style.display = 'none';
-        display.textContent = finalSpeed.toFixed(2);
-        status.textContent = `Simulated: ${simulatedFileSizeMB} MB in ${durationSeconds.toFixed(2)}s`;
-        
-    } catch (error) {
-        loader.style.display = 'none';
-        display.textContent = 'Error';
-        status.textContent = 'Unable to complete speed test simulation.';
-        console.error('Speed test error:', error);
     }
 }
 
@@ -6022,6 +5988,61 @@ function toggleClockFormat() {
     worldClockState.use24Hour = !worldClockState.use24Hour;
     updateWorldClock();
 }
+
+const launcher = document.getElementById('cloudOsLauncher');
+let hasDragged = false;
+let startY, initialTop;
+
+// Click → open cloudOS in your existing modal
+launcher.addEventListener('click', () => {
+    if (hasDragged) return;
+    document.getElementById('modalTitle').innerHTML = '<span class="gradient-text">cloudOS</span>';
+    document.getElementById('modalBody').innerHTML = `
+        <iframe src="windows.html" style="width:100%;height:100%;border:none;" allowfullscreen></iframe>
+    `;
+    document.getElementById('modalOverlay').classList.add('active');
+});
+
+// Dragging (vertical only, stays on right side)
+launcher.addEventListener('mousedown', e => {
+    hasDragged = false;
+    startY = e.clientY;
+    initialTop = launcher.getBoundingClientRect().top;
+    launcher.style.transition = 'none';
+});
+document.addEventListener('mousemove', e => {
+    if (typeof initialTop === 'undefined') return;
+    const delta = e.clientY - startY;
+    if (Math.abs(delta) > 8) hasDragged = true;
+    let newTop = initialTop + delta;
+    const min = 20;
+    const max = window.innerHeight - 102;
+    newTop = Math.max(min, Math.min(max, newTop));
+    launcher.style.top = newTop + 'px';
+    launcher.style.transform = 'none';
+});
+document.addEventListener('mouseup', () => {
+    initialTop = undefined;
+    launcher.style.transition = 'all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+});
+
+// Touch support (mobile)
+launcher.addEventListener('touchstart', e => {
+    hasDragged = false;
+    startY = e.touches[0].clientY;
+    initialTop = launcher.getBoundingClientRect().top;
+});
+document.addEventListener('touchmove', e => {
+    if (typeof initialTop === 'undefined') return;
+    const delta = e.touches[0].clientY - startY;
+    if (Math.abs(delta) > 8) hasDragged = true;
+    let newTop = initialTop + delta;
+    const min = 20;
+    const max = window.innerHeight - 102;
+    newTop = Math.max(min, Math.min(max, newTop));
+    launcher.style.top = newTop + 'px';
+    launcher.style.transform = 'none';
+});
 
 
     </script>
