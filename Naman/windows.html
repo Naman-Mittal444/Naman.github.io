@@ -1,0 +1,3575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudOS - Browser Operating System</title>
+    <style>
+        :root {
+            --primary: #0078d4;
+            --primary-dark: #106ebe;
+            --bg-dark: #1a1a2e;
+            --bg-darker: #16213e;
+            --surface: #242442;
+            --surface-light: #2d2d4a;
+            --text: #ffffff;
+            --text-muted: #a0a0b0;
+            --accent: #00d4aa;
+            --danger: #ff4757;
+            --warning: #ffa502;
+            --shadow: rgba(0, 0, 0, 0.4);
+            --glass: rgba(255, 255, 255, 0.1);
+            --taskbar-height: 48px;
+        }
+
+        .light-theme {
+            --bg-dark: #e8e8f0;
+            --bg-darker: #d0d0e0;
+            --surface: #ffffff;
+            --surface-light: #f5f5f8;
+            --text: #1a1a2e;
+            --text-muted: #606070;
+            --shadow: rgba(0, 0, 0, 0.15);
+            --glass: rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            background: var(--bg-darker);
+        }
+
+        /* Boot Screen */
+        #boot-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 0.5s ease;
+        }
+
+        #boot-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .boot-logo {
+            font-size: 72px;
+            margin-bottom: 30px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .boot-text {
+            color: white;
+            font-size: 24px;
+            font-weight: 300;
+            margin-bottom: 40px;
+        }
+
+        .boot-loader {
+            width: 200px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .boot-loader-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #00d4aa, #0078d4);
+            border-radius: 2px;
+            animation: bootLoad 2.5s ease-out forwards;
+        }
+
+        @keyframes bootLoad {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        /* Desktop */
+        #desktop {
+            width: 100vw;
+            height: calc(100vh - var(--taskbar-height));
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            padding: 20px;
+        }
+
+        /* Desktop Icons */
+        .desktop-icon {
+            position: absolute;
+            width: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .desktop-icon:hover {
+            background: var(--glass);
+        }
+
+        .desktop-icon.selected {
+            background: rgba(0, 120, 212, 0.4);
+        }
+
+        .desktop-icon.dragging {
+            opacity: 0.7;
+            z-index: 1000;
+        }
+
+        .desktop-icon .icon {
+            font-size: 40px;
+            margin-bottom: 5px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            pointer-events: none;
+        }
+
+        .desktop-icon .label {
+            color: white;
+            font-size: 11px;
+            text-align: center;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            word-wrap: break-word;
+            max-width: 70px;
+            pointer-events: none;
+        }
+
+        /* Taskbar */
+        #taskbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: var(--taskbar-height);
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            box-shadow: 0 -2px 20px var(--shadow);
+            z-index: 1000;
+        }
+
+        #start-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        #start-btn:hover {
+            background: var(--glass);
+        }
+
+        #taskbar-apps {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 4px;
+            overflow-x: auto;
+        }
+
+        .taskbar-app {
+            height: 40px;
+            min-width: 44px;
+            padding: 0 12px;
+            border-radius: 6px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+            font-size: 13px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .taskbar-app:hover {
+            background: var(--glass);
+        }
+
+        .taskbar-app.active {
+            background: var(--primary);
+        }
+
+        .taskbar-app.minimized::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        .taskbar-app .icon {
+            font-size: 18px;
+        }
+
+        #system-tray {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 0 15px;
+            height: 100%;
+            border-left: 1px solid var(--glass);
+        }
+
+        .tray-icon {
+            font-size: 16px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .tray-icon:hover {
+            background: var(--glass);
+        }
+
+        #clock {
+            color: var(--text);
+            font-size: 12px;
+            text-align: right;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        #clock:hover {
+            background: var(--glass);
+        }
+
+        #clock .time {
+            font-weight: 500;
+        }
+
+        #clock .date {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Start Menu */
+        #start-menu {
+            position: fixed;
+            bottom: calc(var(--taskbar-height) + 10px);
+            left: 10px;
+            width: 450px;
+            max-height: 580px;
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px var(--shadow);
+            padding: 15px;
+            display: none;
+            z-index: 999;
+            animation: slideUp 0.2s ease;
+        }
+
+        #start-menu.visible {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .start-menu-search {
+            padding: 10px 15px;
+            background: var(--bg-dark);
+            border: 1px solid var(--glass);
+            border-radius: 8px;
+            color: var(--text);
+            width: 100%;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .start-menu-search:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .start-menu-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .start-tab {
+            padding: 6px 10px;
+            background: var(--surface-light);
+            border: none;
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .start-tab:hover {
+            background: var(--glass);
+        }
+
+        .start-tab.active {
+            background: var(--primary);
+        }
+
+        .start-menu-apps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .start-menu-app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .start-menu-app:hover {
+            background: var(--glass);
+        }
+
+        .start-menu-app .icon {
+            font-size: 28px;
+            margin-bottom: 6px;
+        }
+
+        .start-menu-app .label {
+            color: var(--text);
+            font-size: 10px;
+            text-align: center;
+        }
+
+        /* Windows */
+        .window {
+            position: absolute;
+            min-width: 300px;
+            min-height: 200px;
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: 0 10px 50px var(--shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: windowOpen 0.2s ease;
+        }
+
+        .window.minimized {
+            display: none;
+        }
+
+        @keyframes windowOpen {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .window-header {
+            height: 36px;
+            background: var(--surface-light);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            cursor: grab;
+            flex-shrink: 0;
+        }
+
+        .window-header:active {
+            cursor: grabbing;
+        }
+
+        .window-icon {
+            font-size: 16px;
+            margin-right: 8px;
+        }
+
+        .window-title {
+            flex: 1;
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .window-btn {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .window-btn.minimize { background: var(--warning); }
+        .window-btn.maximize { background: var(--accent); }
+        .window-btn.close { background: var(--danger); }
+
+        .window-btn:hover {
+            transform: scale(1.1);
+            filter: brightness(1.1);
+        }
+
+        .window-content {
+            flex: 1;
+            overflow: auto;
+            background: var(--bg-dark);
+        }
+
+        .window-resize {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 15px;
+            height: 15px;
+            cursor: se-resize;
+        }
+
+        /* Notes App */
+        .notes-app {
+            display: flex;
+            height: 100%;
+        }
+
+        .notes-sidebar {
+            width: 180px;
+            background: var(--surface);
+            border-right: 1px solid var(--glass);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .notes-sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--glass);
+        }
+
+        .notes-new-btn {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+
+        .notes-new-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .notes-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .note-item {
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            transition: background 0.2s;
+        }
+
+        .note-item:hover {
+            background: var(--glass);
+        }
+
+        .note-item.active {
+            background: var(--primary);
+        }
+
+        .note-item-title {
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .note-item-date {
+            color: var(--text-muted);
+            font-size: 11px;
+            margin-top: 3px;
+        }
+
+        .notes-editor {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .notes-editor-header {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--glass);
+        }
+
+        .notes-title-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-size: 18px;
+            font-weight: 500;
+            outline: none;
+        }
+
+        .notes-textarea {
+            flex: 1;
+            padding: 15px;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+        }
+
+        /* Terminal App */
+        .terminal-app {
+            background: #0d1117;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        .terminal-output {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            color: #00ff88;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .terminal-line {
+            margin-bottom: 5px;
+            white-space: pre-wrap;
+        }
+
+        .terminal-line.error { color: #ff4757; }
+        .terminal-line.info { color: #00d4ff; }
+        .terminal-line.warning { color: #ffa502; }
+
+        .terminal-input-line {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: #161b22;
+            border-top: 1px solid #30363d;
+        }
+
+        .terminal-prompt {
+            color: #00d4aa;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #00ff88;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+        }
+
+        /* Calculator App */
+        .calculator-app {
+            padding: 15px;
+            background: var(--bg-dark);
+            height: 100%;
+        }
+
+        .calc-display {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: right;
+        }
+
+        .calc-expression {
+            color: var(--text-muted);
+            font-size: 14px;
+            min-height: 20px;
+        }
+
+        .calc-result {
+            color: var(--text);
+            font-size: 32px;
+            font-weight: 300;
+        }
+
+        .calc-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .calc-btn {
+            padding: 18px;
+            border: none;
+            border-radius: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        .calc-btn:hover {
+            background: var(--surface-light);
+            transform: scale(1.02);
+        }
+
+        .calc-btn.operator { background: var(--primary); color: white; }
+        .calc-btn.operator:hover { background: var(--primary-dark); }
+        .calc-btn.equals { background: var(--accent); color: var(--bg-dark); }
+        .calc-btn.clear { background: var(--danger); color: white; }
+
+        /* File Explorer */
+        .explorer-app {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .explorer-toolbar {
+            padding: 10px 15px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--glass);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .explorer-btn {
+            padding: 8px 12px;
+            background: var(--surface-light);
+            border: none;
+            border-radius: 6px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .explorer-btn:hover {
+            background: var(--glass);
+        }
+
+        .explorer-path {
+            flex: 1;
+            padding: 8px 12px;
+            background: var(--bg-dark);
+            border: 1px solid var(--glass);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        .explorer-content {
+            flex: 1;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            align-content: start;
+            overflow-y: auto;
+        }
+
+        .explorer-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .explorer-item:hover {
+            background: var(--glass);
+        }
+
+        .explorer-item.selected {
+            background: rgba(0, 120, 212, 0.3);
+        }
+
+        .explorer-item .icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+
+        .explorer-item .name {
+            color: var(--text);
+            font-size: 12px;
+            text-align: center;
+            word-wrap: break-word;
+            max-width: 90px;
+        }
+
+        /* Settings App */
+        .settings-app {
+            display: flex;
+            height: 100%;
+        }
+
+        .settings-sidebar {
+            width: 200px;
+            background: var(--surface);
+            border-right: 1px solid var(--glass);
+            padding: 15px 0;
+        }
+
+        .settings-nav-item {
+            padding: 12px 20px;
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+        }
+
+        .settings-nav-item:hover {
+            background: var(--glass);
+        }
+
+        .settings-nav-item.active {
+            background: var(--primary);
+        }
+
+        .settings-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .settings-section h3 {
+            color: var(--text);
+            font-size: 24px;
+            font-weight: 400;
+            margin-bottom: 25px;
+        }
+
+        .settings-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--glass);
+        }
+
+        .settings-option-label {
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .settings-option-desc {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .toggle-switch {
+            width: 50px;
+            height: 26px;
+            background: var(--surface-light);
+            border-radius: 13px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: var(--primary);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(24px);
+        }
+
+        .wallpaper-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .color-option {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: white;
+        }
+
+        .custom-wallpaper-btn {
+            padding: 8px 16px;
+            background: var(--primary);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .custom-wallpaper-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Context Menu */
+        .context-menu {
+            position: fixed;
+            background: var(--surface);
+            border-radius: 8px;
+            box-shadow: 0 5px 20px var(--shadow);
+            min-width: 200px;
+            padding: 8px 0;
+            display: none;
+            z-index: 2000;
+        }
+
+        .context-menu.visible {
+            display: block;
+        }
+
+        .context-menu-item {
+            padding: 10px 20px;
+            color: var(--text);
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+        }
+
+        .context-menu-item:hover {
+            background: var(--glass);
+        }
+
+        .context-menu-item.danger {
+            color: var(--danger);
+        }
+
+        .context-menu-divider {
+            height: 1px;
+            background: var(--glass);
+            margin: 5px 0;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--surface);
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 30px var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 3000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .notification-icon { font-size: 24px; }
+        .notification-content { color: var(--text); }
+        .notification-title { font-weight: 500; margin-bottom: 3px; }
+        .notification-message { font-size: 12px; color: var(--text-muted); }
+
+        /* App Store */
+        .appstore-app {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-dark);
+        }
+
+        .appstore-header {
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .appstore-header h1 {
+            color: white;
+            font-size: 24px;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .appstore-search {
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            width: 300px;
+        }
+
+        .appstore-search::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .appstore-search:focus {
+            outline: none;
+            background: rgba(255,255,255,0.3);
+        }
+
+        .appstore-categories {
+            display: flex;
+            gap: 10px;
+            padding: 15px 20px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--glass);
+            overflow-x: auto;
+            flex-shrink: 0;
+        }
+
+        .appstore-cat-btn {
+            padding: 8px 16px;
+            background: var(--surface-light);
+            border: none;
+            border-radius: 20px;
+            color: var(--text);
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .appstore-cat-btn:hover {
+            background: var(--glass);
+        }
+
+        .appstore-cat-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .appstore-grid {
+            flex: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            overflow-y: auto;
+            align-content: start;
+        }
+
+        .appstore-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: var(--surface);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .appstore-card:hover {
+            background: var(--surface-light);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px var(--shadow);
+        }
+
+        .appstore-card-icon {
+            font-size: 40px;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-dark);
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .appstore-card-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .appstore-card-title {
+            color: var(--text);
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .appstore-card-desc {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .appstore-card-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .appstore-btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .appstore-btn.open {
+            background: var(--primary);
+            color: white;
+        }
+
+        .appstore-btn.open:hover {
+            background: var(--primary-dark);
+        }
+
+        .appstore-btn.add {
+            background: var(--accent);
+            color: var(--bg-dark);
+        }
+
+        .appstore-btn.add:hover {
+            filter: brightness(1.1);
+        }
+
+        .appstore-btn.remove {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Other App Styles */
+        .media-player, .image-viewer, .video-player, .weather-app, .browser-app,
+        .paint-app, .game-app, .camera-app, .clock-app, .todo-app {
+            height: 100%;
+        }
+
+        .media-player {
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(180deg, #1a1a2e 0%, #0d0d1a 100%);
+        }
+
+        .media-artwork {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+        }
+
+        .media-artwork-img {
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .media-info {
+            text-align: center;
+            padding: 0 20px 20px;
+        }
+
+        .media-title {
+            color: var(--text);
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .media-artist {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .media-progress {
+            padding: 0 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--glass);
+            border-radius: 2px;
+            cursor: pointer;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 2px;
+            width: 0%;
+        }
+
+        .progress-time {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        .media-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .media-btn {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .media-btn:hover {
+            background: var(--glass);
+        }
+
+        .media-btn.play {
+            background: var(--primary);
+            width: 60px;
+            height: 60px;
+            font-size: 28px;
+        }
+
+        .image-viewer {
+            display: flex;
+            flex-direction: column;
+            background: #0d0d0d;
+        }
+
+        .image-viewer-toolbar {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--glass);
+        }
+
+        .image-viewer-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .image-viewer-content img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .image-placeholder {
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .image-placeholder .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .video-player {
+            display: flex;
+            flex-direction: column;
+            background: #000;
+        }
+
+        .video-player video {
+            flex: 1;
+            width: 100%;
+        }
+
+        .video-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: var(--surface);
+        }
+
+        .weather-app {
+            padding: 30px;
+            background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+            color: white;
+        }
+
+        .weather-main {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .weather-icon { font-size: 80px; margin-bottom: 10px; }
+        .weather-temp { font-size: 64px; font-weight: 200; }
+        .weather-desc { font-size: 20px; opacity: 0.9; }
+        .weather-location { font-size: 16px; opacity: 0.8; margin-top: 5px; }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .weather-detail {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .weather-detail-label { font-size: 12px; opacity: 0.8; margin-bottom: 5px; }
+        .weather-detail-value { font-size: 20px; font-weight: 500; }
+
+        .browser-app {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .browser-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--glass);
+        }
+
+        .browser-url {
+            flex: 1;
+            padding: 8px 12px;
+            background: var(--bg-dark);
+            border: 1px solid var(--glass);
+            border-radius: 20px;
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        .browser-url:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .browser-content {
+            flex: 1;
+            background: white;
+        }
+
+        .browser-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .paint-app {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .paint-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--glass);
+            flex-wrap: wrap;
+        }
+
+        .paint-tool {
+            padding: 8px 12px;
+            background: var(--surface-light);
+            border: none;
+            border-radius: 6px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .paint-tool:hover, .paint-tool.active {
+            background: var(--primary);
+        }
+
+        .paint-color {
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .paint-size {
+            width: 80px;
+            padding: 5px;
+            background: var(--bg-dark);
+            border: 1px solid var(--glass);
+            border-radius: 6px;
+            color: var(--text);
+        }
+
+        .paint-canvas-container {
+            flex: 1;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        .paint-canvas-container canvas {
+            cursor: crosshair;
+        }
+
+        .game-app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-dark);
+            padding: 20px;
+        }
+
+        .game-board {
+            display: grid;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .game-cell {
+            width: 80px;
+            height: 80px;
+            background: var(--surface);
+            border: none;
+            border-radius: 8px;
+            font-size: 36px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text);
+        }
+
+        .game-cell:hover {
+            background: var(--surface-light);
+        }
+
+        .game-status {
+            color: var(--text);
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .game-reset {
+            padding: 10px 30px;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .camera-app {
+            display: flex;
+            flex-direction: column;
+            background: #000;
+        }
+
+        .camera-viewfinder {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .camera-viewfinder video {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .camera-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+            background: var(--surface);
+        }
+
+        .camera-capture {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 4px solid white;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .camera-capture:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .clock-app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-dark);
+            padding: 20px;
+        }
+
+        .analog-clock {
+            width: 200px;
+            height: 200px;
+            border: 4px solid var(--text);
+            border-radius: 50%;
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .clock-hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            border-radius: 3px;
+        }
+
+        .clock-hand.hour { width: 4px; height: 50px; background: var(--text); margin-left: -2px; }
+        .clock-hand.minute { width: 3px; height: 70px; background: var(--primary); margin-left: -1.5px; }
+        .clock-hand.second { width: 2px; height: 80px; background: var(--danger); margin-left: -1px; }
+
+        .clock-center {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--text);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .digital-clock {
+            font-size: 48px;
+            color: var(--text);
+            font-weight: 200;
+            margin-bottom: 10px;
+        }
+
+        .digital-date {
+            color: var(--text-muted);
+            font-size: 18px;
+        }
+
+        .todo-app {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .todo-input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .todo-input {
+            flex: 1;
+            padding: 12px 15px;
+            background: var(--surface);
+            border: 1px solid var(--glass);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .todo-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .todo-add {
+            padding: 12px 20px;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .todo-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px;
+            background: var(--surface);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .todo-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .todo-checkbox.checked {
+            background: var(--primary);
+        }
+
+        .todo-text {
+            flex: 1;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .todo-text.completed {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        .todo-delete {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 18px;
+            opacity: 0.6;
+        }
+
+        .todo-delete:hover {
+            opacity: 1;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--glass); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .hidden-media { display: none; }
+    </style>
+</head>
+<body>
+    <!-- Boot Screen -->
+    <div id="boot-screen">
+        <div class="boot-logo">☁️</div>
+        <div class="boot-text">CloudOS</div>
+        <div class="boot-loader">
+            <div class="boot-loader-bar"></div>
+        </div>
+    </div>
+
+    <!-- Desktop -->
+    <div id="desktop"></div>
+
+    <!-- Taskbar -->
+    <div id="taskbar">
+        <button id="start-btn">☁️</button>
+        <div id="taskbar-apps"></div>
+        <div id="system-tray">
+            <span class="tray-icon" id="volume-icon">🔊</span>
+            <span class="tray-icon" id="wifi-icon">📶</span>
+            <span class="tray-icon" id="battery-icon">🔋</span>
+            <div id="clock">
+                <div class="time">00:00</div>
+                <div class="date">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Menu -->
+    <div id="start-menu">
+        <input type="text" class="start-menu-search" placeholder="🔍 Search apps..." id="app-search">
+        <div class="start-menu-tabs">
+            <button class="start-tab active" data-tab="pinned">📌 Pinned</button>
+            <button class="start-tab" data-tab="all">📱 All Apps</button>
+            <button class="start-tab" data-tab="games">🎮 Games</button>
+            <button class="start-tab" data-tab="utilities">🔧 Utilities</button>
+            <button class="start-tab" data-tab="anime">🎌 Anime</button>
+        </div>
+        <div class="start-menu-apps" id="start-menu-apps"></div>
+    </div>
+
+    <!-- Desktop Context Menu -->
+    <div class="context-menu" id="desktop-context-menu">
+        <div class="context-menu-item" data-action="refresh">🔄 Refresh Desktop</div>
+        <div class="context-menu-item" data-action="change-wallpaper">🖼️ Change Wallpaper</div>
+        <div class="context-menu-item" data-action="sort-icons">📐 Auto Arrange Icons</div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="new-folder">📁 New Folder</div>
+        <div class="context-menu-item" data-action="terminal">💻 Open Terminal</div>
+        <div class="context-menu-item" data-action="settings">⚙️ Settings</div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="appstore">🏪 App Store</div>
+    </div>
+
+    <!-- Icon Context Menu -->
+    <div class="context-menu" id="icon-context-menu">
+        <div class="context-menu-item" data-action="open">▶️ Open</div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item danger" data-action="remove">🗑️ Remove from Desktop</div>
+    </div>
+
+    <!-- Windows Container -->
+    <div id="windows-container"></div>
+
+    <!-- Hidden file input for wallpaper -->
+    <input type="file" id="wallpaper-input" accept="image/*" style="display:none">
+
+    <script>
+        // ===== CloudOS - Core System =====
+        const CloudOS = {
+            apps: {},
+            windows: [],
+            activeWindow: null,
+            zIndex: 100,
+            notes: [],
+            todos: [],
+            settings: {
+                theme: 'dark',
+                wallpaper: 0,
+                customWallpaper: null
+            },
+            desktopIcons: [],
+            selectedIcon: null
+        };
+
+        // Wallpapers
+        const wallpapers = [
+            'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+            'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+            'linear-gradient(135deg, #00b4db 0%, #0083b0 100%)',
+            'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+            'linear-gradient(135deg, #ee0979 0%, #ff6a00 100%)',
+            'linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%)',
+            'linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%)',
+            'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)'
+        ];
+
+        // Default desktop apps
+        const defaultDesktopApps = ['explorer', 'browser', 'notes', 'terminal', 'settings', 'appstore'];
+
+        // ===== App Categories =====
+        const appCategories = {
+            pinned: ['notes', 'terminal', 'explorer', 'calculator', 'settings', 'browser', 'paint', 'musicplayer'],
+            games: ['snake', 'flappy', 'game2048', 'tetris', 'battleship', 'memory', 'tictactoe', 'hangman', 'infinitecraft', 'clicker', 'spaceelevator', 'billionaire', 'jump', 'ronaldobirds', 'solitaire', 'archery', 'spygame', 'spygame2', 'geodash', 'vectortag', 'chess'],
+            utilities: ['calculator', 'terminal', 'explorer', 'notes', 'settings', 'speedtest', 'pomodoro', 'passwordgen', 'drawcircle', 'worldclock', 'clock', 'todo', 'camera', 'weather', 'uptimemonitor', 'utilitytools', 'aiassistant'],
+            creative: ['paint', 'piano', 'imageeditor', 'videoeditor', 'camera'],
+            finance: ['cryptocalc', 'stocks', 'currency'],
+            anime: ['aniverse', 'animehub', 'animetools', 'animelore', 'pokemon', 'animetier'],
+            media: ['musicplayer', 'videoplayer', 'imageviewer']
+        };
+
+        // ===== App Registration =====
+        function registerApp(id, config) {
+            CloudOS.apps[id] = {
+                id,
+                title: config.title,
+                icon: config.icon,
+                width: config.width || 600,
+                height: config.height || 400,
+                content: config.content,
+                onInit: config.onInit,
+                singleton: config.singleton !== false
+            };
+        }
+
+        // ===== Iframe App Factory =====
+        function createIframeApp(id, title, icon, src, width, height) {
+            registerApp(id, {
+                title: title,
+                icon: icon,
+                width: width || 800,
+                height: height || 600,
+                singleton: false,
+                content: function() {
+                    return '<div style="width:100%;height:100%;display:flex;flex-direction:column;"><iframe src="' + src + '" style="flex:1;width:100%;border:none;background:white;"></iframe></div>';
+                }
+            });
+        }
+
+        // ===== Window Management =====
+        function createWindow(appId, customData) {
+            customData = customData || {};
+            var app = CloudOS.apps[appId];
+            if (!app) return;
+
+            if (app.singleton && !customData.forceNew) {
+                var existing = CloudOS.windows.find(function(w) { return w.appId === appId; });
+                if (existing) {
+                    focusWindow(existing.id);
+                    if (existing.minimized) toggleMinimize(existing.id);
+                    return existing;
+                }
+            }
+
+            var windowId = 'window-' + Date.now();
+            var windowData = {
+                id: windowId,
+                appId: appId,
+                title: customData.title || app.title,
+                icon: app.icon,
+                minimized: false,
+                maximized: false,
+                x: 100 + (CloudOS.windows.length * 30) % 200,
+                y: 50 + (CloudOS.windows.length * 30) % 150,
+                width: customData.width || app.width,
+                height: customData.height || app.height,
+                customData: customData
+            };
+
+            CloudOS.windows.push(windowData);
+
+            var windowEl = document.createElement('div');
+            windowEl.className = 'window';
+            windowEl.id = windowId;
+            windowEl.style.left = windowData.x + 'px';
+            windowEl.style.top = windowData.y + 'px';
+            windowEl.style.width = windowData.width + 'px';
+            windowEl.style.height = windowData.height + 'px';
+            windowEl.style.zIndex = ++CloudOS.zIndex;
+
+            var content = typeof app.content === 'function' ? app.content(customData) : app.content;
+
+            windowEl.innerHTML = '<div class="window-header" data-window="' + windowId + '">' +
+                '<span class="window-icon">' + app.icon + '</span>' +
+                '<span class="window-title">' + windowData.title + '</span>' +
+                '<div class="window-controls">' +
+                '<button class="window-btn minimize" data-action="minimize" data-window="' + windowId + '"></button>' +
+                '<button class="window-btn maximize" data-action="maximize" data-window="' + windowId + '"></button>' +
+                '<button class="window-btn close" data-action="close" data-window="' + windowId + '"></button>' +
+                '</div></div>' +
+                '<div class="window-content" id="' + windowId + '-content">' + content + '</div>' +
+                '<div class="window-resize" data-window="' + windowId + '"></div>';
+
+            document.getElementById('windows-container').appendChild(windowEl);
+            focusWindow(windowId);
+            updateTaskbar();
+
+            if (app.onInit) {
+                app.onInit(windowId, customData);
+            }
+
+            return windowData;
+        }
+
+        function closeWindow(windowId) {
+            var index = CloudOS.windows.findIndex(function(w) { return w.id === windowId; });
+            if (index !== -1) CloudOS.windows.splice(index, 1);
+            var windowEl = document.getElementById(windowId);
+            if (windowEl) {
+                windowEl.style.animation = 'windowOpen 0.15s ease reverse';
+                setTimeout(function() { windowEl.remove(); }, 150);
+            }
+            updateTaskbar();
+        }
+
+        function toggleMinimize(windowId) {
+            var windowData = CloudOS.windows.find(function(w) { return w.id === windowId; });
+            var windowEl = document.getElementById(windowId);
+            if (windowData && windowEl) {
+                windowData.minimized = !windowData.minimized;
+                windowEl.classList.toggle('minimized', windowData.minimized);
+                if (!windowData.minimized) focusWindow(windowId);
+                updateTaskbar();
+            }
+        }
+
+        function toggleMaximize(windowId) {
+            var windowData = CloudOS.windows.find(function(w) { return w.id === windowId; });
+            var windowEl = document.getElementById(windowId);
+            if (windowData && windowEl) {
+                windowData.maximized = !windowData.maximized;
+                if (windowData.maximized) {
+                    windowData.prevState = {
+                        x: windowEl.style.left,
+                        y: windowEl.style.top,
+                        width: windowEl.style.width,
+                        height: windowEl.style.height
+                    };
+                    windowEl.style.left = '0';
+                    windowEl.style.top = '0';
+                    windowEl.style.width = '100%';
+                    windowEl.style.height = 'calc(100vh - var(--taskbar-height))';
+                } else {
+                    windowEl.style.left = windowData.prevState.x;
+                    windowEl.style.top = windowData.prevState.y;
+                    windowEl.style.width = windowData.prevState.width;
+                    windowEl.style.height = windowData.prevState.height;
+                }
+            }
+        }
+
+        function focusWindow(windowId) {
+            CloudOS.activeWindow = windowId;
+            document.querySelectorAll('.window').forEach(function(w) {
+                w.style.zIndex = parseInt(w.style.zIndex) || 100;
+            });
+            var windowEl = document.getElementById(windowId);
+            if (windowEl) windowEl.style.zIndex = ++CloudOS.zIndex;
+            updateTaskbar();
+        }
+
+        // ===== Drag Systems =====
+        var dragState = null;
+        var iconDragState = null;
+
+        function initDragSystem() {
+            document.addEventListener('mousedown', function(e) {
+                var header = e.target.closest('.window-header');
+                var resize = e.target.closest('.window-resize');
+                
+                if (header && !e.target.closest('.window-controls')) {
+                    var windowId = header.dataset.window;
+                    var windowEl = document.getElementById(windowId);
+                    var windowData = CloudOS.windows.find(function(w) { return w.id === windowId; });
+                    
+                    if (windowData && windowData.maximized) return;
+                    
+                    focusWindow(windowId);
+                    dragState = {
+                        type: 'move',
+                        windowId: windowId,
+                        startX: e.clientX,
+                        startY: e.clientY,
+                        origX: parseInt(windowEl.style.left),
+                        origY: parseInt(windowEl.style.top)
+                    };
+                } else if (resize) {
+                    var windowId = resize.dataset.window;
+                    var windowEl = document.getElementById(windowId);
+                    focusWindow(windowId);
+                    dragState = {
+                        type: 'resize',
+                        windowId: windowId,
+                        startX: e.clientX,
+                        startY: e.clientY,
+                        origW: parseInt(windowEl.style.width),
+                        origH: parseInt(windowEl.style.height)
+                    };
+                }
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (dragState) {
+                    var windowEl = document.getElementById(dragState.windowId);
+                    if (!windowEl) return;
+
+                    if (dragState.type === 'move') {
+                        var dx = e.clientX - dragState.startX;
+                        var dy = e.clientY - dragState.startY;
+                        windowEl.style.left = Math.max(0, dragState.origX + dx) + 'px';
+                        windowEl.style.top = Math.max(0, dragState.origY + dy) + 'px';
+                    } else if (dragState.type === 'resize') {
+                        var dx = e.clientX - dragState.startX;
+                        var dy = e.clientY - dragState.startY;
+                        windowEl.style.width = Math.max(300, dragState.origW + dx) + 'px';
+                        windowEl.style.height = Math.max(200, dragState.origH + dy) + 'px';
+                    }
+                }
+
+                if (iconDragState) {
+                    var iconEl = document.getElementById(iconDragState.iconId);
+                    if (iconEl) {
+                        var x = e.clientX - iconDragState.offsetX;
+                        var y = e.clientY - iconDragState.offsetY;
+                        var desktop = document.getElementById('desktop');
+                        x = Math.max(0, Math.min(x, desktop.clientWidth - 80));
+                        y = Math.max(0, Math.min(y, desktop.clientHeight - 90));
+                        iconEl.style.left = x + 'px';
+                        iconEl.style.top = y + 'px';
+                    }
+                }
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (iconDragState) {
+                    var iconEl = document.getElementById(iconDragState.iconId);
+                    if (iconEl) {
+                        iconEl.classList.remove('dragging');
+                        var iconData = CloudOS.desktopIcons.find(function(i) { return i.id === iconDragState.iconId; });
+                        if (iconData) {
+                            iconData.x = parseInt(iconEl.style.left);
+                            iconData.y = parseInt(iconEl.style.top);
+                            saveDesktopLayout();
+                        }
+                    }
+                }
+                dragState = null;
+                iconDragState = null;
+            });
+        }
+
+        // ===== Desktop Icons =====
+        function initDesktop() {
+            loadDesktopLayout();
+            renderDesktopIcons();
+            applyWallpaper();
+        }
+
+        function loadDesktopLayout() {
+            var saved = localStorage.getItem('cloudos-desktop');
+            if (saved) {
+                CloudOS.desktopIcons = JSON.parse(saved);
+            } else {
+                var col = 0, row = 0;
+                defaultDesktopApps.forEach(function(appId) {
+                    CloudOS.desktopIcons.push({
+                        id: 'icon-' + appId,
+                        appId: appId,
+                        x: 20 + col * 90,
+                        y: 20 + row * 100
+                    });
+                    row++;
+                    if (row > 5) { row = 0; col++; }
+                });
+            }
+        }
+
+        function saveDesktopLayout() {
+            localStorage.setItem('cloudos-desktop', JSON.stringify(CloudOS.desktopIcons));
+        }
+
+        function renderDesktopIcons() {
+            var desktop = document.getElementById('desktop');
+            desktop.querySelectorAll('.desktop-icon').forEach(function(el) { el.remove(); });
+
+            CloudOS.desktopIcons.forEach(function(iconData) {
+                var app = CloudOS.apps[iconData.appId];
+                if (!app) return;
+
+                var icon = document.createElement('div');
+                icon.className = 'desktop-icon';
+                icon.id = iconData.id;
+                icon.dataset.appId = iconData.appId;
+                icon.style.left = iconData.x + 'px';
+                icon.style.top = iconData.y + 'px';
+                icon.innerHTML = '<span class="icon">' + app.icon + '</span><span class="label">' + app.title + '</span>';
+
+                icon.addEventListener('mousedown', function(e) {
+                    if (e.button === 0) {
+                        CloudOS.selectedIcon = iconData.id;
+                        document.querySelectorAll('.desktop-icon').forEach(function(i) { i.classList.remove('selected'); });
+                        icon.classList.add('selected');
+
+                        icon.classList.add('dragging');
+                        var rect = icon.getBoundingClientRect();
+                        iconDragState = {
+                            iconId: iconData.id,
+                            offsetX: e.clientX - rect.left,
+                            offsetY: e.clientY - rect.top
+                        };
+                    }
+                });
+
+                icon.addEventListener('dblclick', function() {
+                    createWindow(iconData.appId);
+                });
+
+                icon.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    CloudOS.selectedIcon = iconData.id;
+                    showIconContextMenu(e.clientX, e.clientY, iconData);
+                });
+
+                desktop.appendChild(icon);
+            });
+        }
+
+        function addToDesktop(appId) {
+            if (CloudOS.desktopIcons.find(function(i) { return i.appId === appId; })) {
+                showNotification('Already on Desktop', 'This app is already on your desktop', '📌');
+                return;
+            }
+
+            var maxY = 20;
+            CloudOS.desktopIcons.forEach(function(i) {
+                if (i.x < 110 && i.y >= maxY) maxY = i.y + 100;
+            });
+
+            if (maxY > 500) maxY = 20;
+
+            CloudOS.desktopIcons.push({
+                id: 'icon-' + appId + '-' + Date.now(),
+                appId: appId,
+                x: 20,
+                y: maxY
+            });
+
+            saveDesktopLayout();
+            renderDesktopIcons();
+            showNotification('Added to Desktop', CloudOS.apps[appId].title + ' added to desktop', '✅');
+        }
+
+        function removeFromDesktop(iconId) {
+            var index = CloudOS.desktopIcons.findIndex(function(i) { return i.id === iconId; });
+            if (index !== -1) {
+                CloudOS.desktopIcons.splice(index, 1);
+                saveDesktopLayout();
+                renderDesktopIcons();
+            }
+        }
+
+        function autoArrangeIcons() {
+            var col = 0, row = 0;
+            CloudOS.desktopIcons.forEach(function(iconData) {
+                iconData.x = 20 + col * 90;
+                iconData.y = 20 + row * 100;
+                row++;
+                if (row > 5) { row = 0; col++; }
+            });
+            saveDesktopLayout();
+            renderDesktopIcons();
+        }
+
+        // ===== Wallpaper =====
+        function applyWallpaper() {
+            var desktop = document.getElementById('desktop');
+            if (CloudOS.settings.customWallpaper) {
+                desktop.style.background = 'url(' + CloudOS.settings.customWallpaper + ')';
+                desktop.style.backgroundSize = 'cover';
+                desktop.style.backgroundPosition = 'center';
+            } else {
+                desktop.style.background = wallpapers[CloudOS.settings.wallpaper] || wallpapers[0];
+            }
+        }
+
+        function changeWallpaperFromFile() {
+            var input = document.getElementById('wallpaper-input');
+            input.onchange = function(e) {
+                var file = e.target.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function(ev) {
+                        CloudOS.settings.customWallpaper = ev.target.result;
+                        CloudOS.settings.wallpaper = -1;
+                        applyWallpaper();
+                        saveSettings();
+                        showNotification('Wallpaper Changed', 'Your custom wallpaper has been applied', '🖼️');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            input.click();
+        }
+
+        function setPresetWallpaper(index) {
+            CloudOS.settings.wallpaper = index;
+            CloudOS.settings.customWallpaper = null;
+            applyWallpaper();
+            saveSettings();
+        }
+
+        // ===== Context Menus =====
+        function initContextMenus() {
+            var desktopMenu = document.getElementById('desktop-context-menu');
+            var iconMenu = document.getElementById('icon-context-menu');
+            var desktop = document.getElementById('desktop');
+
+            desktop.addEventListener('contextmenu', function(e) {
+                if (e.target === desktop || e.target.id === 'desktop') {
+                    e.preventDefault();
+                    hideAllContextMenus();
+                    desktopMenu.style.left = e.clientX + 'px';
+                    desktopMenu.style.top = e.clientY + 'px';
+                    desktopMenu.classList.add('visible');
+                }
+            });
+
+            document.addEventListener('click', function() {
+                hideAllContextMenus();
+            });
+
+            desktopMenu.addEventListener('click', function(e) {
+                var action = e.target.dataset.action;
+                if (action === 'refresh') location.reload();
+                if (action === 'change-wallpaper') changeWallpaperFromFile();
+                if (action === 'sort-icons') autoArrangeIcons();
+                if (action === 'terminal') createWindow('terminal');
+                if (action === 'settings') createWindow('settings');
+                if (action === 'appstore') createWindow('appstore');
+                hideAllContextMenus();
+            });
+
+            iconMenu.addEventListener('click', function(e) {
+                var action = e.target.dataset.action;
+                if (action === 'open' && CloudOS.selectedIcon) {
+                    var iconData = CloudOS.desktopIcons.find(function(i) { return i.id === CloudOS.selectedIcon; });
+                    if (iconData) createWindow(iconData.appId);
+                }
+                if (action === 'remove' && CloudOS.selectedIcon) {
+                    removeFromDesktop(CloudOS.selectedIcon);
+                }
+                hideAllContextMenus();
+            });
+        }
+
+        function showIconContextMenu(x, y, iconData) {
+            hideAllContextMenus();
+            var menu = document.getElementById('icon-context-menu');
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
+            menu.classList.add('visible');
+        }
+
+        function hideAllContextMenus() {
+            document.querySelectorAll('.context-menu').forEach(function(m) { m.classList.remove('visible'); });
+        }
+
+        // ===== Taskbar =====
+        function updateTaskbar() {
+            var container = document.getElementById('taskbar-apps');
+            container.innerHTML = '';
+
+            CloudOS.windows.forEach(function(w) {
+                var btn = document.createElement('button');
+                btn.className = 'taskbar-app';
+                if (w.id === CloudOS.activeWindow && !w.minimized) btn.classList.add('active');
+                if (w.minimized) btn.classList.add('minimized');
+                btn.innerHTML = '<span class="icon">' + w.icon + '</span><span>' + w.title + '</span>';
+                btn.onclick = function() {
+                    if (w.minimized) {
+                        toggleMinimize(w.id);
+                    } else if (w.id === CloudOS.activeWindow) {
+                        toggleMinimize(w.id);
+                    } else {
+                        focusWindow(w.id);
+                    }
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // ===== Clock =====
+        function updateClock() {
+            var now = new Date();
+            var time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            var date = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            document.querySelector('#clock .time').textContent = time;
+            document.querySelector('#clock .date').textContent = date;
+        }
+
+        // ===== Start Menu =====
+        function initStartMenu() {
+            var startBtn = document.getElementById('start-btn');
+            var startMenu = document.getElementById('start-menu');
+            var appsContainer = document.getElementById('start-menu-apps');
+            var searchInput = document.getElementById('app-search');
+            var currentTab = 'pinned';
+
+            function renderApps(filter, tab) {
+                filter = filter || '';
+                tab = tab || currentTab;
+                appsContainer.innerHTML = '';
+                
+                var appsToShow = [];
+                if (tab === 'all') {
+                    appsToShow = Object.values(CloudOS.apps);
+                } else if (appCategories[tab]) {
+                    appsToShow = appCategories[tab].map(function(id) { return CloudOS.apps[id]; }).filter(function(a) { return a; });
+                } else {
+                    appsToShow = Object.values(CloudOS.apps);
+                }
+
+                appsToShow.forEach(function(app) {
+                    if (filter && !app.title.toLowerCase().includes(filter.toLowerCase())) return;
+                    var appEl = document.createElement('div');
+                    appEl.className = 'start-menu-app';
+                    appEl.innerHTML = '<span class="icon">' + app.icon + '</span><span class="label">' + app.title + '</span>';
+                    appEl.onclick = function() {
+                        createWindow(app.id);
+                        startMenu.classList.remove('visible');
+                        searchInput.value = '';
+                    };
+                    appsContainer.appendChild(appEl);
+                });
+
+                if (appsContainer.children.length === 0) {
+                    appsContainer.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px;grid-column:1/-1;">No apps found</div>';
+                }
+            }
+
+            document.querySelectorAll('.start-tab').forEach(function(tab) {
+                tab.onclick = function() {
+                    document.querySelectorAll('.start-tab').forEach(function(t) { t.classList.remove('active'); });
+                    tab.classList.add('active');
+                    currentTab = tab.dataset.tab;
+                    renderApps(searchInput.value, currentTab);
+                };
+            });
+
+            renderApps();
+
+            searchInput.oninput = function() {
+                if (searchInput.value) {
+                    renderApps(searchInput.value, 'all');
+                } else {
+                    renderApps('', currentTab);
+                }
+            };
+
+            startBtn.onclick = function(e) {
+                e.stopPropagation();
+                startMenu.classList.toggle('visible');
+                if (startMenu.classList.contains('visible')) {
+                    searchInput.focus();
+                }
+            };
+
+            document.addEventListener('click', function(e) {
+                if (!startMenu.contains(e.target) && e.target !== startBtn) {
+                    startMenu.classList.remove('visible');
+                }
+            });
+        }
+
+        // ===== Window Controls =====
+        function initWindowControls() {
+            document.addEventListener('click', function(e) {
+                var btn = e.target.closest('.window-btn');
+                if (!btn) return;
+
+                var action = btn.dataset.action;
+                var windowId = btn.dataset.window;
+
+                if (action === 'close') closeWindow(windowId);
+                if (action === 'minimize') toggleMinimize(windowId);
+                if (action === 'maximize') toggleMaximize(windowId);
+            });
+
+            document.addEventListener('mousedown', function(e) {
+                var windowEl = e.target.closest('.window');
+                if (windowEl) focusWindow(windowEl.id);
+            });
+        }
+
+        // ===== Notifications =====
+        function showNotification(title, message, icon) {
+            icon = icon || '🔔';
+            var notif = document.createElement('div');
+            notif.className = 'notification';
+            notif.innerHTML = '<span class="notification-icon">' + icon + '</span>' +
+                '<div class="notification-content">' +
+                '<div class="notification-title">' + title + '</div>' +
+                '<div class="notification-message">' + message + '</div></div>';
+            document.body.appendChild(notif);
+            setTimeout(function() {
+                notif.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(function() { notif.remove(); }, 300);
+            }, 3000);
+        }
+
+        // ===== Settings =====
+        function loadSettings() {
+            var saved = localStorage.getItem('cloudos-settings');
+            if (saved) {
+                CloudOS.settings = JSON.parse(saved);
+                if (CloudOS.settings.theme === 'light') {
+                    document.body.classList.add('light-theme');
+                }
+            }
+        }
+
+        function saveSettings() {
+            localStorage.setItem('cloudos-settings', JSON.stringify(CloudOS.settings));
+        }
+
+        // ===== File Helpers =====
+        function getFileIcon(name, isDirectory) {
+            if (isDirectory) return '📁';
+            var ext = name.split('.').pop().toLowerCase();
+            var icons = {
+                'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️', 'webp': '🖼️',
+                'mp3': '🎵', 'wav': '🎵', 'ogg': '🎵', 'flac': '🎵',
+                'mp4': '🎬', 'webm': '🎬', 'mkv': '🎬', 'avi': '🎬',
+                'pdf': '📕', 'doc': '📘', 'docx': '📘', 'txt': '📄', 'md': '📝',
+                'js': '📜', 'html': '🌐', 'css': '🎨', 'json': '📋',
+                'zip': '📦', 'rar': '📦'
+            };
+            return icons[ext] || '📄';
+        }
+
+        function getFileType(name) {
+            var ext = name.split('.').pop().toLowerCase();
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext)) return 'image';
+            if (['mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac'].includes(ext)) return 'audio';
+            if (['mp4', 'webm', 'mkv', 'avi', 'mov'].includes(ext)) return 'video';
+            return 'other';
+        }
+
+        // ===== Register All Apps =====
+        
+        // ===== JavaScript-based Apps (You'll add the game code manually) =====
+        
+        // Snake Game - JS Based
+        registerApp('snake', {
+            title: 'Snake',
+            icon: '🐍',
+            width: 600,
+            height: 650,
+            content: '<div id="snake-game-container" style="width:100%;height:100%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;"><div style="text-align:center;color:white;"><h2>Snake Game</h2><p>Game will load here</p><canvas id="snake-canvas"></canvas></div></div>',
+            onInit: function(windowId) {
+                // Your snake game JS code will go here
+                // Access canvas: document.querySelector('#' + windowId + '-content #snake-canvas')
+            }
+        });
+
+        // Flappy Bird - JS Based
+        registerApp('flappy', {
+            title: 'Flappy Bird',
+            icon: '🐦',
+            width: 400,
+            height: 600,
+            content: '<div id="flappy-game-container" style="width:100%;height:100%;background:#70c5ce;display:flex;align-items:center;justify-content:center;"><canvas id="flappy-canvas"></canvas></div>',
+            onInit: function(windowId) {
+                // Your flappy bird JS code will go here
+            }
+        });
+
+        // 2048 - JS Based
+        registerApp('game2048', {
+            title: '2048',
+            icon: '🔢',
+            width: 450,
+            height: 550,
+            content: '<div id="game2048-container" style="width:100%;height:100%;background:#faf8ef;display:flex;align-items:center;justify-content:center;flex-direction:column;"><div id="game2048-board"></div></div>',
+            onInit: function(windowId) {
+                // Your 2048 JS code will go here
+            }
+        });
+
+        // Tetris - JS Based  
+        registerApp('tetris', {
+            title: 'Tetris',
+            icon: '<img src="https://cdn3.emoji.gg/emojis/7829-gameboytetris.png" width="20" height="20">',
+            width: 400,
+            height: 600,
+            content: '<div id="tetris-container" style="width:100%;height:100%;background:#000;display:flex;align-items:center;justify-content:center;"><canvas id="tetris-canvas"></canvas></div>',
+            onInit: function(windowId) {
+                // Your tetris JS code will go here
+            }
+        });
+
+        // Battleship - JS Based
+        registerApp('battleship', {
+            title: 'Battleship',
+            icon: '🚢',
+            width: 800,
+            height: 600,
+            content: '<div id="battleship-container" style="width:100%;height:100%;background:#1a1a2e;padding:20px;overflow:auto;"><div id="battleship-game"></div></div>',
+            onInit: function(windowId) {
+                // Your battleship JS code will go here
+            }
+        });
+
+        // Memory Game - iframe (keep as is)
+        createIframeApp('memory', 'Memory Game', '🧠', 'memory.html', 600, 500);
+
+        // Hangman - JS Based
+        registerApp('hangman', {
+            title: 'Hangman',
+            icon: '☠️',
+            width: 600,
+            height: 500,
+            content: '<div id="hangman-container" style="width:100%;height:100%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;flex-direction:column;color:white;"><div id="hangman-game"></div></div>',
+            onInit: function(windowId) {
+                // Your hangman JS code will go here
+            }
+        });
+
+        // Infinite Craft - JS Based
+        registerApp('infinitecraft', {
+            title: 'Infinite Craft',
+            icon: '🔬',
+            width: 900,
+            height: 600,
+            content: '<div id="infinitecraft-container" style="width:100%;height:100%;background:#f5f5f5;overflow:auto;"><div id="infinitecraft-game"></div></div>',
+            onInit: function(windowId) {
+                // Your infinite craft JS code will go here
+            }
+        });
+
+        // Clicker Game - JS Based
+        registerApp('clicker', {
+            title: 'Clicker Game',
+            icon: '🖱️',
+            width: 500,
+            height: 600,
+            content: '<div id="clicker-container" style="width:100%;height:100%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;flex-direction:column;"><div id="clicker-game"></div></div>',
+            onInit: function(windowId) {
+                // Your clicker game JS code will go here
+            }
+        });
+
+        // Space Elevator - JS Based
+        registerApp('spaceelevator', {
+            title: 'Space Elevator',
+            icon: '🚀',
+            width: 800,
+            height: 600,
+            content: '<div id="spaceelevator-container" style="width:100%;height:100%;background:#0a0a1a;overflow:auto;"><div id="spaceelevator-game"></div></div>',
+            onInit: function(windowId) {
+                // Your space elevator JS code will go here
+            }
+        });
+
+        // Spend Billions - JS Based
+        registerApp('billionaire', {
+            title: 'Spend Billions',
+            icon: '💰',
+            width: 900,
+            height: 650,
+            content: '<div id="billionaire-container" style="width:100%;height:100%;background:#1a1a2e;overflow:auto;"><div id="billionaire-game"></div></div>',
+            onInit: function(windowId) {
+                // Your billionaire game JS code will go here
+            }
+        });
+
+        // Jump Game - JS Based
+        registerApp('jump', {
+            title: 'Jump Game',
+            icon: '🦘',
+            width: 600,
+            height: 500,
+            content: '<div id="jump-container" style="width:100%;height:100%;background:#87CEEB;display:flex;align-items:center;justify-content:center;"><canvas id="jump-canvas"></canvas></div>',
+            onInit: function(windowId) {
+                // Your jump game JS code will go here
+            }
+        });
+
+        // Ronaldo Birds - JS Based
+        registerApp('ronaldobirds', {
+            title: 'Ronaldo Birds',
+            icon: '<img src="flappy/assets/sprites/ronaldo_face.png" width="20" height="20">',
+            width: 400,
+            height: 600,
+            content: '<div id="ronaldobirds-container" style="width:100%;height:100%;background:#70c5ce;display:flex;align-items:center;justify-content:center;"><canvas id="ronaldobirds-canvas"></canvas></div>',
+            onInit: function(windowId) {
+                // Your ronaldo birds JS code will go here
+            }
+        });
+
+        // Water Sort - JS Based
+        registerApp('watersort', {
+            title: 'Water Sort',
+            icon: '🧪',
+            width: 450,
+            height: 650,
+            content: '<div id="watersort-container" style="width:100%;height:100%;background:linear-gradient(180deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;flex-direction:column;"><div id="watersort-game"></div></div>',
+            onInit: function(windowId) {
+                // Your water sort JS code will go here
+            }
+        });
+
+        // Speed Test - JS Based
+        registerApp('speedtest', {
+            title: 'Speed Test',
+            icon: '⚡',
+            width: 700,
+            height: 500,
+            content: '<div id="speedtest-container" style="width:100%;height:100%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;flex-direction:column;color:white;"><div id="speedtest-app"></div></div>',
+            onInit: function(windowId) {
+                // Your speed test JS code will go here
+            }
+        });
+
+        
+
+        // Password Generator - JS Based
+        registerApp('passwordgen', {
+            title: 'Password Gen',
+            icon: '🔐',
+            width: 500,
+            height: 450,
+            content: '<div id="passwordgen-container" style="width:100%;height:100%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;flex-direction:column;color:white;padding:20px;"><div id="passwordgen-app"></div></div>',
+            onInit: function(windowId) {
+                // Your password generator JS code will go here
+            }
+        });
+
+        // Draw Circle - JS Based
+        registerApp('drawcircle', {
+            title: 'Draw Circle',
+            icon: '⭕',
+            width: 600,
+            height: 600,
+            content: '<div id="drawcircle-container" style="width:100%;height:100%;background:#fff;display:flex;align-items:center;justify-content:center;"><canvas id="drawcircle-canvas"></canvas></div>',
+            onInit: function(windowId) {
+                // Your draw circle JS code will go here
+            }
+        });
+
+        // World Clock - JS Based
+        registerApp('worldclock', {
+            title: 'World Clock',
+            icon: '🌍',
+            width: 800,
+            height: 500,
+            content: '<div id="worldclock-container" style="width:100%;height:100%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:20px;padding:20px;overflow:auto;"><div id="worldclock-app"></div></div>',
+            onInit: function(windowId) {
+                // Your world clock JS code will go here
+            }
+        });
+
+        // ===== Iframe-based Apps (external HTML files) =====
+        createIframeApp('solitaire', 'Solitaire', '<img src="https://cdn3.emoji.gg/emojis/675510-cards.png" width="20" height="20">', 'Solitare.html', 900, 650);
+        createIframeApp('archery', 'Archery', '<img src="https://cdn3.emoji.gg/emojis/16819-alienangel.gif" width="20" height="20">', 'Archery.html', 800, 600);
+        createIframeApp('spygame', 'Spy Game', '🕵️', 'Spy.html', 700, 550);
+        createIframeApp('spygame2', 'Spy Game 2', '🕵️', 'Question.html', 700, 550);
+        createIframeApp('geodash', 'Geometry Dash', '▶️', 'Vertical Geometrydash.html', 500, 700);
+        createIframeApp('vectortag', 'Vector Tag', '👾', 'Tag.html', 800, 600);
+        createIframeApp('pomedoro', 'Pomedoro Timer', '⏳', 'timer.html', 800, 600);
+        createIframeApp('speedtest', 'Internet Speed Test', '⚡️', 'speed.html', 800, 600);
+        createIframeApp('chess', 'Chess', '♟️', 'Utility Web/chess/Chess.html', 700, 700);
+        createIframeApp('guessthesong', 'Guess The Song', '🎸', 'Emoji.html', 700, 550);
+        createIframeApp('uptimemonitor', 'Uptime Monitor', '📡', 'Utility Web/Uptime montior/Website_monitor.html', 900, 600);
+        createIframeApp('utilitytools', 'Utility Tools', '🧰', 'Utility Web/Utility_tools.html', 900, 650);
+        createIframeApp('aiassistant', 'AI Assistant', '<img src="https://cdn3.emoji.gg/emojis/927402-baldwinsilence.png" width="20" height="20">', 'Utility Web/AI.html', 800, 600);
+        
+        // Creative
+        createIframeApp('piano', 'Virtual Piano', '🎹', 'SoloSuite/Piano/Main.html', 900, 500);
+        createIframeApp('imageeditor', 'Image Editor Pro', '🖼️', 'Utility Web/Image Editor Pro.html', 1000, 700);
+        createIframeApp('videoeditor', 'Video Editor', '🎬', 'Utility Web/Video_editor_custom.html', 1000, 700);
+        
+        // Finance
+        createIframeApp('cryptocalc', 'Crypto Arbitrage', '<img src="https://cdn3.emoji.gg/emojis/2891-bitcoin.gif" width="20" height="20">', 'Utility Web/crypto-arbitrage-fee-calculator/crypto.html', 800, 600);
+        createIframeApp('stocks', 'Stock Tracker', '<img src="https://cdn3.emoji.gg/emojis/999284-cash.gif" width="20" height="20">', 'Utility Web/Stock.html', 900, 650);
+        createIframeApp('currency', 'Currency Exchange', '💱', 'Utility Web/Currency_exchange.html', 700, 550);
+        
+        // Anime
+        createIframeApp('aniverse', 'AniVerse', '<img src="https://cdn3.emoji.gg/emojis/16392-goku.png" width="20" height="20">', 'Anime_.html', 1000, 700);
+        createIframeApp('animehub', 'Anime Hub', '<img src="https://cdn3.emoji.gg/emojis/657759-gojoooooo.gif" width="20" height="20">', 'anime_hub.html', 1000, 700);
+        createIframeApp('animetools', 'Anime Tools', '<img src="https://cdn3.emoji.gg/emojis/7716_shieldbro_grin.png" width="20" height="20">', 'anime_kit.html', 900, 650);
+        createIframeApp('animelore', 'Anime Lore', '<img src="https://cdn3.emoji.gg/emojis/69220-sukuna-no.gif" width="20" height="20">', 'anime_lore.html', 1000, 700);
+        createIframeApp('pokemon', 'Pokemon Data', '<img src="https://s6.imgcdn.dev/Y1fk6T.png" width="20" height="20">', 'poke.html', 1000, 700);
+        createIframeApp('animetier', 'Anime Tier List', '<img src="https://cdn3.emoji.gg/emojis/94567-ssrtier.png" width="20" height="20">', 'anime_tier.html', 900, 650);
+        createIframeApp('minecraft', 'Minecraft Mods', '<img src="https://cdn3.emoji.gg/emojis/403691-minecraft.png" width="20" height="20">', 'Minecraft/main.html', 900, 650);
+
+        // App Store
+        registerApp('appstore', {
+            title: 'App Store',
+            icon: '🏪',
+            width: 950,
+            height: 650,
+            content: '<div class="appstore-app">' +
+                '<div class="appstore-header"><h1>🏪 App Store</h1>' +
+                '<input type="text" class="appstore-search" id="appstore-search" placeholder="🔍 Search apps..."></div>' +
+                '<div class="appstore-categories" id="appstore-categories"></div>' +
+                '<div class="appstore-grid" id="appstore-grid"></div></div>',
+            onInit: function(windowId) {
+                var content = document.getElementById(windowId + '-content');
+                var grid = content.querySelector('#appstore-grid');
+                var catContainer = content.querySelector('#appstore-categories');
+                var searchInput = content.querySelector('#appstore-search');
+                
+                var categories = [
+                    { id: 'all', label: '📱 All' },
+                    { id: 'games', label: '🎮 Games' },
+                    { id: 'utilities', label: '🔧 Utilities' },
+                    { id: 'creative', label: '🎨 Creative' },
+                    { id: 'finance', label: '💰 Finance' },
+                    { id: 'anime', label: '🎌 Anime' },
+                    { id: 'media', label: '🎵 Media' }
+                ];
+                
+                var currentCat = 'all';
+
+                categories.forEach(function(cat) {
+                    var btn = document.createElement('button');
+                    btn.className = 'appstore-cat-btn' + (cat.id === 'all' ? ' active' : '');
+                    btn.textContent = cat.label;
+                    btn.onclick = function() {
+                        content.querySelectorAll('.appstore-cat-btn').forEach(function(b) { b.classList.remove('active'); });
+                        btn.classList.add('active');
+                        currentCat = cat.id;
+                        renderApps();
+                    };
+                    catContainer.appendChild(btn);
+                });
+
+                function renderApps(filter) {
+                    grid.innerHTML = '';
+                    
+                    var apps = [];
+                    if (currentCat === 'all') {
+                        apps = Object.values(CloudOS.apps);
+                    } else if (appCategories[currentCat]) {
+                        apps = appCategories[currentCat].map(function(id) { return CloudOS.apps[id]; }).filter(function(a) { return a; });
+                    }
+
+                    apps.forEach(function(app) {
+                        if (filter && !app.title.toLowerCase().includes(filter.toLowerCase())) return;
+                        
+                        var isOnDesktop = CloudOS.desktopIcons.some(function(i) { return i.appId === app.id; });
+                        
+                        var card = document.createElement('div');
+                        card.className = 'appstore-card';
+                        card.innerHTML = '<div class="appstore-card-icon">' + app.icon + '</div>' +
+                            '<div class="appstore-card-info">' +
+                            '<div class="appstore-card-title">' + app.title + '</div>' +
+                            '<div class="appstore-card-desc">CloudOS App</div></div>' +
+                            '<div class="appstore-card-actions">' +
+                            '<button class="appstore-btn open">Open</button>' +
+                            '<button class="appstore-btn ' + (isOnDesktop ? 'remove' : 'add') + '">' + (isOnDesktop ? '✖' : '+') + '</button></div>';
+                        
+                        card.querySelector('.appstore-btn.open').onclick = function(e) {
+                            e.stopPropagation();
+                            createWindow(app.id);
+                        };
+                        
+                        var addRemoveBtn = card.querySelector('.appstore-btn.add, .appstore-btn.remove');
+                        addRemoveBtn.onclick = function(e) {
+                            e.stopPropagation();
+                            if (isOnDesktop) {
+                                var iconData = CloudOS.desktopIcons.find(function(i) { return i.appId === app.id; });
+                                if (iconData) removeFromDesktop(iconData.id);
+                            } else {
+                                addToDesktop(app.id);
+                            }
+                            renderApps(filter);
+                        };
+                        
+                        card.ondblclick = function() { createWindow(app.id); };
+                        grid.appendChild(card);
+                    });
+                }
+
+                searchInput.oninput = function() { renderApps(searchInput.value); };
+                renderApps('');
+            }
+        });
+
+        // Notes App
+        registerApp('notes', {
+            title: 'Notes',
+            icon: '📝',
+            width: 700,
+            height: 450,
+            content: '<div class="notes-app"><div class="notes-sidebar"><div class="notes-sidebar-header">' +
+                '<button class="notes-new-btn" id="new-note-btn">+ New Note</button></div>' +
+                '<div class="notes-list" id="notes-list"></div></div>' +
+                '<div class="notes-editor"><div class="notes-editor-header">' +
+                '<input type="text" class="notes-title-input" id="note-title" placeholder="Note title..."></div>' +
+                '<textarea class="notes-textarea" id="note-content" placeholder="Start typing..."></textarea></div></div>',
+            onInit: function(windowId) {
+                var content = document.getElementById(windowId + '-content');
+                var notesList = content.querySelector('#notes-list');
+                var titleInput = content.querySelector('#note-title');
+                var contentArea = content.querySelector('#note-content');
+                var newBtn = content.querySelector('#new-note-btn');
+                var currentNoteId = null;
+
+                function loadNotes() {
+                    CloudOS.notes = JSON.parse(localStorage.getItem('cloudos-notes') || '[]');
+                }
+
+                function saveNotes() {
+                    localStorage.setItem('cloudos-notes', JSON.stringify(CloudOS.notes));
+                }
+
+                function renderNotes() {
+                    notesList.innerHTML = '';
+                    CloudOS.notes.forEach(function(note) {
+                        var item = document.createElement('div');
+                        item.className = 'note-item' + (note.id === currentNoteId ? ' active' : '');
+                        item.innerHTML = '<div class="note-item-title">' + (note.title || 'Untitled') + '</div>' +
+                            '<div class="note-item-date">' + new Date(note.updated).toLocaleDateString() + '</div>';
+                        item.onclick = function() { selectNote(note.id); };
+                        notesList.appendChild(item);
+                    });
+                }
+
+                function selectNote(id) {
+                    currentNoteId = id;
+                    var note = CloudOS.notes.find(function(n) { return n.id === id; });
+                    if (note) {
+                        titleInput.value = note.title;
+                        contentArea.value = note.content;
+                    }
+                    renderNotes();
+                }
+
+                function createNote() {
+                    var note = { id: Date.now(), title: '', content: '', created: Date.now(), updated: Date.now() };
+                    CloudOS.notes.unshift(note);
+                    saveNotes();
+                    selectNote(note.id);
+                }
+
+                function updateCurrentNote() {
+                    var note = CloudOS.notes.find(function(n) { return n.id === currentNoteId; });
+                    if (note) {
+                        note.title = titleInput.value;
+                        note.content = contentArea.value;
+                        note.updated = Date.now();
+                        saveNotes();
+                        renderNotes();
+                    }
+                }
+
+                loadNotes();
+                if (CloudOS.notes.length === 0) createNote();
+                else selectNote(CloudOS.notes[0].id);
+                renderNotes();
+
+                newBtn.onclick = createNote;
+                titleInput.oninput = updateCurrentNote;
+                contentArea.oninput = updateCurrentNote;
+            }
+        });
+
+        // Terminal
+        registerApp('terminal', {
+            title: 'Terminal',
+            icon: '💻',
+            width: 650,
+            height: 400,
+            content: '<div class="terminal-app"><div class="terminal-output" id="terminal-output">' +
+                '<div class="terminal-line info">CloudOS Terminal v2.0</div>' +
+                '<div class="terminal-line">Type "help" for available commands.</div>' +
+                '<div class="terminal-line">&nbsp;</div></div>' +
+                '<div class="terminal-input-line"><span class="terminal-prompt">cloudos@user:~$</span>' +
+                '<input type="text" class="terminal-input" id="terminal-input" autofocus></div></div>',
+            onInit: function(windowId) {
+                var content = document.getElementById(windowId + '-content');
+                var output = content.querySelector('#terminal-output');
+                var input = content.querySelector('#terminal-input');
+                var history = [];
+                var historyIndex = -1;
+
+                var commands = {
+                    help: function() { return ['Commands: help, clear, date, echo, whoami, ls, pwd, open, neofetch, wallpaper']; },
+                    clear: function() { output.innerHTML = ''; return []; },
+                    date: function() { return [new Date().toString()]; },
+                    whoami: function() { return ['cloudos-user']; },
+                    pwd: function() { return ['/home/user']; },
+                    ls: function() { return ['Documents  Downloads  Pictures  Music  Videos']; },
+                    echo: function(args) { return [args.join(' ')]; },
+                    wallpaper: function() { changeWallpaperFromFile(); return ['Opening wallpaper picker...']; },
+                    open: function(args) {
+                        var appName = args[0];
+                        if (CloudOS.apps[appName]) {
+                            createWindow(appName);
+                            return ['Opening ' + appName + '...'];
+                        }
+                        return ['App not found. Try: appstore, notes, terminal, settings'];
+                    },
+                    neofetch: function() {
+                        return [
+                            '   ☁️  CloudOS',
+                            '  ────────────────',
+                            '  OS: CloudOS 2.0',
+                            '  Host: Browser',
+                            '  Apps: ' + Object.keys(CloudOS.apps).length,
+                            '  Desktop Icons: ' + CloudOS.desktopIcons.length,
+                            '  Theme: ' + CloudOS.settings.theme
+                        ];
+                    }
+                };
+
+                function addLine(text, className) {
+                    var line = document.createElement('div');
+                    line.className = 'terminal-line ' + (className || '');
+                    line.textContent = text;
+                    output.appendChild(line);
+                }
+
+                function processCommand(cmd) {
+                    var parts = cmd.trim().split(/\s+/);
+                    var command = parts[0].toLowerCase();
+                    var args = parts.slice(1);
+
+                    addLine('cloudos@user:~$ ' + cmd);
+
+                    if (!command) return;
+
+                    if (commands[command]) {
+                        var result = commands[command](args);
+                        result.forEach(function(line) { addLine(line); });
+                    } else {
+                        addLine('Command not found: ' + command, 'error');
+                    }
+
+                    output.scrollTop = output.scrollHeight;
+                }
+
+                input.onkeydown = function(e) {
+                    if (e.key === 'Enter') {
+                        var cmd = input.value;
+                        if (cmd.trim()) { history.push(cmd); historyIndex = history.length; }
+                        processCommand(cmd);
+                        input.value = '';
+                    } else if (e.key === 'ArrowUp') {
+                        if (historyIndex > 0) { historyIndex--; input.value = history[historyIndex]; }
+                        e.preventDefault();
+                    } else if (e.key === 'ArrowDown') {
+                        if (historyIndex < history.length - 1) { historyIndex++; input.value = history[historyIndex]; }
+                        else { historyIndex = history.length; input.value = ''; }
+                        e.preventDefault();
+                    }
+                };
+
+                input.focus();
+            }
+        });
+
+        // Calculator
+        registerApp('calculator', {
+            title: 'Calculator',
+            icon: '🧮',
+            width: 320,
+            height: 480,
+            content: '<div class="calculator-app"><div class="calc-display">' +
+                '<div class="calc-expression" id="calc-expr"></div><div class="calc-result" id="calc-result">0</div></div>' +
+                '<div class="calc-buttons">' +
+                '<button class="calc-btn clear" data-calc="C">C</button><button class="calc-btn operator" data-calc="(">(</button>' +
+                '<button class="calc-btn operator" data-calc=")">)</button><button class="calc-btn operator" data-calc="/">÷</button>' +
+                '<button class="calc-btn" data-calc="7">7</button><button class="calc-btn" data-calc="8">8</button>' +
+                '<button class="calc-btn" data-calc="9">9</button><button class="calc-btn operator" data-calc="*">×</button>' +
+                '<button class="calc-btn" data-calc="4">4</button><button class="calc-btn" data-calc="5">5</button>' +
+                '<button class="calc-btn" data-calc="6">6</button><button class="calc-btn operator" data-calc="-">−</button>' +
+                '<button class="calc-btn" data-calc="1">1</button><button class="calc-btn" data-calc="2">2</button>' +
+                '<button class="calc-btn" data-calc="3">3</button><button class="calc-btn operator" data-calc="+">+</button>' +
+                '<button class="calc-btn" data-calc="0">0</button><button class="calc-btn" data-calc=".">.</button>' +
+                '<button class="calc-btn" data-calc="DEL">⌫</button><button class="calc-btn equals" data-calc="=">=</button>' +
+                '</div></div>',
+            onInit: function(windowId) {
+                var content = document.getElementById(windowId + '-content');
+                var exprEl = content.querySelector('#calc-expr');
+                var resultEl = content.querySelector('#calc-result');
+                var expression = '';
+
+                content.querySelectorAll('.calc-btn').forEach(function(btn) {
+                    btn.onclick = function() {
+                        var val = btn.dataset.calc;
+                        if (val === 'C') { expression = ''; resultEl.textContent = '0'; exprEl.textContent = ''; }
+                        else if (val === 'DEL') { expression = expression.slice(0, -1); exprEl.textContent = expression; }
+                        else if (val === '=') {
+                            try { var result = eval(expression); resultEl.textContent = result; exprEl.textContent = expression + ' ='; expression = String(result); }
+                            catch (e) { resultEl.textContent = 'Error'; }
+                        } else { expression += val; exprEl.textContent = expression; }
+                    };
+                });
+            }
+        });
+
+        // File Explorer
+        registerApp('explorer', {
+            title: 'Files',
+            icon: '📁',
+            width: 800,
+            height: 500,
+            content: '<div class="explorer-app"><div class="explorer-toolbar">' +
+                '<button class="explorer-btn" id="explorer-back">←</button>' +
+                '<button class="explorer-btn" id="explorer-open-folder">📂 Open Folder</button>' +
+                '<div class="explorer-path" id="explorer-path">/home/user</div></div>' +
+                '<div class="explorer-content" id="explorer-content"></div></div>',
+            onInit: function(windowId) {
+                var content = document.getElementById(windowId + '-content');
+                var explorerContent = content.querySelector('#explorer-content');
+                var pathDisplay = content.querySelector('#explorer-path');
+                var openFolderBtn = content.querySelector('#explorer-open-folder');
+                
+                var currentHandle = null;
+                var handleStack = [];
+
+                var virtualFiles = [
+                    { name: 'Documents', icon: '📁', type: 'folder' },
+                    { name: 'Downloads', icon: '📥', type: 'folder' },
+                    { name: 'Pictures', icon: '🖼️', type: 'folder' },
+                    { name: 'Music', icon: '🎵', type: 'folder' },
+                    { name: 'readme.txt', icon: '📄', type: 'file' }
+                ];
+
+                function renderVirtualFolder() {
+                    explorerContent.innerHTML = '';
+                    pathDisplay.textContent = '/home/user';
+
+                    virtualFiles.forEach(function(file) {
+                        var item = document.createElement('div');
+                        item.className = 'explorer-item';
+                        item.innerHTML = '<span class="icon">' + file.icon + '</span><span class="name">' + file.name + '</span>';
+                        item.ondblclick = function() {
+                            showNotification('Tip', 'Click "Open Folder" to browse real files', '💡');
+                        };
+                        explorerContent.appendChild(item);
+                    });
+                }
+
+                openFolderBtn.onclick = async function() {
+                    try {
+                        if ('showDirectoryPicker' in window) {
+                            var handle = await window.showDirectoryPicker();
+                            currentHandle = handle;
+                            handleStack = [handle];
+                            await renderRealFolder(handle);
+                        } else {
+                            showNotification('Not Supported', 'File System API not available', '⚠️');
+                        }
+                    } catch (e) {}
+                };
+
+                async function renderRealFolder(handle) {
+                    explorerContent.innerHTML = '';
+                    pathDisplay.textContent = handle.name || 'Root';
+
+                    var entries = [];
+                    for await (var entry of handle.values()) {
+                        entries.push(entry);
+                    }
+
+                    entries.sort(function(a, b) {
+                        if (a.kind !== b.kind) return a.kind === 'directory' ? -1 : 1;
+                        return a.name.localeCompare(b.name);
+                    });
+
+                    for (var entry of entries) {
+                        var item = document.createElement('div');
+                        item.className = 'explorer-item';
+                        var isDir = entry.kind === 'directory';
+                        var icon = getFileIcon(entry.name, isDir);
+                        item.innerHTML = '<span class="icon">' + icon + '</span><span class="name">' + entry.name + '</span>';
+                        
+                        (function(entry, isDir) {
+                            item.ondblclick = async function() {
+                                if (isDir) {
+                                    var dirHandle = await handle.getDirectoryHandle(entry.name);
+                                    handleStack.push(dirHandle);
+                                    currentHandle = dirHandle;
+                                    await renderRealFolder(dirHandle);
+                                } else {
+                                    var fileType = getFileType(entry.name);
+                                    var file = await entry.getFile();
+                                    var url = URL.createObjectURL(file);
+                                    
+                                    if (fileType === 'image') createWindow('imageviewer', { imageUrl: url, title: entry.name });
+                                    else if (fileType === 'audio') createWindow('musicplayer', { audioUrl: url, title: entry.name, forceNew: true });
+                                    else if (fileType === 'video') createWindow('videoplayer', { videoUrl: url, title: entry.name, forceNew: true });
+                                    else showNotification('File', 'Cannot preview ' + entry.name, '📄');
+                                }
+                            };
+                        })(entry, isDir);
+                        
+                        explorerContent.appendChild(item);
+                    }
+                }
+
+                content.querySelector('#explorer-back').onclick = async function() {
+                    if (handleStack.length > 1) {
+                        handleStack.pop();
+                        currentHandle = handleStack[handleStack.length - 1];
+                        await renderRealFolder(currentHandle);
+                    }
+                };
+
+                renderVirtualFolder();
+            }
+        });
+
+        // Settings
+        registerApp('settings', {
+            title: 'Settings',
+            icon: '⚙️',
+            width: 750,
+            height: 550,
+            content: '<div class="settings-app"><div class="settings-sidebar">' +
+                '<div class="settings-nav-item active">🎨 Appearance</div>' +
+                '<div class="settings-nav-item">🖥️ Display</div>' +
+                '<div class="settings-nav-item">ℹ️ About</div></div>' +
+                '<div class="settings-content"><div class="settings-section"><h3>Appearance</h3>' +
+                '<div class="settings-option"><div><div class="settings-option-label">Dark Mode</div>' +
+                '<div class="settings-option-desc">Use dark theme for the interface</div></div>' +
+                '<div class="toggle-switch active" id="theme-toggle"></div></div>' +
+                '<div class="settings-option"><div><div class="settings-option-label">Wallpaper</div>' +
+                '<div class="settings-option-desc">Choose preset or custom wallpaper</div></div>' +
+                '<div class="wallpaper-options" id="wallpaper-picker"></div></div>' +
+                '<div class="settings-option"><div><div class="settings-option-label">Custom Wallpaper</div>' +
+                '<div class="settings-option-desc">Upload an image from your device</div></div>' +
+                '<button class="custom-wallpaper-btn" id="custom-wallpaper-btn">📂 Choose Image</button></div>' +
+                '</div></div></div>',
+            onInit: function(windowId) {
+                var content = document.getElementById(windowId + '-content');
+                var themeToggle = content.querySelector('#theme-toggle');
+                var wallpaperPicker = content.querySelector('#wallpaper-picker');
+                var customBtn = content.querySelector('#custom-wallpaper-btn');
+
+                if (CloudOS.settings.theme === 'light') themeToggle.classList.remove('active');
+                
+                themeToggle.onclick = function() {
+                    themeToggle.classList.toggle('active');
+                    CloudOS.settings.theme = themeToggle.classList.contains('active') ? 'dark' : 'light';
+                    document.body.classList.toggle('light-theme', CloudOS.settings.theme === 'light');
+                    saveSettings();
+                };
+
+                var colors = ['#667eea', '#1a1a2e', '#00b4db', '#11998e', '#ee0979', '#2c3e50', '#ff9a9e', '#a18cd1'];
+                colors.forEach(function(color, i) {
+                    var opt = document.createElement('div');
+                    opt.className = 'color-option' + (i === CloudOS.settings.wallpaper && !CloudOS.settings.customWallpaper ? ' selected' : '');
+                    opt.style.background = color;
+                    opt.onclick = function() {
+                        content.querySelectorAll('.color-option').forEach(function(c) { c.classList.remove('selected'); });
+                        opt.classList.add('selected');
+                        setPresetWallpaper(i);
+                    };
+                    wallpaperPicker.appendChild(opt);
+                });
+
+                customBtn.onclick = changeWallpaperFromFile;
+            }
+        });
+
+        // Image Viewer
+        registerApp('imageviewer', {
+            title: 'Image Viewer',
+            icon: '🖼️',
+            width: 700,
+            height: 500,
+            singleton: false,
+            content: function(data) {
+                var imgHtml = data.imageUrl ? '<img src="' + data.imageUrl + '" id="viewer-image">' : '<div class="image-placeholder"><div class="icon">🖼️</div><div>Click "Open Image" to view</div></div>';
+                return '<div class="image-viewer"><div class="image-viewer-toolbar">' +
+                    '<button class="explorer-btn" id="img-open">📂 Open Image</button>' +
+                    '<button class="explorer-btn" id="img-zoomin">🔍+</button>' +
+                    '<button class="explorer-btn" id="img-zoomout">🔍-</button></div>' +
+                    '<div class="image-viewer-content" id="img-container">' + imgHtml + '</div></div>';
+            },
+            onInit: function(windowId, data) {
+                var content = document.getElementById(windowId + '-content');
+                var container = content.querySelector('#img-container');
+                var zoom = 1;
+
+                content.querySelector('#img-open').onclick = async function() {
+                    try {
+                        var handles = await window.showOpenFilePicker({ types: [{ description: 'Images', accept: { 'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'] } }] });
+                        var file = await handles[0].getFile();
+                        var url = URL.createObjectURL(file);
+                        container.innerHTML = '<img src="' + url + '" id="viewer-image" style="transform:scale(' + zoom + ')">';
+                    } catch (e) {}
+                };
+
+                content.querySelector('#img-zoomin').onclick = function() {
+                    zoom = Math.min(zoom * 1.2, 5);
+                    var img = container.querySelector('img');
+                    if (img) img.style.transform = 'scale(' + zoom + ')';
+                };
+
+                content.querySelector('#img-zoomout').onclick = function() {
+                    zoom = Math.max(zoom / 1.2, 0.2);
+                    var img = container.querySelector('img');
+                    if (img) img.style.transform = 'scale(' + zoom + ')';
+                };
+            }
+        });
+
+        // Music Player
+        registerApp('musicplayer', {
+            title: 'Music Player',
+            icon: '🎵',
+            width: 400,
+            height: 550,
+            singleton: false,
+            content: '<div class="media-player"><div class="media-artwork"><div class="media-artwork-img" id="album-art">🎵</div></div>' +
+                '<div class="media-info"><div class="media-title" id="track-title">No track playing</div>' +
+                '<div class="media-artist" id="track-artist">Open a music file</div></div>' +
+                '<div class="media-progress"><div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>' +
+                '<div class="progress-time"><span id="current-time">0:00</span><span id="total-time">0:00</span></div></div>' +
+                '<div class="media-controls"><button class="media-btn" id="prev-btn">⏮️</button>' +
+                '<button class="media-btn play" id="play-btn">▶️</button><button class="media-btn" id="next-btn">⏭️</button></div>' +
+                '<button class="explorer-btn" style="margin:0 20px 20px;" id="open-music">📂 Open Music</button></div>',
+            onInit: function(windowId, data) {
+                var content = document.getElementById(windowId + '-content');
+                var audio = new Audio();
+                var isPlaying = false;
+                var playBtn = content.querySelector('#play-btn');
+                var progressFill = content.querySelector('#progress-fill');
+                var progressBar = content.querySelector('#progress-bar');
+                var currentTimeEl = content.querySelector('#current-time');
+                var totalTimeEl = content.querySelector('#total-time');
+                var titleEl = content.querySelector('#track-title');
+                var openBtn = content.querySelector('#open-music');
+
+                function formatTime(seconds) {
+                    var m = Math.floor(seconds / 60);
+                    var s = Math.floor(seconds % 60).toString().padStart(2, '0');
+                    return m + ':' + s;
+                }
+
+                audio.ontimeupdate = function() {
+                    if (audio.duration) {
+                        var percent = (audio.currentTime / audio.duration) * 100;
+                        progressFill.style.width = percent + '%';
+                        currentTimeEl.textContent = formatTime(audio.currentTime);
+                        totalTimeEl.textContent = formatTime(audio.duration);
+                    }
+                };
+
+                audio.onended = function() { isPlaying = false; playBtn.textContent = '▶️'; };
+
+                playBtn.onclick = function() {
+                    if (audio.src) {
+                        if (isPlaying) { audio.pause(); playBtn.textContent = '▶️'; }
+                        else { audio.play(); playBtn.textContent = '⏸️'; }
+                        isPlaying = !isPlaying;
+                    }
+                };
+
+                progressBar.onclick = function(e) {
+                    if (audio.duration) {
+                        var rect = progressBar.getBoundingClientRect();
+                        var percent = (e.clientX - rect.left) / rect.width;
+                        audio.currentTime = percent * audio.duration;
+                    }
+                };
+
+                openBtn.onclick = async function() {
+                    try {
+                        var handles = await window.showOpenFilePicker({ types: [{ description: 'Audio', accept: { 'audio/*': ['.mp3', '.wav', '.ogg', '.flac'] } }] });
+                        var file = await handles[0].getFile();
+                        audio.src = URL.createObjectURL(file);
+                        titleEl.textContent = file.name;
+                        audio.play();
+                        isPlaying = true;
+                        playBtn.textContent = '⏸️';
+                    } catch (e) {}
+                };
+
+                if (data && data.audioUrl) {
+                    audio.src = data.audioUrl;
+                    titleEl.textContent = data.title || 'Unknown Track';
+                    audio.play();
+                    isPlaying = true;
+                    playBtn.textContent = '⏸️';
+                }
+            }
+        });
+
+        // Video Player
+        registerApp('videoplayer', {
+            title: 'Video Player',
+            icon: '🎬',
+            width: 800,
+            height: 500,
+            singleton: false,
+            content: '<div class="video-player"><video id="video-element" controls></video>' +
+                '<div class="video-controls"><button class="explorer-btn" id="open-video">📂 Open Video</button></div></div>',
+            onInit: function(windowId, data) {
+                var content = document.getElementById(windowId + '-content');
+                var video = content.querySelector('#video-element');
+                var openBtn = content.querySelector('#open-video');
+
+                openBtn.onclick = async function() {
+                    try {
+                        var handles = await window.showOpenFilePicker({ types: [{ description: 'Video', accept: { 'video/*': ['.mp4', '.webm', '.mkv'] } }] });
+                        var file = await handles[0].getFile();
+                        video.src = URL.createObjectURL(file);
+                        video.play();
+                    } catch (e) {}
+                };
+
+                if (data && data.videoUrl) {
+                    video.src = data.videoUrl;
+                    video.play();
+                }
+            }
+        });
+
+        // Weather, Browser, Paint, TicTacToe, Camera, Clock, Todo (simplified versions)
+        registerApp('weather', { title: 'Weather', icon: '🌤️', width: 400, height: 450,
+            content: '<div class="weather-app"><div class="weather-main"><div class="weather-icon">☀️</div>' +
+                '<div class="weather-temp">22°C</div><div class="weather-desc">Sunny</div><div class="weather-location">📍 Your Location</div></div>' +
+                '<div class="weather-details"><div class="weather-detail"><div class="weather-detail-label">Humidity</div><div class="weather-detail-value">45%</div></div>' +
+                '<div class="weather-detail"><div class="weather-detail-label">Wind</div><div class="weather-detail-value">12 km/h</div></div>' +
+                '<div class="weather-detail"><div class="weather-detail-label">UV</div><div class="weather-detail-value">6</div></div></div></div>'
+        });
+
+        registerApp('browser', { title: 'Browser', icon: '🌐', width: 900, height: 600,
+            content: '<div class="browser-app"><div class="browser-toolbar">' +
+                '<button class="explorer-btn" id="browser-back">←</button><button class="explorer-btn" id="browser-refresh">🔄</button>' +
+                '<input type="text" class="browser-url" id="browser-url" value="https://wikipedia.org" placeholder="Enter URL...">' +
+                '<button class="explorer-btn" id="browser-go">Go</button></div>' +
+                '<div class="browser-content"><iframe id="browser-frame" src="https://wikipedia.org" sandbox="allow-scripts allow-same-origin allow-forms"></iframe></div></div>',
+            onInit: function(windowId) {
+                var content = document.getElementById(windowId + '-content');
+                var urlInput = content.querySelector('#browser-url');
+                var frame = content.querySelector('#browser-frame');
+                var goBtn = content.querySelector('#browser-go');
+
+                function navigate() {
+                    var url = urlInput.value;
+                    if (!url.startsWith('http')) url = 'https://' + url;
+                    frame.src = url;
+                }
+
+                goBtn.onclick = navigate;
+                urlInput.onkeydown = function(e) { if (e.key === 'Enter') navigate(); };
+                content.querySelector('#browser-refresh').onclick = function() { frame.src = frame.src; };
+            }
+        });
+
+        registerApp('paint', { title: 'Paint', icon: '🎨', width: 800, height: 600,
+            content: '<div class="paint-app"><div class="paint-toolbar">' +
+                '<button class="paint-tool active" data-tool="brush">🖌️</button><button class="paint-tool" data-tool="eraser">🧹</button>' +
+                '<input type="color" class="paint-color" id="paint-color" value="#000000">' +
+                '<select class="paint-size" id="paint-size"><option value="2">S</option><option value="5" selected>M</option><option value="10">L</option><option value="20">XL</option></select>' +
+                '<button class="paint-tool" id="paint-clear">🗑️</button><button class="paint-tool" id="paint-save">💾</button></div>' +
+                '<div class="paint-canvas-container"><canvas id="paint-canvas"></canvas></div></div>',
+            onInit: function(windowId) {
+                var content = document.getElementById(windowId + '-content');
+                var canvas = content.querySelector('#paint-canvas');
+                var ctx = canvas.getContext('2d');
+                var container = content.querySelector('.paint-canvas-container');
+
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                var drawing = false, tool = 'brush', color = '#000000', size = 5;
+
+                content.querySelectorAll('.paint-tool[data-tool]').forEach(function(btn) {
+                    btn.onclick = function() {
+                        content.querySelectorAll('.paint-tool[data-tool]').forEach(function(b) { b.classList.remove('active'); });
+                        btn.classList.add('active');
+                        tool = btn.dataset.tool;
+                    };
+                });
+
+                content.querySelector('#paint-color').oninput = function(e) { color = e.target.value; };
+                content.querySelector('#paint-size').onchange = function(e) { size = parseInt(e.target.value); };
+                content.querySelector('#paint-clear').onclick = function() { ctx.fillStyle = 'white'; ctx.fillRect(0, 0, canvas.width, canvas.height); };
+                content.querySelector('#paint-save').onclick = function() {
+                    var link = document.createElement('a'); link.download = 'drawing.png'; link.href = canvas.toDataURL(); link.click();
+                };
+
+                canvas.onmousedown = function(e) { drawing = true; var rect = canvas.getBoundingClientRect(); ctx.beginPath(); ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top); };
+                canvas.onmousemove = function(e) {
+                    if (!drawing) return;
+                    var rect = canvas.getBoundingClientRect();
+                    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+                    ctx.strokeStyle = tool === 'eraser' ? 'white' : color;
+                    ctx.lineWidth = size; ctx.lineCap = 'round'; ctx.stroke();
+                };
+                canvas.onmouseup = function() { drawing = false; };
+                canvas.onmouseleave = function() { drawing = false; };
+            }
+        });
+
+        registerApp('tictactoe', { title: 'Tic Tac Toe', icon: '⭕', width: 350, height: 420,
+            content: '<div class="game-app"><div class="game-status" id="game-status">Your turn (X)</div>' +
+                '<div class="game-board" id="game-board" style="grid-template-columns:repeat(3,1fr);"></div>' +
+                '<button class="game-reset" id="game-reset">New Game</button></div>',
+            onInit: function(windowId) {
+                var content = document.getElementById(windowId + '-content');
+                var board = content.querySelector('#game-board');
+                var status = content.querySelector('#game-status');
+                var resetBtn = content.querySelector('#game-reset');
+
+                var cells = ['', '', '', '', '', '', '', '', ''];
+                var currentPlayer = 'X', gameOver = false;
+                var winPatterns = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+                function render() {
+                    board.innerHTML = '';
+                    cells.forEach(function(cell, i) {
+                        var btn = document.createElement('button');
+                        btn.className = 'game-cell'; btn.textContent = cell;
+                        btn.onclick = function() { makeMove(i); };
+                        board.appendChild(btn);
+                    });
+                }
+
+                function checkWinner() {
+                    for (var p of winPatterns) {
+                        if (cells[p[0]] && cells[p[0]] === cells[p[1]] && cells[p[0]] === cells[p[2]]) return cells[p[0]];
+                    }
+                    return cells.includes('') ? null : 'tie';
+                }
+
+                function makeMove(i) {
+                    if (cells[i] || gameOver) return;
+                    cells[i] = currentPlayer;
+                    var winner = checkWinner();
+                    if (winner) { gameOver = true; status.textContent = winner === 'tie' ? "It's a tie!" : winner + ' wins!'; }
+                    else {
+                        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                        status.textContent = (currentPlayer === 'X' ? 'Your' : 'AI') + ' turn (' + currentPlayer + ')';
+                        if (currentPlayer === 'O') setTimeout(aiMove, 500);
+                    }
+                    render();
+                }
+
+                function aiMove() {
+                    var empty = cells.map(function(c, i) { return c === '' ? i : -1; }).filter(function(i) { return i !== -1; });
+                    if (empty.length > 0 && !gameOver) makeMove(empty[Math.floor(Math.random() * empty.length)]);
+                }
+
+                resetBtn.onclick = function() { cells = ['','','','','','','','','']; currentPlayer = 'X'; gameOver = false; status.textContent = 'Your turn (X)'; render(); };
+                render();
+            }
+        });
+
+        registerApp('clock', { title: 'Clock', icon: '🕐', width: 350, height: 400,
+            content: '<div class="clock-app"><div class="analog-clock">' +
+                '<div class="clock-hand hour" id="hour-hand"></div><div class="clock-hand minute" id="minute-hand"></div>' +
+                '<div class="clock-hand second" id="second-hand"></div><div class="clock-center"></div></div>' +
+                '<div class="digital-clock" id="digital-clock">00:00:00</div><div class="digital-date" id="digital-date">Loading...</div></div>',
+            onInit: function(windowId) {
+                var content = document.getElementById(windowId + '-content');
+                var hourHand = content.querySelector('#hour-hand');
+                var minuteHand = content.querySelector('#minute-hand');
+                var secondHand = content.querySelector('#second-hand');
+                var digitalClock = content.querySelector('#digital-clock');
+                var digitalDate = content.querySelector('#digital-date');
+
+                function update() {
+                    var now = new Date();
+                    var h = now.getHours() % 12, m = now.getMinutes(), s = now.getSeconds();
+                    hourHand.style.transform = 'rotate(' + (h * 30 + m * 0.5) + 'deg)';
+                    minuteHand.style.transform = 'rotate(' + (m * 6) + 'deg)';
+                    secondHand.style.transform = 'rotate(' + (s * 6) + 'deg)';
+                    digitalClock.textContent = now.toLocaleTimeString();
+                    digitalDate.textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                }
+
+                update();
+                var interval = setInterval(update, 1000);
+                var checkWindow = setInterval(function() { if (!document.getElementById(windowId)) { clearInterval(interval); clearInterval(checkWindow); } }, 1000);
+            }
+        });
+
+        registerApp('todo', { title: 'To-Do', icon: '✅', width: 400, height: 500,
+            content: '<div class="todo-app"><div class="todo-input-container">' +
+                '<input type="text" class="todo-input" id="todo-input" placeholder="Add a new task...">' +
+                '<button class="todo-add" id="todo-add">Add</button></div><div class="todo-list" id="todo-list"></div></div>',
+            onInit: function(windowId) {
+                var content = document.getElementById(windowId + '-content');
+                var input = content.querySelector('#todo-input');
+                var addBtn = content.querySelector('#todo-add');
+                var list = content.querySelector('#todo-list');
+
+                function loadTodos() { CloudOS.todos = JSON.parse(localStorage.getItem('cloudos-todos') || '[]'); }
+                function saveTodos() { localStorage.setItem('cloudos-todos', JSON.stringify(CloudOS.todos)); }
+
+                function render() {
+                    list.innerHTML = '';
+                    CloudOS.todos.forEach(function(todo, i) {
+                        var item = document.createElement('div');
+                        item.className = 'todo-item';
+                        item.innerHTML = '<div class="todo-checkbox ' + (todo.done ? 'checked' : '') + '" data-i="' + i + '">' + (todo.done ? '✓' : '') + '</div>' +
+                            '<span class="todo-text ' + (todo.done ? 'completed' : '') + '">' + todo.text + '</span>' +
+                            '<button class="todo-delete" data-i="' + i + '">×</button>';
+                        list.appendChild(item);
+                    });
+                }
+
+                list.onclick = function(e) {
+                    var checkbox = e.target.closest('.todo-checkbox');
+                    var deleteBtn = e.target.closest('.todo-delete');
+                    if (checkbox) { var i = parseInt(checkbox.dataset.i); CloudOS.todos[i].done = !CloudOS.todos[i].done; saveTodos(); render(); }
+                    if (deleteBtn) { var i = parseInt(deleteBtn.dataset.i); CloudOS.todos.splice(i, 1); saveTodos(); render(); }
+                };
+
+                function addTodo() {
+                    var text = input.value.trim();
+                    if (text) { CloudOS.todos.push({ text: text, done: false }); saveTodos(); render(); input.value = ''; }
+                }
+
+                addBtn.onclick = addTodo;
+                input.onkeydown = function(e) { if (e.key === 'Enter') addTodo(); };
+                loadTodos(); render();
+            }
+        });
+
+        registerApp('camera', { title: 'Camera', icon: '📷', width: 640, height: 520,
+            content: '<div class="camera-app"><div class="camera-viewfinder"><video id="camera-video" autoplay></video></div>' +
+                '<div class="camera-controls"><button class="camera-capture" id="camera-capture"></button></div></div>',
+            onInit: async function(windowId) {
+                var content = document.getElementById(windowId + '-content');
+                var video = content.querySelector('#camera-video');
+                var captureBtn = content.querySelector('#camera-capture');
+
+                try {
+                    var stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    video.srcObject = stream;
+
+                    var checkWindow = setInterval(function() {
+                        if (!document.getElementById(windowId)) {
+                            stream.getTracks().forEach(function(track) { track.stop(); });
+                            clearInterval(checkWindow);
+                        }
+                    }, 1000);
+
+                    captureBtn.onclick = function() {
+                        var canvas = document.createElement('canvas');
+                        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+                        canvas.getContext('2d').drawImage(video, 0, 0);
+                        var link = document.createElement('a');
+                        link.download = 'photo-' + Date.now() + '.png';
+                        link.href = canvas.toDataURL(); link.click();
+                        showNotification('Photo Saved', 'Photo has been downloaded', '📷');
+                    };
+                } catch (e) { showNotification('Camera Error', 'Could not access camera', '❌'); }
+            }
+        });
+
+        // ===== Boot =====
+        function boot() {
+            loadSettings();
+            
+            setTimeout(function() {
+                document.getElementById('boot-screen').classList.add('hidden');
+                
+                setTimeout(function() {
+                    document.getElementById('boot-screen').remove();
+                    showNotification('Welcome to CloudOS!', 'Drag icons to move them. Right-click for options.', '☁️');
+                }, 500);
+            }, 2800);
+        }
+
+        // ===== Initialize =====
+        document.addEventListener('DOMContentLoaded', function() {
+            boot();
+            initDragSystem();
+            initWindowControls();
+            initDesktop();
+            initStartMenu();
+            initContextMenus();
+            updateClock();
+            setInterval(updateClock, 1000);
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    document.getElementById('start-menu').classList.remove('visible');
+                    hideAllContextMenus();
+                }
+            });
+
+            document.getElementById('desktop').onclick = function(e) {
+                if (e.target === document.getElementById('desktop')) {
+                    CloudOS.selectedIcon = null;
+                    document.querySelectorAll('.desktop-icon').forEach(function(i) { i.classList.remove('selected'); });
+                }
+            };
+        });
+        
+    </script>
+</body>
+</html>
