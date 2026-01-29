@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="green">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hacker-Style Simulator</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+    :root {
+      --bg: #06090d;
+      --panel: rgba(7, 16, 21, 0.8);
+      --text: #d9fff5;
+      --muted: rgba(192, 255, 235, 0.6);
+      --primary: #21f6d9;
+      --secondary: #6d7cff;
+      --accent: #f16dff;
+      --danger: #ff5a6c;
+    }
+    [data-theme="red"] {
+      --bg: #0b0507;
+      --panel: rgba(19, 6, 8, 0.86);
+      --text: #ffe3e7;
+      --muted: rgba(255, 190, 200, 0.6);
+      --primary: #ff5a6c;
+      --secondary: #ff9f4f;
+      --accent: #f2d66d;
+      --danger: #ff2020;
+    }
+    [data-theme="blue"] {
+      --bg: #050b18;
+      --panel: rgba(7, 16, 28, 0.85);
+      --text: #dbe9ff;
+      --muted: rgba(174, 208, 255, 0.6);
+      --primary: #3bd2ff;
+      --secondary: #6e7dff;
+      --accent: #46ffb1;
+      --danger: #ff5170;
+    }
+    body {
+      background: radial-gradient(circle at top, rgba(70, 255, 209, 0.15), transparent 55%), var(--bg);
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      overflow-x: hidden;
+    }
+    .glow {
+      box-shadow: 0 0 18px rgba(33, 246, 217, 0.2), 0 0 45px rgba(33, 246, 217, 0.12);
+    }
+    .scanline {
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.04) 1px, transparent 2px, transparent 4px);
+      mix-blend-mode: screen;
+      pointer-events: none;
+      animation: scan 6s linear infinite;
+      opacity: 0.15;
+      z-index: 1;
+    }
+    @keyframes scan {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(100%); }
+    }
+    .grid-overlay {
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(rgba(33, 246, 217, 0.05) 1px, transparent 1px),
+        linear-gradient(to right, rgba(33, 246, 217, 0.05) 1px, transparent 1px);
+      background-size: 32px 32px;
+      opacity: 0.25;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(120, 255, 233, 0.18);
+      border-radius: 18px;
+      position: relative;
+      overflow: hidden;
+      resize: both;
+      min-width: 240px;
+      min-height: 200px;
+    }
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(120, 255, 233, 0.12);
+      text-transform: uppercase;
+      letter-spacing: 0.32em;
+      font-size: 0.65rem;
+      cursor: grab;
+    }
+    .panel-body {
+      padding: 16px;
+    }
+    .panel.collapsed .panel-body {
+      display: none;
+    }
+    .panel.collapsed {
+      min-height: unset;
+      resize: none;
+    }
+    .pill {
+      border: 1px solid rgba(120, 255, 233, 0.3);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+    .terminal {
+      height: 260px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      padding-right: 6px;
+    }
+    .terminal::-webkit-scrollbar {
+      width: 6px;
+    }
+    .terminal::-webkit-scrollbar-thumb {
+      background: rgba(120, 255, 233, 0.3);
+      border-radius: 999px;
+    }
+    .caret {
+      display: inline-block;
+      width: 8px;
+      height: 14px;
+      background: var(--primary);
+      margin-left: 4px;
+      animation: blink 1s steps(1) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+    .toast {
+      background: rgba(8, 18, 24, 0.95);
+      border: 1px solid rgba(120, 255, 233, 0.3);
+      border-left: 3px solid var(--primary);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      box-shadow: 0 0 20px rgba(0,0,0,0.6);
+      animation: toastIn 0.35s ease;
+    }
+    @keyframes toastIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .pulse-ring {
+      position: absolute;
+      inset: 0;
+      border: 1px solid rgba(120, 255, 233, 0.2);
+      border-radius: 50%;
+      animation: pulse 2.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.6; }
+      70% { transform: scale(1.5); opacity: 0; }
+      100% { opacity: 0; }
+    }
+    .cube {
+      width: 120px;
+      height: 120px;
+      position: relative;
+      transform-style: preserve-3d;
+      animation: rotateCube 12s linear infinite;
+      margin: 0 auto;
+    }
+    .cube div {
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      background: rgba(33, 246, 217, 0.08);
+      border: 1px solid rgba(120, 255, 233, 0.4);
+    }
+    .cube .front { transform: translateZ(60px); }
+    .cube .back { transform: rotateY(180deg) translateZ(60px); }
+    .cube .right { transform: rotateY(90deg) translateZ(60px); }
+    .cube .left { transform: rotateY(-90deg) translateZ(60px); }
+    .cube .top { transform: rotateX(90deg) translateZ(60px); }
+    .cube .bottom { transform: rotateX(-90deg) translateZ(60px); }
+    @keyframes rotateCube {
+      0% { transform: rotateX(0deg) rotateY(0deg); }
+      100% { transform: rotateX(360deg) rotateY(360deg); }
+    }
+    .traffic-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--primary);
+      border-radius: 999px;
+    }
+    .flash {
+      animation: flash 0.8s ease;
+    }
+    @keyframes flash {
+      0% { box-shadow: 0 0 10px var(--primary); }
+      100% { box-shadow: 0 0 30px transparent; }
+    }
+    .hacktyper {
+      height: 210px;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .tag {
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(120, 255, 233, 0.15);
+      border: 1px solid rgba(120, 255, 233, 0.3);
+    }
+    .particle-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .map-canvas,
+    .traffic-canvas {
+      width: 100%;
+      height: 220px;
+      display: block;
+      border-radius: 12px;
+      border: 1px solid rgba(120, 255, 233, 0.2);
+      background: rgba(0, 0, 0, 0.35);
+    }
+    .dragging {
+      opacity: 0.85;
+      cursor: grabbing;
+    }
+    .full-screen {
+      position: fixed;
+      inset: 20px;
+      z-index: 30;
+      resize: none;
+    }
+    @media (max-width: 900px) {
+      .dashboard {
+        grid-template-columns: 1fr !important;
+      }
+      .panel {
+        resize: none;
+      }
+      .panel-header {
+        font-size: 0.6rem;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="grid-overlay"></div>
+  <div class="scanline"></div>
+  <canvas id="particles" class="particle-canvas"></canvas>
+
+  <main class="relative z-10 px-4 py-6 lg:px-10">
+    <header class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <p class="text-xs uppercase tracking-[0.45em] text-[var(--muted)]">System Override Console</p>
+        <h1 class="text-3xl font-semibold text-[var(--text)]">Hacker-Style Simulator</h1>
+        <p class="mt-2 max-w-2xl text-sm text-[var(--muted)]">Hyper-styled cyber dashboard with fake terminals, auto-breaches, notifications, map telemetry, traffic visualizations, and dozens of live simulations.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <button id="themeToggle" class="pill">Theme: Green</button>
+        <button id="soundToggle" class="pill">Sound: ON</button>
+        <button id="downloadReport" class="pill">Download report</button>
+        <button id="printLogs" class="pill">Print logs</button>
+        <button id="resetLayout" class="pill">Reset panels</button>
+      </div>
+    </header>
+
+    <section class="mt-6 grid gap-4 lg:grid-cols-4">
+      <div class="glow rounded-2xl border border-[rgba(120,255,233,0.3)] bg-[var(--panel)] p-4">
+        <p class="text-xs text-[var(--muted)]">Session ID</p>
+        <p class="text-lg font-semibold" id="sessionId">VX-1457</p>
+      </div>
+      <div class="glow rounded-2xl border border-[rgba(120,255,233,0.3)] bg-[var(--panel)] p-4">
+        <p class="text-xs text-[var(--muted)]">Threat Level</p>
+        <p class="text-lg font-semibold" id="threatLevel">OMEGA</p>
+      </div>
+      <div class="glow rounded-2xl border border-[rgba(120,255,233,0.3)] bg-[var(--panel)] p-4">
+        <p class="text-xs text-[var(--muted)]">Live Uptime</p>
+        <p class="text-lg font-semibold" id="uptime">00:00:00</p>
+      </div>
+      <div class="glow rounded-2xl border border-[rgba(120,255,233,0.3)] bg-[var(--panel)] p-4">
+        <p class="text-xs text-[var(--muted)]">Breach Timer</p>
+        <p class="text-lg font-semibold" id="breachTimer">00:45</p>
+      </div>
+    </section>
+
+    <section class="dashboard mt-6 grid gap-6 lg:grid-cols-[1.2fr_1.1fr_1fr]">
+      <div class="panel glow" data-panel="terminal">
+        <div class="panel-header"><span>Terminal Stream</span><div class="flex items-center gap-2">
+          <span class="tag" id="terminalStatus">LIVE</span>
+          <button class="collapse-btn">–</button>
+        </div></div>
+        <div class="panel-body">
+          <div id="terminal" class="terminal"></div>
+          <div class="mt-3 flex items-center gap-2 text-sm">
+            <span class="text-[var(--primary)]">root@nebula</span>
+            <span class="text-[var(--muted)]">$</span>
+            <span id="typedCommand"></span>
+            <span class="caret"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel glow" data-panel="hacktyper">
+        <div class="panel-header"><span>Hackertyper Mode</span><div class="flex items-center gap-2">
+          <span class="tag">Type anywhere</span>
+          <button class="collapse-btn">–</button>
+        </div></div>
+        <div class="panel-body">
+          <div id="hacktyper" class="hacktyper"></div>
+          <p class="mt-3 text-xs text-[var(--muted)]">Keystrokes generate synthetic code. Backspace removes characters.</p>
+        </div>
+      </div>
+
+      <div class="panel glow" data-panel="console">
+        <div class="panel-header"><span>Interactive Console</span><div class="flex items-center gap-2">
+          <button id="autoToggle" class="tag">Auto: ON</button>
+          <button id="consoleFull" class="tag">Full</button>
+          <button class="collapse-btn">–</button>
+        </div></div>
+        <div class="panel-body">
+          <div id="consoleOutput" class="terminal h-40"></div>
+          <form id="consoleForm" class="mt-3 flex flex-wrap items-center gap-2 text-sm">
+            <span class="text-[var(--primary)]">ops@matrix</span>
+            <span class="text-[var(--muted)]">$</span>
+            <input id="consoleInput" autocomplete="off" placeholder="Type command (ex: breach --node 7)" class="flex-1 min-w-[180px] rounded-lg border border-[rgba(120,255,233,0.3)] bg-black/30 px-3 py-2 text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40" />
+            <button class="rounded-lg border border-[rgba(120,255,233,0.4)] px-4 py-2 text-[var(--muted)]">Execute</button>
+          </form>
+          <div class="mt-2 flex flex-wrap gap-2 text-xs text-[var(--muted)]">
+            <span class="tag">Ctrl+L clear</span>
+            <span class="tag">Ctrl+K auto</span>
+            <span class="tag">Ctrl+P print</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel glow" data-panel="scan">
+        <div class="panel-header"><span>System Scan</span><div class="flex items-center gap-2">
+          <span class="tag" id="scanStatus">Initializing</span>
+          <button class="collapse-btn">–</button>
+        </div></div>
+        <div class="panel-body">
+          <div id="scanList" class="space-y-3 text-xs"></div>
+          <button id="boostScan" class="mt-4 w-full rounded-lg border border-[rgba(120,255,233,0.4)] px-3 py-2 text-xs text-[var(--muted)]">Boost scan</button>
+        </div>
+      </div>
+
+      <div class="panel glow" data-panel="telemetry">
+        <div class="panel-header"><span>Node Telemetry</span><div class="flex items-center gap-2">
+          <span class="tag">Live</span>
+          <button class="collapse-btn">–</button>
+        </div></div>
+        <div class="panel-body space-y-4 text-xs">
+          <div>
+            <div class="flex items-center justify-between"><span>CPU Overclock</span><span id="cpuValue">72%</span></div>
+            <div class="mt-2 h-2 rounded-full bg-black/40"><div id="cpuBar" class="h-2 rounded-full bg-[var(--primary)]"></div></div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between"><span>Signal Breach</span><span id="signalValue">43%</span></div>
+            <div class="mt-2 h-2 rounded-full bg-black/40"><div id="signalBar" class="h-2 rounded-full bg-[var(--secondary)]"></div></div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between"><span>Quantum Sync</span><span id="syncValue">59%</span></div>
+            <div class="mt-2 h-2 rounded-full bg-black/40"><div id="syncBar" class="h-2 rounded-full bg-[var(--accent)]"></div></div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between"><span>Firewall Pulse</span><span id="fireValue">83%</span></div>
+            <div class="mt-2 h-2 rounded-full bg-black/40"><div id="fireBar" class="h-2 rounded-full bg-[var(--primary)]"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel glow" data-panel="breach">
+        <div class="panel-header"><span>Breach Attempts</span><div class="flex items-center gap-2">
+          <span class="tag" id="breachStatus">ACTIVE</span>
+          <button class="collapse-btn">–</button>
+        </div></div>
+        <div class="panel-body">
+          <div class="text-xs text-[var(--muted)]">Next breach window</div>
+          <div class="mt-3 text-3xl font-semibold" id="breachCountdown">00:45</div>
+          <div class="mt-4 flex items-center gap-3 text-xs">
+            <span class="pill">Target: NODE-07A</span>
+            <span class="pill">Risk: High</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel glow" data-panel="map">
+        <div class="panel-header"><span>Global Node Map</span><div class="flex items-center gap-2">
+          <button class="collapse-btn">–</button>
+        </div></div>
+        <div class="panel-body">
+          <canvas id="mapCanvas" class="map-canvas"></canvas>
+          <p class="mt-3 text-xs text-[var(--muted)]">Dynamic node connections across the globe.</p>
+        </div>
+      </div>
+
+      <div class="panel glow" data-panel="traffic">
+        <div class="panel-header"><span>Network Traffic</span><div class="flex items-center gap-2">
+          <button class="collapse-btn">–</button>
+        </div></div>
+        <div class="panel-body">
+          <canvas id="trafficCanvas" class="traffic-canvas"></canvas>
+          <p class="mt-3 text-xs text-[var(--muted)]">Animated packet flow and latency streams.</p>
+        </div>
+      </div>
+
+      <div class="panel glow" data-panel="crack">
+        <div class="panel-header"><span>Password Cracker</span><div class="flex items-center gap-2">
+          <span class="tag" id="crackStatus">RUNNING</span>
+          <button class="collapse-btn">–</button>
+        </div></div>
+        <div class="panel-body">
+          <div class="text-xs text-[var(--muted)]">Target Hash: 9f2b4a1e</div>
+          <div class="mt-3 h-2 rounded-full bg-black/40"><div id="crackBar" class="h-2 rounded-full bg-[var(--primary)]"></div></div>
+          <div class="mt-3 text-xs">Current Guess: <span id="crackGuess">a7f9</span></div>
+          <div class="mt-3 text-xs">Estimated time: <span id="crackEta">00:32</span></div>
+        </div>
+      </div>
+
+      <div class="panel glow" data-panel="core">
+        <div class="panel-header"><span>System Core</span><div class="flex items-center gap-2">
+          <span class="tag">3D</span>
+          <button class="collapse-btn">–</button>
+        </div></div>
+        <div class="panel-body text-center">
+          <div class="cube">
+            <div class="front"></div>
+            <div class="back"></div>
+            <div class="right"></div>
+            <div class="left"></div>
+            <div class="top"></div>
+            <div class="bottom"></div>
+          </div>
+          <p class="mt-4 text-xs text-[var(--muted)]">Quantum core stability: <span id="coreStability">92%</span></p>
+        </div>
+      </div>
+
+      <div class="panel glow" data-panel="nodes">
+        <div class="panel-header"><span>Active Nodes</span><div class="flex items-center gap-2">
+          <span class="tag" id="nodeCount">8 nodes</span>
+          <button class="collapse-btn">–</button>
+        </div></div>
+        <div class="panel-body">
+          <div id="nodes" class="grid grid-cols-2 gap-3 text-xs"></div>
+        </div>
+      </div>
+
+      <div class="panel glow" data-panel="files">
+        <div class="panel-header"><span>Compromised Files</span><div class="flex items-center gap-2">
+          <button class="collapse-btn">–</button>
+        </div></div>
+        <div class="panel-body">
+          <ul id="fileBrowser" class="space-y-2 text-xs"></ul>
+          <button id="downloadPacket" class="mt-4 w-full rounded-lg border border-[rgba(120,255,233,0.4)] px-3 py-2 text-xs text-[var(--muted)]">Download data packet</button>
+        </div>
+      </div>
+
+      <div class="panel glow" data-panel="chat">
+        <div class="panel-header"><span>Remote Operators</span><div class="flex items-center gap-2">
+          <span class="tag">Encrypted</span>
+          <button class="collapse-btn">–</button>
+        </div></div>
+        <div class="panel-body">
+          <div id="chatLog" class="terminal h-36"></div>
+          <form id="chatForm" class="mt-3 flex gap-2 text-xs">
+            <input id="chatInput" placeholder="Send secure message" class="flex-1 rounded-lg border border-[rgba(120,255,233,0.3)] bg-black/30 px-3 py-2 text-[var(--text)] focus:outline-none" />
+            <button class="rounded-lg border border-[rgba(120,255,233,0.4)] px-3 py-2 text-[var(--muted)]">Send</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="panel glow" data-panel="features">
+        <div class="panel-header"><span>Features Online</span><div class="flex items-center gap-2">
+          <button class="collapse-btn">–</button>
+        </div></div>
+        <div class="panel-body">
+          <ul id="featureList" class="space-y-2 text-xs text-[var(--muted)]"></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toastContainer" class="fixed right-6 top-6 z-20 flex flex-col gap-3"></div>
+
+  <script>
+    const terminal = document.getElementById('terminal');
+    const typedCommand = document.getElementById('typedCommand');
+    const scanList = document.getElementById('scanList');
+    const scanStatus = document.getElementById('scanStatus');
+    const featureList = document.getElementById('featureList');
+    const uptimeEl = document.getElementById('uptime');
+    const sessionIdEl = document.getElementById('sessionId');
+    const threatLevelEl = document.getElementById('threatLevel');
+    const nodeCountEl = document.getElementById('nodeCount');
+    const nodesContainer = document.getElementById('nodes');
+    const consoleOutput = document.getElementById('consoleOutput');
+    const consoleForm = document.getElementById('consoleForm');
+    const consoleInput = document.getElementById('consoleInput');
+    const autoToggle = document.getElementById('autoToggle');
+    const consoleFull = document.getElementById('consoleFull');
+    const themeToggle = document.getElementById('themeToggle');
+    const soundToggle = document.getElementById('soundToggle');
+    const downloadReport = document.getElementById('downloadReport');
+    const printLogs = document.getElementById('printLogs');
+    const resetLayout = document.getElementById('resetLayout');
+    const toastContainer = document.getElementById('toastContainer');
+    const breachCountdownEl = document.getElementById('breachCountdown');
+    const breachTimerEl = document.getElementById('breachTimer');
+    const crackBar = document.getElementById('crackBar');
+    const crackGuess = document.getElementById('crackGuess');
+    const crackEta = document.getElementById('crackEta');
+    const coreStability = document.getElementById('coreStability');
+    const chatLog = document.getElementById('chatLog');
+    const chatForm = document.getElementById('chatForm');
+    const chatInput = document.getElementById('chatInput');
+    const fileBrowser = document.getElementById('fileBrowser');
+    const downloadPacket = document.getElementById('downloadPacket');
+    const hacktyperEl = document.getElementById('hacktyper');
+    const boostScan = document.getElementById('boostScan');
+
+    const bars = [
+      { bar: document.getElementById('cpuBar'), value: document.getElementById('cpuValue'), min: 55, max: 95 },
+      { bar: document.getElementById('signalBar'), value: document.getElementById('signalValue'), min: 30, max: 88 },
+      { bar: document.getElementById('syncBar'), value: document.getElementById('syncValue'), min: 40, max: 92 },
+      { bar: document.getElementById('fireBar'), value: document.getElementById('fireValue'), min: 60, max: 99 },
+    ];
+
+    const logs = [];
+
+    const logStream = [
+      'Routing ghost packets through proxy grid... OK',
+      'Decrypting vault: AES-512 handshake acknowledged.',
+      'Tracing spectral pings across node cluster.',
+      'Seeding stealth relay for blacksite uplink.',
+      'Injecting entropy into firewall heuristics.',
+      'Zero-trust bypass: covert channel established.',
+      'Quantum key mesh aligned to 0.001 latency.',
+      'Anomaly sweep initiated on sector 7B.',
+      'Recompiling intrusion lattice... done.',
+      'Deploying countermeasure swarm protocols.'
+    ];
+
+    const commands = [
+      'scan --full --stealth',
+      'deploy sentinel --mode silent',
+      'trace --vector omni',
+      'inject --payload ghost',
+      'override --access root',
+      'stabilize --matrix core',
+      'scramble --ids',
+      'analyze --pattern deep'
+    ];
+
+    const scanSteps = [
+      'Initializing neural sensors',
+      'Mapping secure lattice nodes',
+      'Extracting encryption keys',
+      'Validating access signatures',
+      'Isolating rogue endpoints',
+      'Scrubbing digital footprints',
+      'Compiling threat spectrum',
+      'Finalizing system report'
+    ];
+
+    const features = [
+      'Hackertyper typing mode with real-time code stream',
+      'Interactive console with simulated command execution',
+      'Auto-run command sequences + hints',
+      'Fullscreen console mode',
+      'Dynamic system scan checklist with boost control',
+      'Animated breach countdowns with alerts',
+      'Notification/toast system for events',
+      'Sound effects for commands, alerts, system pings',
+      'Map visualization of global nodes',
+      'Animated network traffic canvas',
+      'Password cracking simulation and ETA',
+      '3D system core cube',
+      'Simulated file browser with downloadable packets',
+      'Remote operator encrypted chat',
+      'Draggable/resizable panels + collapsible sections',
+      'Dark mode toggle with green/red/blue schemes',
+      'Printable or downloadable session logs',
+      'Particle effects on critical events',
+      'Keyboard shortcuts for power users',
+      'Mobile-friendly responsive layout'
+    ];
+
+    featureList.innerHTML = features.map(item => `<li>▸ ${item}</li>`).join('');
+
+    const fakeCode = `function breach(node){\n  const matrix = initializeVector(node);\n  while(matrix.locked){\n    matrix.inject(entropy());\n    if(matrix.level>7){\n      matrix.unlock('root');\n      break;\n    }\n  }\n  return matrix.payload;\n}\n\nconst nodes = ['NYC','LON','TYO','DXB','SFO'];\nfor(const node of nodes){\n  breach(node);\n}`;
+    let hackIndex = 0;
+
+    function addLog(text) {
+      const line = document.createElement('div');
+      line.textContent = `> ${text}`;
+      terminal.appendChild(line);
+      terminal.scrollTop = terminal.scrollHeight;
+      logs.push(`[LOG] ${text}`);
+    }
+
+    function typeCommand() {
+      const cmd = commands[Math.floor(Math.random() * commands.length)];
+      typedCommand.textContent = '';
+      let index = 0;
+      const typer = setInterval(() => {
+        typedCommand.textContent += cmd[index];
+        index++;
+        if (index >= cmd.length) {
+          clearInterval(typer);
+        }
+      }, 60);
+    }
+
+    function updateBars() {
+      bars.forEach(({ bar, value, min, max }) => {
+        const level = Math.floor(Math.random() * (max - min + 1)) + min;
+        bar.style.width = `${level}%`;
+        value.textContent = `${level}%`;
+      });
+    }
+
+    function updateNodes() {
+      nodesContainer.innerHTML = '';
+      const count = Math.floor(Math.random() * 4) + 8;
+      nodeCountEl.textContent = `${count} nodes`;
+      for (let i = 0; i < count; i++) {
+        const node = document.createElement('div');
+        node.className = 'rounded-lg border border-[rgba(120,255,233,0.3)] bg-black/30 px-3 py-2 text-xs text-[var(--muted)]';
+        node.textContent = `NODE-${(Math.random() * 9999).toFixed(0).padStart(4, '0')}`;
+        nodesContainer.appendChild(node);
+      }
+    }
+
+    function updateScan() {
+      scanList.innerHTML = '';
+      scanSteps.forEach((step, index) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between text-xs';
+        const status = document.createElement('span');
+        status.textContent = step;
+        const progress = document.createElement('span');
+        progress.textContent = index === 0 ? 'RUNNING' : 'PENDING';
+        progress.className = index === 0 ? 'text-[var(--primary)]' : 'text-[var(--muted)]';
+        row.appendChild(status);
+        row.appendChild(progress);
+        scanList.appendChild(row);
+      });
+
+      let activeIndex = 0;
+      scanStatus.textContent = 'Scan in progress';
+      const scanTimer = setInterval(() => {
+        const rows = [...scanList.children];
+        rows.forEach((row, idx) => {
+          const tag = row.querySelector('span:last-child');
+          if (idx < activeIndex) {
+            tag.textContent = 'COMPLETE';
+            tag.className = 'text-[var(--primary)]';
+          } else if (idx === activeIndex) {
+            tag.textContent = 'RUNNING';
+            tag.className = 'text-[var(--text)]';
+          } else {
+            tag.textContent = 'PENDING';
+            tag.className = 'text-[var(--muted)]';
+          }
+        });
+        activeIndex++;
+        if (activeIndex > scanSteps.length) {
+          scanStatus.textContent = 'Scan complete';
+          notify('System scan completed. Threat level updated.', 'success');
+          triggerParticles();
+          playTone('success');
+          clearInterval(scanTimer);
+          setTimeout(updateScan, 3500);
+        }
+      }, 1400);
+    }
+
+    function updateSession() {
+      sessionIdEl.textContent = `VX-${Math.floor(1000 + Math.random() * 9000)}`;
+      const levels = ['OMEGA', 'SIGMA', 'DELTA', 'VOID', 'NOVA'];
+      threatLevelEl.textContent = levels[Math.floor(Math.random() * levels.length)];
+    }
+
+    function startUptime() {
+      const start = Date.now();
+      setInterval(() => {
+        const diff = Date.now() - start;
+        const hrs = String(Math.floor(diff / 3600000)).padStart(2, '0');
+        const mins = String(Math.floor(diff / 60000) % 60).padStart(2, '0');
+        const secs = String(Math.floor(diff / 1000) % 60).padStart(2, '0');
+        uptimeEl.textContent = `${hrs}:${mins}:${secs}`;
+      }, 1000);
+    }
+
+    const consoleReplies = [
+      'Resolving target vector... OK',
+      'Executing payload chain: phase 1 complete.',
+      'Cipher handshake established at node 11.',
+      'Routing through stealth relay... secure.',
+      'Packet storm injected. Response latency dropping.',
+      'Privilege escalation accepted. Root access granted.',
+      'Signal cloaked. IDS sensors bypassed.',
+      'Quantum cache warmed. Throughput optimized.',
+      'Data shards compiled into secure vault.',
+      'Command chain completed without trace.'
+    ];
+
+    const consoleHints = [
+      'Try: breach --node 7',
+      'Hint: trace --vector omni',
+      'Try: decrypt --vault omega',
+      'Hint: override --access root',
+      'Try: sweep --sector 4C'
+    ];
+
+    let autoRun = true;
+    let autoTimer = null;
+    let soundOn = true;
+    let themeIndex = 0;
+    const themes = ['green', 'red', 'blue'];
+
+    function appendConsoleLine(text, className = 'text-[var(--muted)]') {
+      const line = document.createElement('div');
+      line.className = className;
+      line.textContent = text;
+      consoleOutput.appendChild(line);
+      consoleOutput.scrollTop = consoleOutput.scrollHeight;
+      logs.push(text);
+    }
+
+    function simulateOutput(command) {
+      appendConsoleLine(`$ ${command}`, 'text-[var(--text)]');
+      const response = consoleReplies[Math.floor(Math.random() * consoleReplies.length)];
+      const hint = consoleHints[Math.floor(Math.random() * consoleHints.length)];
+      setTimeout(() => appendConsoleLine(response), 300);
+      setTimeout(() => appendConsoleLine(hint, 'text-[var(--secondary)]'), 650);
+      playTone('command');
+      if (command.toLowerCase().includes('breach')) {
+        notify('Breach command executed. Countermeasures running.', 'alert');
+      }
+      if (command.toLowerCase().includes('xyzzy') || command.toLowerCase().includes('sudo')) {
+        notify('Easter egg activated: shadow protocol', 'success');
+        triggerParticles();
+      }
+    }
+
+    function runAutoCommand() {
+      const command = commands[Math.floor(Math.random() * commands.length)];
+      simulateOutput(command);
+    }
+
+    function toggleAutoRun(forceState) {
+      autoRun = typeof forceState === 'boolean' ? forceState : !autoRun;
+      autoToggle.textContent = `Auto: ${autoRun ? 'ON' : 'OFF'}`;
+      if (autoRun) {
+        runAutoCommand();
+        autoTimer = setInterval(runAutoCommand, 3600);
+      } else if (autoTimer) {
+        clearInterval(autoTimer);
+        autoTimer = null;
+      }
+    }
+
+    consoleForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const value = consoleInput.value.trim();
+      if (!value) return;
+      simulateOutput(value);
+      consoleInput.value = '';
+    });
+
+    consoleFull.addEventListener('click', async () => {
+      const panel = document.querySelector('[data-panel="console"]');
+      if (!document.fullscreenElement) {
+        await panel.requestFullscreen();
+        panel.classList.add('full-screen');
+        consoleFull.textContent = 'Exit';
+      } else {
+        await document.exitFullscreen();
+        panel.classList.remove('full-screen');
+        consoleFull.textContent = 'Full';
+      }
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      const panel = document.querySelector('[data-panel="console"]');
+      if (!document.fullscreenElement) {
+        panel.classList.remove('full-screen');
+        consoleFull.textContent = 'Full';
+      }
+    });
+
+    autoToggle.addEventListener('click', () => toggleAutoRun());
+
+    themeToggle.addEventListener('click', () => {
+      themeIndex = (themeIndex + 1) % themes.length;
+      const theme = themes[themeIndex];
+      document.documentElement.setAttribute('data-theme', theme);
+      themeToggle.textContent = `Theme: ${theme.charAt(0).toUpperCase() + theme.slice(1)}`;
+    });
+
+    soundToggle.addEventListener('click', () => {
+      soundOn = !soundOn;
+      soundToggle.textContent = `Sound: ${soundOn ? 'ON' : 'OFF'}`;
+    });
+
+    downloadReport.addEventListener('click', () => {
+      const report = {
+        session: sessionIdEl.textContent,
+        threat: threatLevelEl.textContent,
+        logs: logs.slice(-150),
+        generated: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `report-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      notify('Report downloaded.', 'success');
+      playTone('success');
+    });
+
+    printLogs.addEventListener('click', () => {
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`<pre>${logs.join('\n')}</pre>`);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      notify('Print dialog opened.', 'info');
+    });
+
+    resetLayout.addEventListener('click', () => {
+      document.querySelectorAll('.panel').forEach(panel => {
+        panel.style.transform = 'translate(0px, 0px)';
+        panel.dataset.x = 0;
+        panel.dataset.y = 0;
+      });
+      notify('Panel layout reset.', 'info');
+    });
+
+    function notify(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = message;
+      toast.style.borderLeftColor = type === 'alert' ? 'var(--danger)' : type === 'success' ? 'var(--primary)' : 'var(--secondary)';
+      toastContainer.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    function playTone(kind) {
+      if (!soundOn) return;
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = kind === 'alert' ? 'square' : 'sine';
+      osc.frequency.value = kind === 'alert' ? 220 : kind === 'success' ? 520 : 420;
+      gain.gain.value = 0.08;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.18);
+    }
+
+    let breachTime = 45;
+    function updateBreachTimer() {
+      breachTime--;
+      if (breachTime <= 0) {
+        breachTime = Math.floor(Math.random() * 30) + 35;
+        notify('Breach attempt succeeded. Data siphoned.', 'alert');
+        playTone('alert');
+        triggerParticles();
+        document.getElementById('breachStatus').textContent = 'COMPLETE';
+        document.querySelector('[data-panel="breach"]').classList.add('flash');
+        setTimeout(() => document.querySelector('[data-panel="breach"]').classList.remove('flash'), 1200);
+      }
+      const display = `${String(Math.floor(breachTime / 60)).padStart(2, '0')}:${String(breachTime % 60).padStart(2, '0')}`;
+      breachCountdownEl.textContent = display;
+      breachTimerEl.textContent = display;
+    }
+
+    function updateCracker() {
+      const progress = Math.floor(Math.random() * 65) + 35;
+      crackBar.style.width = `${progress}%`;
+      crackGuess.textContent = Math.random().toString(36).slice(2, 6);
+      crackEta.textContent = `00:${String(Math.floor(Math.random() * 50) + 10).padStart(2, '0')}`;
+    }
+
+    function updateCore() {
+      coreStability.textContent = `${Math.floor(Math.random() * 12) + 88}%`;
+    }
+
+    function updateFiles() {
+      const files = ['vault.db', 'secrets.log', 'keys.pem', 'blackbox.bin', 'ghost.img', 'telemetry.json'];
+      fileBrowser.innerHTML = files.map(file => `<li class="flex items-center justify-between"><span>${file}</span><span class="text-[var(--muted)]">${Math.floor(Math.random()*900+100)}kb</span></li>`).join('');
+    }
+
+    downloadPacket.addEventListener('click', () => {
+      const packet = {
+        packetId: `PKT-${Math.floor(Math.random() * 9999)}`,
+        nodes: Array.from({ length: 4 }, () => `NODE-${Math.floor(Math.random() * 9999)}`),
+        timestamp: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(packet, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'data-packet.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      notify('Data packet downloaded.', 'success');
+    });
+
+    chatForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const message = chatInput.value.trim();
+      if (!message) return;
+      appendChat(`You: ${message}`, 'text-[var(--text)]');
+      chatInput.value = '';
+      setTimeout(() => {
+        const replies = ['Operator: Signal locked.', 'Operator: Payload delivered.', 'Operator: Waiting for next task.', 'Operator: Node access granted.'];
+        appendChat(replies[Math.floor(Math.random() * replies.length)], 'text-[var(--muted)]');
+      }, 700);
+    });
+
+    function appendChat(text, className) {
+      const line = document.createElement('div');
+      line.className = className;
+      line.textContent = text;
+      chatLog.appendChild(line);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    function hacktyperInput(chars) {
+      hacktyperEl.textContent += chars;
+      hacktyperEl.scrollTop = hacktyperEl.scrollHeight;
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.target.closest('input, textarea')) return;
+      if (event.key === 'Backspace') {
+        hacktyperEl.textContent = hacktyperEl.textContent.slice(0, -1);
+        return;
+      }
+      if (event.key.length === 1 || event.key === 'Enter' || event.key === 'Tab') {
+        event.preventDefault();
+        const chunk = fakeCode.slice(hackIndex, hackIndex + 6);
+        hackIndex = (hackIndex + 6) % fakeCode.length;
+        hacktyperInput(chunk);
+        playTone('command');
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.ctrlKey && event.key.toLowerCase() === 'l') {
+        event.preventDefault();
+        consoleOutput.innerHTML = '';
+        appendConsoleLine('Console cleared. Awaiting new instructions.');
+      }
+      if (event.ctrlKey && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        toggleAutoRun();
+      }
+      if (event.ctrlKey && event.key.toLowerCase() === 'p') {
+        event.preventDefault();
+        printLogs.click();
+      }
+    });
+
+    boostScan.addEventListener('click', () => {
+      notify('Scan boost injected. Completing cycle early.', 'success');
+      playTone('success');
+      updateScan();
+    });
+
+    document.querySelectorAll('.collapse-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const panel = btn.closest('.panel');
+        panel.classList.toggle('collapsed');
+      });
+    });
+
+    // Dragging panels
+    document.querySelectorAll('.panel').forEach(panel => {
+      const header = panel.querySelector('.panel-header');
+      let startX = 0;
+      let startY = 0;
+      let dragging = false;
+
+      header.addEventListener('pointerdown', (event) => {
+        if (event.target.classList.contains('collapse-btn')) return;
+        dragging = true;
+        panel.classList.add('dragging');
+        startX = event.clientX - (parseFloat(panel.dataset.x) || 0);
+        startY = event.clientY - (parseFloat(panel.dataset.y) || 0);
+        header.setPointerCapture(event.pointerId);
+      });
+
+      header.addEventListener('pointermove', (event) => {
+        if (!dragging) return;
+        const x = event.clientX - startX;
+        const y = event.clientY - startY;
+        panel.style.transform = `translate(${x}px, ${y}px)`;
+        panel.dataset.x = x;
+        panel.dataset.y = y;
+      });
+
+      header.addEventListener('pointerup', (event) => {
+        dragging = false;
+        panel.classList.remove('dragging');
+        header.releasePointerCapture(event.pointerId);
+      });
+    });
+
+    function runMap() {
+      const canvas = document.getElementById('mapCanvas');
+      const ctx = canvas.getContext('2d');
+      const resize = () => {
+        canvas.width = canvas.clientWidth * devicePixelRatio;
+        canvas.height = canvas.clientHeight * devicePixelRatio;
+      };
+      resize();
+      window.addEventListener('resize', resize);
+
+      const nodes = Array.from({ length: 10 }, () => ({
+        x: Math.random(),
+        y: Math.random(),
+        pulse: Math.random() * Math.PI * 2
+      }));
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(33, 246, 217, 0.08)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        nodes.forEach((node, i) => {
+          nodes.forEach((other, j) => {
+            if (i !== j && Math.random() > 0.85) {
+              ctx.strokeStyle = 'rgba(109, 124, 255, 0.2)';
+              ctx.beginPath();
+              ctx.moveTo(node.x * canvas.width, node.y * canvas.height);
+              ctx.lineTo(other.x * canvas.width, other.y * canvas.height);
+              ctx.stroke();
+            }
+          });
+        });
+        nodes.forEach(node => {
+          node.pulse += 0.05;
+          const radius = 3 + Math.sin(node.pulse) * 2;
+          ctx.fillStyle = 'rgba(33, 246, 217, 0.8)';
+          ctx.beginPath();
+          ctx.arc(node.x * canvas.width, node.y * canvas.height, radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function runTraffic() {
+      const canvas = document.getElementById('trafficCanvas');
+      const ctx = canvas.getContext('2d');
+      const resize = () => {
+        canvas.width = canvas.clientWidth * devicePixelRatio;
+        canvas.height = canvas.clientHeight * devicePixelRatio;
+      };
+      resize();
+      window.addEventListener('resize', resize);
+
+      const streams = Array.from({ length: 18 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        speed: Math.random() * 1.5 + 0.6
+      }));
+
+      function draw() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = 'rgba(33, 246, 217, 0.3)';
+        streams.forEach(stream => {
+          ctx.beginPath();
+          ctx.moveTo(stream.x, stream.y);
+          ctx.lineTo(stream.x + 40, stream.y + 10);
+          ctx.stroke();
+          stream.x += stream.speed * 2;
+          if (stream.x > canvas.width + 60) {
+            stream.x = -60;
+            stream.y = Math.random() * canvas.height;
+          }
+        });
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    // Particle system
+    const particleCanvas = document.getElementById('particles');
+    const pctx = particleCanvas.getContext('2d');
+    const particles = [];
+
+    function resizeParticles() {
+      particleCanvas.width = window.innerWidth * devicePixelRatio;
+      particleCanvas.height = window.innerHeight * devicePixelRatio;
+    }
+    resizeParticles();
+    window.addEventListener('resize', resizeParticles);
+
+    function triggerParticles() {
+      for (let i = 0; i < 45; i++) {
+        particles.push({
+          x: particleCanvas.width / 2,
+          y: particleCanvas.height / 2,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6,
+          life: 80
+        });
+      }
+    }
+
+    function animateParticles() {
+      pctx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+      particles.forEach((p, index) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 1;
+        pctx.fillStyle = `rgba(33, 246, 217, ${p.life / 80})`;
+        pctx.beginPath();
+        pctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        pctx.fill();
+        if (p.life <= 0) {
+          particles.splice(index, 1);
+        }
+      });
+      requestAnimationFrame(animateParticles);
+    }
+
+    // Hackertyper mode initializer
+    hacktyperEl.textContent = '';
+
+    // Build file browser
+    updateFiles();
+
+    // Notifications
+    notify('Console online. Awaiting commands.', 'info');
+
+    // Auto logs
+    setInterval(() => addLog(logStream[Math.floor(Math.random() * logStream.length)]), 900);
+    setInterval(typeCommand, 4000);
+    setInterval(updateBars, 2500);
+    setInterval(updateNodes, 3500);
+    setInterval(updateSession, 6000);
+    setInterval(updateBreachTimer, 1000);
+    setInterval(updateCracker, 2200);
+    setInterval(updateCore, 3200);
+
+    updateBars();
+    updateNodes();
+    updateScan();
+    typeCommand();
+    startUptime();
+    appendConsoleLine('Console online. Awaiting commands.', 'text-[var(--muted)]');
+    toggleAutoRun(true);
+    runMap();
+    runTraffic();
+    animateParticles();
+  </script>
+</body>
+</html>
