@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MaxCode – AI Powered by Puter.js</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --primary: #6366f1;
+  --primary-glow: rgba(99, 102, 241, 0.5);
+  --secondary: #8b5cf6;
+  --accent: #ec4899;
+  --bg-1: #030712;
+  --bg-2: #0f172a;
+  --bg-3: #1e293b;
+  --surface: rgba(15, 23, 42, 0.8);
+  --border: rgba(99, 102, 241, 0.2);
+  --text-1: #f8fafc;
+  --text-2: #94a3b8;
+  --glass: rgba(255, 255, 255, 0.03);
+}
+
+/* Cyberpunk Theme */
+[data-theme="cyberpunk"] {
+  --primary: #00fff2;
+  --primary-glow: rgba(0, 255, 242, 0.5);
+  --secondary: #ff00ff;
+  --accent: #ffff00;
+  --bg-1: #0a0a0f;
+  --bg-2: #12121a;
+  --bg-3: #1a1a25;
+  --surface: rgba(18, 18, 26, 0.9);
+  --border: rgba(0, 255, 242, 0.3);
+  --text-1: #00fff2;
+  --text-2: #ff00ff;
+}
+
+/* Sunset Theme */
+[data-theme="sunset"] {
+  --primary: #f97316;
+  --primary-glow: rgba(249, 115, 22, 0.5);
+  --secondary: #ef4444;
+  --accent: #fbbf24;
+  --bg-1: #1c1917;
+  --bg-2: #292524;
+  --bg-3: #44403c;
+  --surface: rgba(41, 37, 36, 0.9);
+  --border: rgba(249, 115, 22, 0.3);
+  --text-1: #fef3c7;
+  --text-2: #fbbf24;
+}
+
+/* Ocean Theme */
+[data-theme="ocean"] {
+  --primary: #06b6d4;
+  --primary-glow: rgba(6, 182, 212, 0.5);
+  --secondary: #0ea5e9;
+  --accent: #22d3ee;
+  --bg-1: #042f2e;
+  --bg-2: #0f3d3c;
+  --bg-3: #164e4a;
+  --surface: rgba(15, 61, 60, 0.9);
+  --border: rgba(6, 182, 212, 0.3);
+  --text-1: #ccfbf1;
+  --text-2: #5eead4;
+}
+
+/* Aurora Theme */
+[data-theme="aurora"] {
+  --primary: #a855f7;
+  --primary-glow: rgba(168, 85, 247, 0.5);
+  --secondary: #6366f1;
+  --accent: #22d3ee;
+  --bg-1: #0c0a1d;
+  --bg-2: #1a1333;
+  --bg-3: #2d2150;
+  --surface: rgba(26, 19, 51, 0.9);
+  --border: rgba(168, 85, 247, 0.3);
+  --text-1: #e9d5ff;
+  --text-2: #c084fc;
+}
+
+/* Forest Theme */
+[data-theme="forest"] {
+  --primary: #22c55e;
+  --primary-glow: rgba(34, 197, 94, 0.5);
+  --secondary: #16a34a;
+  --accent: #86efac;
+  --bg-1: #052e16;
+  --bg-2: #14532d;
+  --bg-3: #166534;
+  --surface: rgba(20, 83, 45, 0.9);
+  --border: rgba(34, 197, 94, 0.3);
+  --text-1: #dcfce7;
+  --text-2: #86efac;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: var(--bg-1);
+  color: var(--text-1);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ============ LANDING ============ */
+#landing {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+#landing.hide {
+  opacity: 0;
+  transform: scale(1.2);
+  pointer-events: none;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+#app.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.landing-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(48px, 12vw, 100px);
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 3s ease infinite, titlePop 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+  opacity: 0;
+  transform: scale(0.5) rotateX(-30deg);
+  filter: drop-shadow(0 0 40px var(--primary-glow));
+  letter-spacing: 6px;
+}
+
+.landing-subtitle {
+  font-size: clamp(14px, 3vw, 20px);
+  color: var(--text-2);
+  margin-top: 20px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeUp 0.8s ease 0.6s forwards;
+  letter-spacing: 4px;
+}
+
+.landing-subtitle span {
+  background: linear-gradient(90deg, var(--secondary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes titlePop {
+  0% { opacity: 0; transform: scale(0.5) rotateX(-30deg); }
+  60% { transform: scale(1.1) rotateX(5deg); }
+  100% { opacity: 1; transform: scale(1) rotateX(0); }
+}
+
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============ ANIMATED BACKGROUND ============ */
+.bg-animation {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.bg-animation::before {
+  content: '';
+  position: absolute;
+  width: 150%;
+  height: 150%;
+  top: -25%;
+  left: -25%;
+  background: 
+    radial-gradient(circle at 20% 80%, var(--primary-glow) 0%, transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.3) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+  animation: bgFloat 20s ease-in-out infinite;
+}
+
+@keyframes bgFloat {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(3%, 3%) rotate(2deg); }
+  66% { transform: translate(-2%, 2%) rotate(-1deg); }
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.4;
+  animation: orbFloat 15s ease-in-out infinite;
+}
+
+.orb-1 {
+  width: 400px;
+  height: 400px;
+  background: var(--primary);
+  top: 10%;
+  left: 10%;
+}
+
+.orb-2 {
+  width: 300px;
+  height: 300px;
+  background: var(--secondary);
+  top: 60%;
+  right: 10%;
+  animation-delay: -5s;
+}
+
+.orb-3 {
+  width: 250px;
+  height: 250px;
+  background: var(--accent);
+  bottom: 10%;
+  left: 40%;
+  animation-delay: -10s;
+}
+
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(30px, -30px) scale(1.1); }
+  50% { transform: translate(-20px, 20px) scale(0.9); }
+  75% { transform: translate(20px, 10px) scale(1.05); }
+}
+
+/* ============ HEADER ============ */
+header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 16px 24px;
+  background: var(--surface);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 100;
+}
+
+.logo {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  -webkit-text-fill-color: white;
+  box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+select, button {
+  background: var(--bg-3);
+  color: var(--text-1);
+  border: 1px solid var(--border);
+  padding: 10px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+select:hover, button:hover {
+  background: var(--bg-2);
+  border-color: var(--primary);
+  box-shadow: 0 0 20px var(--primary-glow);
+  transform: translateY(-2px);
+}
+
+button.google-btn {
+  background: white;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+button.google-btn:hover {
+  background: #f5f5f5;
+  border-color: #4285f4;
+  box-shadow: 0 4px 20px rgba(66, 133, 244, 0.3);
+}
+
+.theme-selector {
+  position: relative;
+}
+
+.theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  display: none;
+  min-width: 160px;
+  z-index: 1000;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.theme-dropdown.show { display: block; }
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  width: 100%;
+  background: transparent;
+  color: var(--text-1);
+  font-size: 13px;
+}
+
+.theme-option:hover {
+  background: var(--bg-3);
+  transform: none;
+  box-shadow: none;
+}
+
+.theme-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.2);
+}
+
+/* ============ MAIN LAYOUT ============ */
+main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ============ SIDEBAR ============ */
+.sidebar {
+  border-right: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  background: var(--surface);
+  backdrop-filter: blur(10px);
+}
+
+.panel {
+  background: linear-gradient(145deg, var(--bg-2), var(--bg-3));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 16px;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.panel:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3), 0 0 30px var(--primary-glow);
+}
+
+.panel:hover::before { opacity: 1; }
+
+.panel h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.panel h3 i {
+  color: var(--primary);
+  font-size: 16px;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.template-grid button {
+  font-size: 12px;
+  padding: 10px;
+  background: var(--bg-1);
+  border-radius: 10px;
+}
+
+#editor {
+  height: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.editor-btn {
+  width: 100%;
+  margin-top: 12px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary)) !important;
+  border: none !important;
+  font-weight: 600;
+}
+
+.editor-btn:hover {
+  box-shadow: 0 6px 25px var(--primary-glow) !important;
+}
+
+/* ============ CHAT AREA ============ */
+.chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  position: relative;
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  scroll-behavior: smooth;
+}
+
+.msg {
+  max-width: 75%;
+  padding: 16px 20px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+  line-height: 1.7;
+  animation: msgSlide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+
+@keyframes msgSlide {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.msg.user {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  margin-left: auto;
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 4px 20px var(--primary-glow);
+}
+
+.msg.ai {
+  background: var(--surface);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 6px;
+}
+
+.msg.system {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.1));
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  max-width: 90%;
+  text-align: center;
+  margin: 0 auto 16px;
+}
+
+.actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.actions button {
+  font-size: 11px;
+  padding: 6px 12px;
+  background: var(--bg-3);
+  opacity: 0.8;
+  border-radius: 8px;
+}
+
+.actions button:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+/* ============ CHAT FOOTER ============ */
+.chat-footer {
+  padding: 20px 24px;
+  background: var(--surface);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+}
+
+.input-container {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+textarea {
+  flex: 1;
+  resize: none;
+  height: 56px;
+  background: var(--bg-2);
+  color: var(--text-1);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 20px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-glow);
+}
+
+textarea::placeholder {
+  color: var(--text-2);
+}
+
+.send-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary)) !important;
+  border: none !important;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.send-btn:hover {
+  transform: translateY(-3px) scale(1.05) !important;
+  box-shadow: 0 8px 30px var(--primary-glow) !important;
+}
+
+.quick-btns {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.quick-btns button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 10px 16px;
+  background: var(--bg-2);
+  border-radius: 12px;
+}
+
+.quick-btns button i {
+  font-size: 14px;
+  color: var(--primary);
+}
+
+/* ============ USER INFO ============ */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--bg-3);
+  border-radius: 25px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.user-info img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+}
+
+/* ============ SCROLLBAR ============ */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { 
+  background: var(--bg-3); 
+  border-radius: 10px; 
+}
+::-webkit-scrollbar-thumb:hover { 
+  background: var(--primary); 
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 900px) {
+  main { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  header { padding: 12px 16px; }
+  .messages { padding: 16px; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="bg-animation">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<!-- LANDING -->
+<div id="landing">
+  <h1 class="landing-title">MaxCode</h1>
+  <p class="landing-subtitle">made by <span>Naman Mittal</span></p>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon"><i class="fas fa-code"></i></div>
+      MaxCode
+    </div>
+
+    <select id="model">
+      <option value="auto">🤖 Auto Select</option>
+      <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
+      <option value="claude-sonnet-4">Claude Sonnet 4</option>
+      <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
+      <option value="claude-opus-4">Claude Opus 4</option>
+      <option value="claude-opus-4-1">Claude Opus 4.1</option>
+      <option value="claude-opus-4-5">Claude Opus 4.5</option>
+    </select>
+
+    <select id="chunkToggle">
+      <option value="on">📦 Chunking ON</option>
+      <option value="off">📦 Chunking OFF</option>
+    </select>
+
+    <div class="theme-selector">
+      <button class="theme-btn" id="themeBtn">
+        <i class="fas fa-palette"></i> Theme
+      </button>
+      <div class="theme-dropdown" id="themeDropdown">
+        <button class="theme-option" data-theme="default">
+          <span class="theme-dot" style="background: linear-gradient(135deg, #6366f1, #8b5cf6)"></span>
+          Default
+        </button>
+        <button class="theme-option" data-theme="cyberpunk">
+          <span class="theme-dot" style="background: linear-gradient(135deg, #00fff2, #ff00ff)"></span>
+          Cyberpunk
+        </button>
+        <button class="theme-option" data-theme="sunset">
+          <span class="theme-dot" style="background: linear-gradient(135deg, #f97316, #ef4444)"></span>
+          Sunset
+        </button>
+        <button class="theme-option" data-theme="ocean">
+          <span class="theme-dot" style="background: linear-gradient(135deg, #06b6d4, #0ea5e9)"></span>
+          Ocean
+        </button>
+        <button class="theme-option" data-theme="aurora">
+          <span class="theme-dot" style="background: linear-gradient(135deg, #a855f7, #6366f1)"></span>
+          Aurora
+        </button>
+        <button class="theme-option" data-theme="forest">
+          <span class="theme-dot" style="background: linear-gradient(135deg, #22c55e, #16a34a)"></span>
+          Forest
+        </button>
+      </div>
+    </div>
+
+    <button class="google-btn" id="googleBtn">
+      <i class="fab fa-google" style="color:#4285f4"></i> Sign in
+    </button>
+
+    <div id="userDisplay" style="display:none;"></div>
+
+    <button id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
+    <button id="clearBtn"><i class="fas fa-trash"></i></button>
+  </header>
+
+  <main>
+    <div class="sidebar">
+
+      <div class="panel">
+        <h3><i class="fas fa-bolt"></i> Templates</h3>
+        <div class="template-grid" id="templateGrid">
+          <button data-template="explain"><i class="fas fa-lightbulb"></i> Explain</button>
+          <button data-template="refactor"><i class="fas fa-recycle"></i> Refactor</button>
+          <button data-template="optimize"><i class="fas fa-rocket"></i> Optimize</button>
+          <button data-template="secure"><i class="fas fa-shield-alt"></i> Secure</button>
+          <button data-template="debug"><i class="fas fa-bug"></i> Debug</button>
+          <button data-template="test"><i class="fas fa-vial"></i> Test</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3><i class="fas fa-code"></i> Code Editor</h3>
+        <div id="editor"></div>
+        <button class="editor-btn" id="sendCodeBtn">
+          <i class="fas fa-paper-plane"></i> Analyze Code
+        </button>
+      </div>
+
+    </div>
+
+    <div class="chat">
+      <div class="messages" id="messages"></div>
+      
+      <div class="chat-footer">
+        <div class="input-container">
+          <textarea id="prompt" placeholder="Ask MaxCode anything..."></textarea>
+          <button class="send-btn" id="sendBtn">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+        
+        <div class="quick-btns">
+          <button id="uploadBtn">
+            <i class="fas fa-upload"></i> Upload File
+          </button>
+          <input type="file" id="fileInput" style="display:none;">
+          
+          <button id="githubBtn">
+            <i class="fab fa-github"></i> GitHub Repo
+          </button>
+          
+          <button data-template="explain">
+            <i class="fas fa-lightbulb"></i> Explain
+          </button>
+          
+          <button data-template="debug">
+            <i class="fas fa-bug"></i> Debug
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://js.puter.com/v2/"></script>
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+
+<script>
+(function() {
+  'use strict';
+
+  /* ============ LANDING ANIMATION - Exactly 2 seconds ============ */
+  function showMainApp() {
+    const landing = document.getElementById('landing');
+    const app = document.getElementById('app');
+
+    landing.classList.add('hide');
+    
+    requestAnimationFrame(() => {
+      app.classList.add('show');
+    });
+
+    setTimeout(() => {
+      landing.remove();
+    }, 700);
+  }
+
+  /* ============ DOM CONTENT LOADED ============ */
+  document.addEventListener('DOMContentLoaded', () => {
+    
+    // Show main app after exactly 2 seconds
+    setTimeout(showMainApp, 2000);
+
+    /* ============ DOM ELEMENTS ============ */
+    const messagesEl = document.getElementById('messages');
+    const promptBox = document.getElementById('prompt');
+    const modelSel = document.getElementById('model');
+    const chunkToggle = document.getElementById('chunkToggle');
+    const fileInput = document.getElementById('fileInput');
+    const userDisplay = document.getElementById('userDisplay');
+    const themeDropdown = document.getElementById('themeDropdown');
+
+    const CHUNK_SIZE = 3500;
+    let editor = null;
+    let currentUser = null;
+
+    /* ============ LOAD SAVED THEME ============ */
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme && savedTheme !== 'default') {
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+
+    /* ============ THEME FUNCTIONS ============ */
+    function setTheme(theme) {
+      if (theme === 'default') {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        document.documentElement.setAttribute('data-theme', theme);
+      }
+      localStorage.setItem('theme', theme);
+      themeDropdown.classList.remove('show');
+    }
+
+    document.getElementById('themeBtn').onclick = (e) => {
+      e.stopPropagation();
+      themeDropdown.classList.toggle('show');
+    };
+
+    document.querySelectorAll('.theme-option').forEach(btn => {
+      btn.onclick = () => setTheme(btn.dataset.theme);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.theme-selector')) {
+        themeDropdown.classList.remove('show');
+      }
+    });
+
+    /* ============ GOOGLE AUTH (Demo) ============ */
+    function loginWithGoogle() {
+      const popup = window.open('', 'Google Sign In', 'width=450,height=550');
+      
+      if (popup) {
+        popup.document.write(`
+          <html><head><title>Sign in with Google</title>
+          <style>
+            body{font-family:Segoe UI,sans-serif;display:flex;flex-direction:column;
+            align-items:center;justify-content:center;height:100vh;margin:0;
+            background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)}
+            .card{background:white;padding:40px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center}
+            .google-icon{font-size:48px;margin-bottom:20px}h2{color:#333;margin-bottom:10px}
+            p{color:#666;margin-bottom:25px}.btn{background:#4285f4;color:white;border:none;
+            padding:14px 32px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:600}
+            .btn:hover{background:#357abd}
+          </style></head><body>
+          <div class="card"><div class="google-icon">🔐</div><h2>Sign in with Google</h2>
+          <p>Demo authentication flow</p>
+          <button class="btn" onclick="window.opener.completeGoogleLogin();window.close();">
+          Continue as Demo User</button></div></body></html>
+        `);
+      } else {
+        window.completeGoogleLogin();
+      }
+    }
+
+    window.completeGoogleLogin = function() {
+      currentUser = {
+        name: 'Demo User',
+        email: 'demo@maxcode.ai',
+        picture: 'https://ui-avatars.com/api/?name=Demo+User&background=6366f1&color=fff&size=128'
+      };
+      localStorage.setItem('user', JSON.stringify(currentUser));
+      updateUserDisplay();
+      addSystemMessage('✅ Welcome back, ' + currentUser.name + '!');
+    };
+
+    function updateUserDisplay() {
+      if (currentUser) {
+        userDisplay.innerHTML = `
+          <div class="user-info">
+            <img src="${currentUser.picture}" alt="${currentUser.name}">
+            <span>${currentUser.name}</span>
+          </div>
+        `;
+        userDisplay.style.display = 'block';
+      } else {
+        userDisplay.style.display = 'none';
+      }
+    }
+
+    function logout() {
+      currentUser = null;
+      localStorage.removeItem('user');
+      updateUserDisplay();
+      addSystemMessage('👋 Logged out successfully');
+    }
+
+    // Check saved user
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      try {
+        currentUser = JSON.parse(savedUser);
+        updateUserDisplay();
+      } catch(e) {}
+    }
+
+    document.getElementById('googleBtn').onclick = loginWithGoogle;
+    document.getElementById('logoutBtn').onclick = logout;
+
+    /* ============ TEMPLATES ============ */
+    const templates = {
+      explain: 'Please explain this code in detail:\n\n',
+      refactor: 'Please refactor this code for better readability:\n\n',
+      optimize: 'Please optimize this code for performance:\n\n',
+      secure: 'Please review for security vulnerabilities:\n\n',
+      debug: 'Please help debug this code:\n\n',
+      test: 'Please write unit tests for this code:\n\n'
+    };
+
+    function useTemplate(t) {
+      promptBox.value = templates[t] + promptBox.value;
+      promptBox.focus();
+    }
+
+    document.querySelectorAll('[data-template]').forEach(btn => {
+      btn.onclick = () => useTemplate(btn.dataset.template);
+    });
+
+    /* ============ MEMORY ============ */
+    let memory = [];
+    try {
+      memory = JSON.parse(localStorage.getItem('memory') || '[]');
+    } catch(e) { memory = []; }
+
+    function saveMemory(role, text) {
+      memory.push({ role, text, ts: Date.now() });
+      if (memory.length > 50) memory = memory.slice(-50);
+      localStorage.setItem('memory', JSON.stringify(memory));
+    }
+
+    /* ============ MESSAGES ============ */
+    function addMsg(text, cls) {
+      const d = document.createElement('div');
+      d.className = 'msg ' + cls;
+      d.textContent = text;
+      
+      if (cls === 'ai') {
+        const a = document.createElement('div');
+        a.className = 'actions';
+        
+        const copyBtn = document.createElement('button');
+        copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy';
+        copyBtn.onclick = () => {
+          navigator.clipboard.writeText(d.firstChild.textContent || text);
+          copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+          setTimeout(() => { copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy'; }, 2000);
+        };
+        
+        const retryBtn = document.createElement('button');
+        retryBtn.innerHTML = '<i class="fas fa-redo"></i> Retry';
+        retryBtn.onclick = () => send('Please elaborate more: ' + text.slice(0, 150));
+        
+        a.appendChild(copyBtn);
+        a.appendChild(retryBtn);
+        d.appendChild(a);
+      }
+      
+      messagesEl.appendChild(d);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return d;
+    }
+
+    function addSystemMessage(text) {
+      const d = document.createElement('div');
+      d.className = 'msg system';
+      d.innerHTML = text;
+      messagesEl.appendChild(d);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    /* ============ CHUNKING ============ */
+    function chunk(text) {
+      if (chunkToggle.value === 'off') return [text];
+      const out = [];
+      for (let i = 0; i < text.length; i += CHUNK_SIZE) {
+        out.push(text.slice(i, i + CHUNK_SIZE));
+      }
+      return out;
+    }
+
+    /* ============ AUTO MODEL ============ */
+    function autoModel(text) {
+      const len = text.length;
+      if (len < 500) return 'claude-haiku-4-5';
+      if (len < 1500) return 'claude-sonnet-4';
+      if (len < 3000) return 'claude-sonnet-4-5';
+      return 'claude-opus-4';
+    }
+
+    /* ============ SEND ============ */
+    async function send(text) {
+      const q = (text || promptBox.value).trim();
+      if (!q) return;
+      
+      promptBox.value = '';
+      addMsg(q, 'user');
+      saveMemory('user', q);
+      
+      const ai = addMsg('✨ Thinking...', 'ai');
+      ai.textContent = '';
+      
+      try {
+        if (!window.puter || !window.puter.ai) {
+          ai.textContent = '⚠️ Puter.js is loading... Please wait and try again.';
+          return;
+        }
+        
+        const chunks = chunk(q);
+        
+        for (const part of chunks) {
+          const model = modelSel.value === 'auto' ? autoModel(part) : modelSel.value;
+          
+          try {
+            const response = await puter.ai.chat(part, { model, stream: true });
+            
+            for await (const chunkData of response) {
+              if (chunkData && chunkData.text) {
+                ai.textContent += chunkData.text;
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+              }
+            }
+          } catch (err) {
+            console.warn('Model ' + model + ' failed, using fallback...');
+            const fallback = await puter.ai.chat(part, { stream: true });
+            
+            for await (const fallbackChunk of fallback) {
+              if (fallbackChunk && fallbackChunk.text) {
+                ai.textContent += fallbackChunk.text;
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+              }
+            }
+          }
+        }
+        
+        if (!ai.textContent.trim()) {
+          ai.textContent = '🤖 Received your message but couldn\'t generate a response. Please try again.';
+        }
+        
+        saveMemory('ai', ai.textContent);
+        
+      } catch (e) {
+        console.error('AI Error:', e);
+        ai.textContent = '❌ Error: ' + (e.message || 'Failed to get response');
+      }
+    }
+
+    document.getElementById('sendBtn').onclick = () => send();
+
+    /* ============ FILE UPLOAD ============ */
+    document.getElementById('uploadBtn').onclick = () => fileInput.click();
+
+    fileInput.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      try {
+        const text = await file.text();
+        const preview = text.slice(0, 2500);
+        const truncated = text.length > 2500 ? '\n\n[... truncated ...]' : '';
+        
+        send('Analyze this file (' + file.name + '):\n\n```\n' + preview + truncated + '\n```');
+      } catch (err) {
+        send('Analyze file: ' + file.name + ' (' + file.type + ', ' + (file.size/1024).toFixed(1) + 'KB)');
+      }
+      
+      fileInput.value = '';
+    };
+
+    /* ============ GITHUB ============ */
+    document.getElementById('githubBtn').onclick = () => {
+      const url = prompt('Enter GitHub repository URL:', 'https://github.com/user/repo');
+      if (url && url.trim()) {
+        send('Analyze this GitHub repository:\n\n' + url.trim());
+      }
+    };
+
+    /* ============ MONACO EDITOR ============ */
+    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' }});
+    require(['vs/editor/editor.main'], () => {
+      editor = monaco.editor.create(document.getElementById('editor'), {
+        value: '// Welcome to MaxCode!\n\nfunction greet(name) {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet("World"));',
+        language: 'javascript',
+        theme: 'vs-dark',
+        minimap: { enabled: false },
+        fontSize: 13,
+        lineNumbers: 'on',
+        scrollBeyondLastLine: false,
+        automaticLayout: true,
+        padding: { top: 10 }
+      });
+    });
+
+    document.getElementById('sendCodeBtn').onclick = () => {
+      if (!editor) {
+        alert('Editor is loading...');
+        return;
+      }
+      const code = editor.getValue();
+      if (!code.trim()) {
+        alert('Please write some code first!');
+        return;
+      }
+      send('Review and explain this code:\n\n```\n' + code + '\n```');
+    };
+
+    /* ============ CLEAR CHAT ============ */
+    document.getElementById('clearBtn').onclick = () => {
+      messagesEl.innerHTML = '';
+      addSystemMessage('🧹 Chat cleared. Ready for a new conversation!');
+    };
+
+    /* ============ KEYBOARD ============ */
+    promptBox.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
+
+    /* ============ WELCOME MESSAGE ============ */
+    setTimeout(() => {
+      if (messagesEl.children.length === 0) {
+        addSystemMessage(
+          '<strong>👋 Welcome to MaxCode!</strong><br>' +
+          'Powered by Claude AI via Puter.js<br><br>' +
+          '<em>Ask me anything about code, debugging, or development!</em>'
+        );
+      }
+    }, 2200);
+
+  });
+
+})();
+</script>
+
+</body>
+</html>
